@@ -1,0 +1,15 @@
+import { describe, expect, it } from 'vitest';
+
+import { addHours, formatShelfLife } from './dates';
+
+describe('label date calculations', () => {
+  it('adds the configured shelf-life hours to the made time', () => {
+    const madeAt = new Date('2026-10-14T12:00:00.000Z');
+    expect(addHours(madeAt, 72).toISOString()).toBe('2026-10-17T12:00:00.000Z');
+  });
+
+  it('formats whole-day and hourly durations clearly', () => {
+    expect(formatShelfLife(72)).toBe('3 days');
+    expect(formatShelfLife(36)).toBe('36 hours');
+  });
+});
