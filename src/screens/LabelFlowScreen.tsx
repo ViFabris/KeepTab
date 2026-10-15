@@ -1,20 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
+import { ArrowLeft, CheckCircle2, Printer, UserRound } from 'lucide-react-native';
 
 import { BigButton } from '../components/BigButton';
+import { Card } from '../components/Card';
 import { ItemSelector } from '../components/ItemSelector';
 import { LabelPreview } from '../components/LabelPreview';
 import { OptionStep } from '../components/OptionStep';
 import { PageHeader } from '../components/PageHeader';
 import { SafetyBanner } from '../components/SafetyBanner';
+import { StepProgress } from '../components/StepProgress';
 import { getItems, getShelfLife } from '../database/itemsRepository';
 import { getStaff } from '../database/staffRepository';
 import { getItemName, getLabelOptionName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
 import { useSettings } from '../settings/SettingsContext';
-import { colors } from '../theme';
+import { colors, radii, sizes, spacing, typography } from '../theme';
 import type {
   KitchenItem,
   ItemLabelOption,
@@ -26,6 +29,16 @@ import type {
 import { addHours } from '../utils/dates';
 
 type FlowStep = 'item' | 'storage' | 'form' | 'staff' | 'preview' | 'printed';
+
+const FLOW_STEP_NUMBER: Record<FlowStep, number> = {
+  item: 1,
+  storage: 2,
+  form: 3,
+  staff: 4,
+  preview: 5,
+  printed: 5,
+};
+const FLOW_STEP_TOTAL = 5;
 
 interface LabelFlowScreenProps {
   onPrinted: () => void;
@@ -60,6 +73,13 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
   const [error, setError] = useState('');
 
   const printer = useMemo(() => new MockPrinter(db), [db]);
+  const progress = (
+    <StepProgress
+      current={FLOW_STEP_NUMBER[step]}
+      total={FLOW_STEP_TOTAL}
+      label={copy.setup.step(FLOW_STEP_NUMBER[step], FLOW_STEP_TOTAL)}
+    />
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -169,7 +189,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
     return (
       <View style={styles.screen}>
         <View style={styles.headerWithBanner}>
-          <PageHeader title={copy.itemQuestion} subtitle={copy.itemHint} />
+          <PageHeader title={copy.itemQuestion} subtitle={copy.itemHint} action={progress} />
           <SafetyBanner compact />
         </View>
         {error ? <ErrorMessage message={error} /> : null}
@@ -195,6 +215,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
           onSelect={setStorageOption}
           onBack={resetFlow}
           onConfirm={() => setStep('form')}
+          progress={progress}
         />
       </View>
     );
@@ -211,6 +232,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
           onSelect={setFormOption}
           onBack={() => setStep('storage')}
           onConfirm={() => setStep('staff')}
+          progress={progress}
         />
       </View>
     );
@@ -222,6 +244,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         <PageHeader
           title={copy.staffQuestion}
           subtitle={`${localizedItemName} · ${getLabelOptionName(formOption, language)} · ${getLabelOptionName(storageOption, language)}`}
+          action={progress}
         />
         {error ? <ErrorMessage message={error} /> : null}
         {staff.length ? (
@@ -234,20 +257,22 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
                 disabled={busy}
                 variant="choice"
                 style={styles.staffButton}
+                leading={<UserRound color={colors.secondary} size={sizes.iconMd} strokeWidth={2} />}
               />
             ))}
           </ScrollView>
         ) : (
-          <View style={styles.emptyStaff}>
+          <Card style={styles.emptyStaff}>
             <Text style={styles.emptyTitle}>{copy.noStaffTitle}</Text>
             <Text style={styles.emptyBody}>{copy.noStaffBody}</Text>
-          </View>
+          </Card>
         )}
         <BigButton
           label={copy.back}
           onPress={() => setStep('form')}
           variant="secondary"
           style={styles.bottomBack}
+          leading={<ArrowLeft color={colors.ink} size={sizes.iconMd} strokeWidth={2} />}
         />
       </View>
     );
@@ -256,7 +281,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
   if (step === 'preview' && draftWithoutUseBy) {
     return (
       <View style={styles.screen}>
-        <PageHeader title={copy.previewTitle} subtitle={copy.previewHint} />
+        <PageHeader title={copy.previewTitle} subtitle={copy.previewHint} action={progress} />
         {error ? <ErrorMessage message={error} /> : null}
         <ScrollView contentContainerStyle={styles.previewArea}>
           <LabelPreview
@@ -285,12 +310,14 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
             onPress={() => setStep('staff')}
             variant="secondary"
             style={styles.backButton}
+            leading={<ArrowLeft color={colors.ink} size={sizes.iconMd} strokeWidth={2} />}
           />
           <BigButton
             label={busy ? copy.printing : copy.printLabel}
             onPress={() => void printLabel()}
             disabled={!label || busy}
             style={styles.flexButton}
+            leading={<Printer color={colors.background} size={sizes.iconLg} strokeWidth={2} />}
           />
         </View>
       </View>
@@ -305,6 +332,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
           subtitle={copy.savedLabel(printedLabel.id)}
         />
         <View style={styles.printedNotice}>
+          <CheckCircle2 color={colors.background} size={sizes.iconLg} strokeWidth={2} />
           <Text style={styles.printedNoticeText}>
             {copy.mockPrinterNotice}
           </Text>
@@ -345,51 +373,53 @@ function errorMessage(caught: unknown, fallback: string): string {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, padding: 28, gap: 18 },
-  headerWithBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: 22 },
-  staffGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, paddingVertical: 20 },
-  staffButton: { width: '31%', minHeight: 92 },
+  screen: { flex: 1, padding: spacing.xxl, gap: spacing.lg, backgroundColor: colors.background },
+  headerWithBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xl },
+  staffGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, paddingVertical: spacing.lg },
+  staffButton: { width: '31%', minHeight: sizes.tapMin + spacing.xxl },
   emptyStaff: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 30,
-    borderWidth: 2,
+    padding: spacing.xxl,
+    borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    backgroundColor: colors.surfaceRaised,
   },
-  emptyTitle: { color: colors.ink, fontSize: 28, fontWeight: '800' },
-  emptyBody: { marginTop: 8, color: colors.muted, fontSize: 19 },
-  inlineButton: { marginTop: 22, minWidth: 260 },
+  emptyTitle: { ...typography.h2, color: colors.ink },
+  emptyBody: { ...typography.body, marginTop: spacing.xs, color: colors.muted },
+  inlineButton: { marginTop: spacing.xl, minWidth: 260 },
   bottomBack: { width: 180 },
-  previewArea: { flexGrow: 1, justifyContent: 'center', gap: 14, paddingVertical: 6 },
+  previewArea: { flexGrow: 1, justifyContent: 'center', gap: spacing.md, paddingVertical: spacing.xs },
   noShelfLife: {
-    padding: 16,
-    borderWidth: 2,
+    padding: spacing.md,
+    borderWidth: 1,
     borderColor: colors.danger,
-    borderRadius: 12,
+    borderRadius: radii.md,
     backgroundColor: colors.dangerSoft,
   },
-  noShelfTitle: { color: colors.dangerDark, fontSize: 20, fontWeight: '900' },
-  noShelfBody: { marginTop: 4, color: colors.dangerDark, fontSize: 17, lineHeight: 23 },
-  actionRow: { flexDirection: 'row', gap: 16 },
+  noShelfTitle: { ...typography.h3, color: colors.dangerDark },
+  noShelfBody: { ...typography.body, marginTop: spacing.xxs, color: colors.dangerDark },
+  actionRow: { flexDirection: 'row', gap: spacing.md },
   backButton: { width: 180 },
-  flexButton: { flex: 1 },
+  flexButton: { flex: 1, minHeight: sizes.control + spacing.sm },
   printedNotice: {
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: colors.primarySoft,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
-  printedNoticeText: { color: colors.primaryDark, fontSize: 17, fontWeight: '700' },
+  printedNoticeText: { ...typography.bodyStrong, flex: 1, color: colors.background },
   error: {
-    padding: 12,
-    borderRadius: 10,
+    ...typography.bodyStrong,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
     backgroundColor: colors.dangerSoft,
     color: colors.dangerDark,
-    fontSize: 17,
-    fontWeight: '700',
   },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-  centeredText: { color: colors.ink, fontSize: 22, fontWeight: '700' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, backgroundColor: colors.background },
+  centeredText: { ...typography.h3, color: colors.ink },
 });

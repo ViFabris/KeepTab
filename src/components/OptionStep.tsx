@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { getLabelOptionName } from '../i18n';
@@ -16,6 +17,7 @@ interface OptionStepProps {
   onSelect: (value: ItemLabelOption) => void;
   onConfirm: () => void;
   onBack: () => void;
+  progress?: ReactNode;
 }
 
 export function OptionStep({
@@ -26,12 +28,13 @@ export function OptionStep({
   onSelect,
   onConfirm,
   onBack,
+  progress,
 }: OptionStepProps) {
   const { language, copy } = useLanguage();
   const selectedLabel = getLabelOptionName(selected, language);
   return (
     <View style={styles.container}>
-      <PageHeader title={title} subtitle={subtitle} />
+      <PageHeader title={title} subtitle={subtitle} action={progress} />
       <ScrollView style={styles.choiceScroller} contentContainerStyle={styles.choices}>
         {options.map((option) => (
           <OptionChip
