@@ -8,6 +8,8 @@ interface SettingsRow {
   date_order: DateOrder;
   time_format: TimeFormat;
   spell_out_month: number;
+  time_zone: string;
+  clock_offset_ms: number;
   label_width_mm: number;
   label_height_mm: number;
   setup_complete: number;
@@ -16,7 +18,7 @@ interface SettingsRow {
 export async function getAppSettings(db: SQLiteDatabase): Promise<AppSettings> {
   const row = await db.getFirstAsync<SettingsRow>(
     `SELECT language, date_order, time_format, spell_out_month,
-            label_width_mm, label_height_mm, setup_complete
+            time_zone, clock_offset_ms, label_width_mm, label_height_mm, setup_complete
      FROM app_settings WHERE id = 1`,
   );
   if (!row) {
@@ -33,12 +35,15 @@ export async function saveAppSettings(
     await transaction.runAsync(
       `UPDATE app_settings SET
          language = ?, date_order = ?, time_format = ?, spell_out_month = ?,
-         label_width_mm = ?, label_height_mm = ?, setup_complete = ?
+         time_zone = ?, clock_offset_ms = ?, label_width_mm = ?, label_height_mm = ?,
+         setup_complete = ?
        WHERE id = 1`,
       settings.language,
       settings.dateOrder,
       settings.timeFormat,
       settings.spellOutMonth ? 1 : 0,
+      settings.timeZone,
+      settings.clockOffsetMs,
       settings.labelWidthMm,
       settings.labelHeightMm,
       settings.setupComplete ? 1 : 0,
@@ -68,6 +73,8 @@ function mapSettings(row: SettingsRow): AppSettings {
     dateOrder: row.date_order,
     timeFormat: row.time_format,
     spellOutMonth: row.spell_out_month === 1,
+    timeZone: row.time_zone,
+    clockOffsetMs: row.clock_offset_ms,
     labelWidthMm: row.label_width_mm,
     labelHeightMm: row.label_height_mm,
     setupComplete: row.setup_complete === 1,

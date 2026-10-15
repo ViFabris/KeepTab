@@ -25,6 +25,8 @@ describe('label date calculations', () => {
         dateOrder: 'DD/MM/YYYY',
         timeFormat: '24h',
         spellOutMonth: true,
+        timeZone: 'America/Sao_Paulo',
+        clockOffsetMs: 0,
         labelWidthMm: 60,
         labelHeightMm: 40,
         setupComplete: true,

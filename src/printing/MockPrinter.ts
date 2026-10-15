@@ -7,17 +7,21 @@ import type { LabelPrinter } from './LabelPrinter';
 export class MockPrinter implements LabelPrinter {
   readonly maxWidthMm = 100;
 
-  constructor(private readonly db: SQLiteDatabase) {}
+  constructor(
+    private readonly db: SQLiteDatabase,
+    private readonly now: () => Date = () => new Date(),
+  ) {}
 
   async print(label: PrintableLabel): Promise<SavedLabel> {
+    const printedAt = this.now().toISOString();
     if (label.testOnly) {
       return {
         ...label,
         id: 0,
         status: 'active',
-        printedAt: new Date().toISOString(),
+        printedAt,
       };
     }
-    return savePrintedLabel(this.db, label);
+    return savePrintedLabel(this.db, label, printedAt);
   }
 }

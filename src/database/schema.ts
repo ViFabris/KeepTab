@@ -13,6 +13,8 @@ export const SCHEMA_SQL = `
     date_order TEXT NOT NULL CHECK (date_order IN ('DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD')),
     time_format TEXT NOT NULL CHECK (time_format IN ('12h', '24h')),
     spell_out_month INTEGER NOT NULL CHECK (spell_out_month IN (0, 1)),
+    time_zone TEXT NOT NULL DEFAULT 'America/Sao_Paulo',
+    clock_offset_ms INTEGER NOT NULL DEFAULT 0,
     label_width_mm REAL NOT NULL,
     label_height_mm REAL NOT NULL,
     setup_complete INTEGER NOT NULL DEFAULT 0 CHECK (setup_complete IN (0, 1))

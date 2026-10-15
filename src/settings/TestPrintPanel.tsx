@@ -9,6 +9,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
 import { colors, spacing, typography } from '../theme';
 import type { LabelOption, PrintableLabel, SavedLabel, ShelfLife } from '../types';
+import { getAppNow } from '../utils/appClock';
 import { addHours } from '../utils/dates';
 import { useSettings } from './SettingsContext';
 
@@ -26,7 +27,10 @@ export function TestPrintPanel({ autoPrint = false }: { autoPrint?: boolean }) {
   const [formOption, setFormOption] = useState<LabelOption>();
   const [storageOption, setStorageOption] = useState<LabelOption>();
   const [error, setError] = useState('');
-  const printer = useMemo(() => new MockPrinter(db), [db]);
+  const printer = useMemo(
+    () => new MockPrinter(db, () => getAppNow(settings)),
+    [db, settings.clockOffsetMs],
+  );
 
   const printTest = useCallback(async () => {
     setError('');
@@ -43,7 +47,7 @@ export function TestPrintPanel({ autoPrint = false }: { autoPrint?: boolean }) {
       }
       setFormOption(selectedForm);
       setStorageOption(selectedStorage);
-      const madeAt = new Date();
+      const madeAt = getAppNow(settings);
       const label: PrintableLabel = {
         itemId: 'test-label',
         itemName: copy.setup.sampleItem,
@@ -63,7 +67,7 @@ export function TestPrintPanel({ autoPrint = false }: { autoPrint?: boolean }) {
     } catch {
       setError(copy.genericError);
     }
-  }, [copy, db, printer, settings.labelHeightMm, settings.labelWidthMm]);
+  }, [copy, db, printer, settings]);
 
   useEffect(() => {
     if (autoPrint) void printTest();

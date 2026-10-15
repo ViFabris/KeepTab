@@ -6,7 +6,7 @@ import type {
   SavedLabel,
   TodayLabelGroups,
 } from '../types';
-import { addLocalDays, startOfLocalDay } from '../utils/dates';
+import { DEFAULT_TIME_ZONE, getZonedDayNumber } from '../utils/appClock';
 
 interface LabelRow {
   id: number;
@@ -63,25 +63,27 @@ export async function savePrintedLabel(
 export async function getTodayLabelGroups(
   db: SQLiteDatabase,
   now = new Date(),
+  timeZone = DEFAULT_TIME_ZONE,
 ): Promise<TodayLabelGroups> {
-  const tomorrow = addLocalDays(startOfLocalDay(now), 1);
-  const endOfUpcomingWindow = addLocalDays(startOfLocalDay(now), 4);
   const rows = await db.getAllAsync<LabelRow>(
     `SELECT * FROM labels
-     WHERE status = 'active' AND use_by_at < ?
+     WHERE status = 'active'
      ORDER BY use_by_at ASC`,
-    endOfUpcomingWindow.toISOString(),
   );
 
   const groups: TodayLabelGroups = { overdue: [], today: [], nextThreeDays: [] };
+  const todayNumber = getZonedDayNumber(now, timeZone);
   for (const row of rows) {
     const label = mapLabelRow(row);
     const useBy = new Date(label.useByAt);
     if (useBy < now) {
       groups.overdue.push(label);
-    } else if (useBy < tomorrow) {
+      continue;
+    }
+    const dayDistance = getZonedDayNumber(useBy, timeZone) - todayNumber;
+    if (dayDistance === 0) {
       groups.today.push(label);
-    } else {
+    } else if (dayDistance >= 1 && dayDistance <= 3) {
       groups.nextThreeDays.push(label);
     }
   }

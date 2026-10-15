@@ -26,6 +26,7 @@ import type {
   ShelfLife,
   StaffMember,
 } from '../types';
+import { getAppNow } from '../utils/appClock';
 import { addHours } from '../utils/dates';
 
 type FlowStep = 'item' | 'storage' | 'form' | 'staff' | 'preview' | 'printed';
@@ -72,7 +73,10 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const printer = useMemo(() => new MockPrinter(db), [db]);
+  const printer = useMemo(
+    () => new MockPrinter(db, () => getAppNow(settings)),
+    [db, settings.clockOffsetMs],
+  );
   const progress = (
     <StepProgress
       current={FLOW_STEP_NUMBER[step]}
@@ -121,7 +125,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         formOption.id,
         storageOption.id,
       );
-      const madeAt = new Date();
+      const madeAt = getAppNow(settings);
       const draft = {
         itemId: item.id,
         itemName: getItemName(item.id, item.name, language),

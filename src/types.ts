@@ -41,6 +41,8 @@ export interface AppSettings {
   dateOrder: DateOrder;
   timeFormat: TimeFormat;
   spellOutMonth: boolean;
+  timeZone: string;
+  clockOffsetMs: number;
   labelWidthMm: number;
   labelHeightMm: number;
   setupComplete: boolean;

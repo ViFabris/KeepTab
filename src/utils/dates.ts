@@ -1,5 +1,6 @@
 import { getLocale } from '../i18n';
 import type { AppSettings, Language } from '../types';
+import { getZonedDateTimeParts } from './appClock';
 
 export function addHours(date: Date, hours: number): Date {
   return new Date(date.getTime() + hours * 60 * 60 * 1000);
@@ -32,15 +33,16 @@ export function formatConfiguredDateTime(iso: string, settings: AppSettings): st
 export function formatLabelUseBy(iso: string, settings: AppSettings): string {
   const date = new Date(iso);
   const dateText = settings.spellOutMonth
-    ? formatSpelledMonth(date, settings.language)
+    ? formatSpelledMonth(date, settings)
     : formatConfiguredDate(date, settings);
   return `${dateText} ${formatConfiguredTime(date, settings)}`;
 }
 
 function formatConfiguredDate(date: Date, settings: AppSettings): string {
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = String(date.getFullYear());
+  const parts = getZonedDateTimeParts(date, settings.timeZone);
+  const day = String(parts.day).padStart(2, '0');
+  const month = String(parts.month).padStart(2, '0');
+  const year = String(parts.year);
   if (settings.dateOrder === 'MM/DD/YYYY') return `${month}/${day}/${year}`;
   if (settings.dateOrder === 'YYYY-MM-DD') return `${year}-${month}-${day}`;
   return `${day}/${month}/${year}`;
@@ -51,17 +53,20 @@ function formatConfiguredTime(date: Date, settings: AppSettings): string {
     hour: '2-digit',
     minute: '2-digit',
     hour12: settings.timeFormat === '12h',
+    timeZone: settings.timeZone,
   }).format(date);
 }
 
-function formatSpelledMonth(date: Date, language: Language): string {
-  const months = language === 'pt-BR'
+function formatSpelledMonth(date: Date, settings: AppSettings): string {
+  const months = settings.language === 'pt-BR'
     ? ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ']
     : ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-  const month = months[date.getMonth()] ?? '';
-  const day = String(date.getDate()).padStart(2, '0');
-  const year = date.getFullYear();
-  return language === 'pt-BR' ? `${day} ${month} ${year}` : `${month} ${day} ${year}`;
+  const parts = getZonedDateTimeParts(date, settings.timeZone);
+  const month = months[parts.month - 1] ?? '';
+  const day = String(parts.day).padStart(2, '0');
+  return settings.language === 'pt-BR'
+    ? `${day} ${month} ${parts.year}`
+    : `${month} ${day} ${parts.year}`;
 }
 
 export function formatShelfLife(hours: number, language: Language = 'en'): string {

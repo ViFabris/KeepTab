@@ -15,6 +15,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { useSettings } from '../settings/SettingsContext';
 import { cardStyle, colors, radii, sizes, spacing, typography } from '../theme';
 import type { LabelOption, SavedLabel, TodayLabelGroups } from '../types';
+import { getAppNow } from '../utils/appClock';
 import { formatConfiguredDateTime } from '../utils/dates';
 
 const EMPTY_GROUPS: TodayLabelGroups = { overdue: [], today: [], nextThreeDays: [] };
@@ -26,6 +27,7 @@ interface TodayScreenProps {
 export function TodayScreen({ refreshKey }: TodayScreenProps) {
   const db = useSQLiteContext();
   const { copy } = useLanguage();
+  const { settings } = useSettings();
   const [options, setOptions] = useState<LabelOption[]>([]);
   const [groups, setGroups] = useState<TodayLabelGroups>(EMPTY_GROUPS);
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,7 @@ export function TodayScreen({ refreshKey }: TodayScreenProps) {
     setError('');
     try {
       const [nextGroups, nextOptions] = await Promise.all([
-        getTodayLabelGroups(db),
+        getTodayLabelGroups(db, getAppNow(settings), settings.timeZone),
         getLabelOptions(db, undefined, true),
       ]);
       setGroups(nextGroups);
@@ -46,7 +48,7 @@ export function TodayScreen({ refreshKey }: TodayScreenProps) {
     } finally {
       setLoading(false);
     }
-  }, [copy.labelsLoadError, db]);
+  }, [copy.labelsLoadError, db, settings.clockOffsetMs, settings.timeZone]);
 
   useEffect(() => {
     setLoading(true);

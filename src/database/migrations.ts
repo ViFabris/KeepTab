@@ -24,9 +24,24 @@ const DEFAULT_OPTIONS = [
 export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await seedDefaultOptions(db);
   await migrateLabelsTable(db);
+  await migrateClockSettings(db);
   await initializeSettings(db);
   await linkExistingLabelsToOptions(db);
-  await db.execAsync('PRAGMA user_version = 2');
+  await db.execAsync('PRAGMA user_version = 3');
+}
+
+async function migrateClockSettings(db: SQLiteDatabase): Promise<void> {
+  const columns = await db.getAllAsync<TableColumn>('PRAGMA table_info(app_settings)');
+  if (!columns.some((column) => column.name === 'time_zone')) {
+    await db.execAsync(
+      "ALTER TABLE app_settings ADD COLUMN time_zone TEXT NOT NULL DEFAULT 'America/Sao_Paulo'",
+    );
+  }
+  if (!columns.some((column) => column.name === 'clock_offset_ms')) {
+    await db.execAsync(
+      'ALTER TABLE app_settings ADD COLUMN clock_offset_ms INTEGER NOT NULL DEFAULT 0',
+    );
+  }
 }
 
 async function seedDefaultOptions(db: SQLiteDatabase): Promise<void> {
@@ -97,8 +112,8 @@ async function initializeSettings(db: SQLiteDatabase): Promise<void> {
   await db.runAsync(
     `INSERT OR IGNORE INTO app_settings
       (id, language, date_order, time_format, spell_out_month,
-       label_width_mm, label_height_mm, setup_complete)
-     VALUES (1, ?, ?, ?, 1, 60, 40, 0)`,
+       time_zone, clock_offset_ms, label_width_mm, label_height_mm, setup_complete)
+     VALUES (1, ?, ?, ?, 1, 'America/Sao_Paulo', 0, 60, 40, 0)`,
     language,
     dateOrder,
     timeFormat,
