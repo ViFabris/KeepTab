@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
+import { ArrowLeft, LockKeyhole } from 'lucide-react-native';
 
 import { BigButton } from '../components/BigButton';
+import { Card } from '../components/Card';
 import { PageHeader } from '../components/PageHeader';
 import { useLanguage } from '../i18n/LanguageContext';
 import { PinInput } from '../settings/PinInput';
 import { verifyAdminPin } from '../settings/pin';
-import { colors } from '../theme';
+import { colors, radii, sizes, spacing, typography } from '../theme';
 
 export function SettingsUnlockScreen({
   onUnlocked,
@@ -41,7 +43,10 @@ export function SettingsUnlockScreen({
 
   return (
     <View style={styles.screen}>
-      <View style={styles.card}>
+      <Card style={styles.card}>
+        <View style={styles.iconCircle}>
+          <LockKeyhole color={colors.primary} size={sizes.iconXl} strokeWidth={2} />
+        </View>
         <PageHeader title={copy.settings.unlockTitle} subtitle={copy.settings.unlockHint} />
         <View style={styles.pinWrap}>
           <PinInput label={copy.setup.pin} value={pin} onChange={setPin} />
@@ -53,33 +58,39 @@ export function SettingsUnlockScreen({
             onPress={onCancel}
             variant="secondary"
             style={styles.button}
+            leading={<ArrowLeft color={colors.ink} size={sizes.iconMd} strokeWidth={2} />}
           />
           <BigButton
             label={copy.settings.unlock}
             onPress={() => void unlock()}
             disabled={busy}
             style={styles.button}
+            leading={<LockKeyhole color={colors.background} size={sizes.iconMd} strokeWidth={2} />}
           />
         </View>
-      </View>
+      </Card>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30 },
+  screen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl, backgroundColor: colors.background },
   card: {
     width: '68%',
     maxWidth: 720,
-    padding: 30,
-    gap: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
+    padding: spacing.xxl,
+    gap: spacing.lg,
+  },
+  iconCircle: {
+    width: sizes.control,
+    height: sizes.control,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.pill,
+    backgroundColor: colors.primarySoft,
   },
   pinWrap: { alignSelf: 'center', width: '70%' },
-  actions: { flexDirection: 'row', gap: 14 },
+  actions: { flexDirection: 'row', gap: spacing.md },
   button: { flex: 1 },
-  error: { color: colors.danger, fontSize: 17, fontWeight: '800', textAlign: 'center' },
+  error: { ...typography.bodyStrong, color: colors.dangerDark, textAlign: 'center' },
 });

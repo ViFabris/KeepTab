@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
+import { Languages, LockKeyhole, PackageOpen, Printer, Ruler, Users } from 'lucide-react-native';
 
 import { BigButton } from '../components/BigButton';
+import { Card } from '../components/Card';
+import { OptionChip } from '../components/OptionChip';
 import { PageHeader } from '../components/PageHeader';
 import { useLanguage } from '../i18n/LanguageContext';
 import { LabelSizeEditor, parseLabelSize, type LabelSizeDraft } from '../settings/LabelSizeEditor';
@@ -13,7 +16,7 @@ import { PreferencesEditor } from '../settings/PreferencesEditor';
 import { useSettings } from '../settings/SettingsContext';
 import { TestPrintPanel } from '../settings/TestPrintPanel';
 import { MockPrinter } from '../printing/MockPrinter';
-import { colors } from '../theme';
+import { colors, radii, sizes, spacing, typography } from '../theme';
 import { StaffScreen } from './StaffScreen';
 
 type SettingsSection = 'preferences' | 'size' | 'people' | 'options' | 'security' | 'test';
@@ -88,13 +91,13 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
     }
   }
 
-  const sections: { id: SettingsSection; label: string }[] = [
-    { id: 'preferences', label: copy.settings.preferences },
-    { id: 'size', label: copy.settings.labelSize },
-    { id: 'people', label: copy.settings.people },
-    { id: 'options', label: copy.settings.options },
-    { id: 'security', label: copy.settings.security },
-    { id: 'test', label: copy.settings.testPrint },
+  const sections = [
+    { id: 'preferences' as const, label: copy.settings.preferences, icon: Languages },
+    { id: 'size' as const, label: copy.settings.labelSize, icon: Ruler },
+    { id: 'people' as const, label: copy.settings.people, icon: Users },
+    { id: 'options' as const, label: copy.settings.options, icon: PackageOpen },
+    { id: 'security' as const, label: copy.settings.security, icon: LockKeyhole },
+    { id: 'test' as const, label: copy.settings.testPrint, icon: Printer },
   ];
 
   return (
@@ -112,7 +115,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
       />
       <ScrollView horizontal style={styles.sectionScroller} contentContainerStyle={styles.sectionNav}>
         {sections.map((item) => (
-          <BigButton
+          <OptionChip
             key={item.id}
             label={item.label}
             onPress={() => {
@@ -120,15 +123,21 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
               setMessage('');
             }}
             selected={section === item.id}
-            variant="choice"
             style={styles.sectionButton}
+            leading={
+              <item.icon
+                color={section === item.id ? colors.background : colors.secondary}
+                size={sizes.iconSm}
+                strokeWidth={2}
+              />
+            }
           />
         ))}
       </ScrollView>
       {message ? (
         <Text style={[styles.message, isError && styles.errorMessage]}>{message}</Text>
       ) : null}
-      <View style={styles.content}>
+      <Card style={styles.content}>
         {section === 'preferences' ? (
           <ScrollView contentContainerStyle={styles.paddedContent}>
             <PreferencesEditor
@@ -171,28 +180,27 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
           </View>
         ) : null}
         {section === 'test' ? <TestPrintPanel /> : null}
-      </View>
+      </Card>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, padding: 24, gap: 14 },
-  close: { width: 150, minHeight: 56 },
-  sectionNav: { gap: 8, paddingBottom: 2 },
+  screen: { flex: 1, padding: spacing.xl, gap: spacing.md, backgroundColor: colors.background },
+  close: { width: 160, minHeight: sizes.tapMin },
+  sectionNav: { gap: spacing.xs, paddingBottom: spacing.xxs },
   sectionScroller: { flexGrow: 0 },
-  sectionButton: { minWidth: 150, minHeight: 56, paddingHorizontal: 12 },
-  content: { flex: 1, minHeight: 0 },
-  paddedContent: { flexGrow: 1, padding: 8, gap: 14 },
-  securityContent: { flex: 1, justifyContent: 'center', gap: 20, padding: 18 },
-  pinRow: { flexDirection: 'row', gap: 14 },
+  sectionButton: { minWidth: 160, minHeight: sizes.tapMin, paddingHorizontal: spacing.sm },
+  content: { flex: 1, minHeight: 0, padding: spacing.md },
+  paddedContent: { flexGrow: 1, padding: spacing.xs, gap: spacing.md },
+  securityContent: { flex: 1, justifyContent: 'center', gap: spacing.lg, padding: spacing.lg },
+  pinRow: { flexDirection: 'row', gap: spacing.md },
   message: {
-    padding: 10,
-    borderRadius: 9,
+    ...typography.bodyStrong,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
     backgroundColor: colors.primarySoft,
     color: colors.primaryDark,
-    fontSize: 16,
-    fontWeight: '800',
   },
   errorMessage: { backgroundColor: colors.dangerSoft, color: colors.dangerDark },
 });
