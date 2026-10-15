@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
+import { Check, RefreshCw, Trash2 } from 'lucide-react-native';
 
 import { BigButton } from '../components/BigButton';
+import { BrandShapes } from '../components/BrandShapes';
+import { ListRow } from '../components/ListRow';
 import { PageHeader } from '../components/PageHeader';
+import { StatusBadge, type StatusTone } from '../components/StatusBadge';
 import { getTodayLabelGroups, updateLabelStatus } from '../database/labelsRepository';
 import { getLabelOptions } from '../database/optionsRepository';
 import { getFormLabel, getItemName, getLabelOptionName, getStorageLabel } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useSettings } from '../settings/SettingsContext';
-import { colors } from '../theme';
+import { cardStyle, colors, radii, sizes, spacing, typography } from '../theme';
 import type { LabelOption, SavedLabel, TodayLabelGroups } from '../types';
 import { formatConfiguredDateTime } from '../utils/dates';
 
@@ -84,6 +88,7 @@ export function TodayScreen({ refreshKey }: TodayScreenProps) {
             }}
             variant="secondary"
             style={styles.refresh}
+            leading={<RefreshCw color={colors.ink} size={sizes.iconMd} strokeWidth={2} />}
           />
         }
       />
@@ -139,16 +144,23 @@ interface LabelSectionProps {
 function LabelSection({ title, labels, tone, updatingId, options, onClose }: LabelSectionProps) {
   const { language, copy } = useLanguage();
   const { settings } = useSettings();
+  const statusTone: StatusTone = tone === 'danger' ? 'danger' : 'warning';
   return (
     <View style={styles.section}>
       <View style={[styles.sectionHeader, toneStyles[tone].header]}>
-        <Text style={[styles.sectionTitle, toneStyles[tone].title]}>{title}</Text>
+        <StatusBadge label={title} tone={statusTone} />
         <Text style={[styles.count, toneStyles[tone].count]}>{labels.length}</Text>
       </View>
       <ScrollView contentContainerStyle={styles.list}>
-        {labels.length === 0 ? <Text style={styles.empty}>{copy.nothingHere}</Text> : null}
+        {labels.length === 0 ? (
+          <View style={styles.empty}>
+            <BrandShapes style={styles.emptyShapes} />
+            <Text style={styles.emptyText}>{copy.nothingHere}</Text>
+          </View>
+        ) : null}
         {labels.map((label) => (
-          <View key={label.id} style={[styles.card, toneStyles[tone].card]}>
+          <ListRow key={label.id} style={[styles.card, toneStyles[tone].card]}>
+            <StatusBadge label={title} tone={statusTone} />
             <Text numberOfLines={1} style={styles.itemName}>
               {getItemName(label.itemId, label.itemName, language)}
             </Text>
@@ -194,6 +206,7 @@ function LabelSection({ title, labels, tone, updatingId, options, onClose }: Lab
                 disabled={updatingId === label.id}
                 variant="secondary"
                 style={styles.cardButton}
+                leading={<Check color={colors.ink} size={sizes.iconSm} strokeWidth={2} />}
               />
               <BigButton
                 label={copy.thrownAway}
@@ -201,9 +214,10 @@ function LabelSection({ title, labels, tone, updatingId, options, onClose }: Lab
                 disabled={updatingId === label.id}
                 variant="danger"
                 style={styles.cardButton}
+                leading={<Trash2 color={colors.background} size={sizes.iconSm} strokeWidth={2} />}
               />
             </View>
-          </View>
+          </ListRow>
         ))}
       </ScrollView>
     </View>
@@ -214,79 +228,72 @@ const toneStyles = {
   danger: StyleSheet.create({
     header: { backgroundColor: colors.dangerSoft },
     title: { color: colors.dangerDark },
-    count: { backgroundColor: colors.danger, color: '#ffffff' },
+    count: { backgroundColor: colors.danger, color: colors.background },
     card: { borderLeftColor: colors.danger },
   }),
   today: StyleSheet.create({
     header: { backgroundColor: colors.todaySoft },
-    title: { color: '#754000' },
-    count: { backgroundColor: colors.today, color: '#ffffff' },
+    title: { color: colors.warning },
+    count: { backgroundColor: colors.today, color: colors.ink },
     card: { borderLeftColor: colors.today },
   }),
   upcoming: StyleSheet.create({
-    header: { backgroundColor: colors.upcomingSoft },
-    title: { color: colors.upcoming },
-    count: { backgroundColor: colors.upcoming, color: '#ffffff' },
-    card: { borderLeftColor: colors.upcoming },
+    header: { backgroundColor: colors.accentSoft },
+    title: { color: colors.warning },
+    count: { backgroundColor: colors.accent, color: colors.ink },
+    card: { borderLeftColor: colors.accent },
   }),
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, padding: 28, gap: 18 },
-  refresh: { width: 150, minHeight: 58 },
-  columns: { flex: 1, flexDirection: 'row', gap: 14, minHeight: 0 },
+  screen: { flex: 1, padding: spacing.xxl, gap: spacing.lg, backgroundColor: colors.background },
+  refresh: { width: 160, minHeight: sizes.tapMin },
+  columns: { flex: 1, flexDirection: 'row', gap: spacing.md, minHeight: 0 },
   section: {
+    ...cardStyle,
     flex: 1,
     minWidth: 0,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    backgroundColor: colors.surface,
   },
   sectionHeader: {
-    minHeight: 64,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
+    minHeight: sizes.control,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: spacing.xs,
   },
-  sectionTitle: { flex: 1, fontSize: 18, fontWeight: '900' },
   count: {
-    minWidth: 34,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 17,
+    ...typography.bodyStrong,
+    minWidth: 36,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
     textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '900',
   },
-  list: { padding: 12, gap: 12 },
+  list: { padding: spacing.sm, gap: spacing.sm, flexGrow: 1 },
   card: {
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
+    alignItems: 'stretch',
     borderLeftWidth: 6,
-    borderRadius: 10,
-    backgroundColor: '#ffffff',
+    borderRadius: radii.md,
   },
-  itemName: { color: colors.ink, fontSize: 23, fontWeight: '900' },
-  meta: { marginTop: 2, color: colors.muted, fontSize: 16, fontWeight: '600' },
-  due: { marginTop: 11, color: colors.ink, fontSize: 17, fontWeight: '800' },
-  staff: { marginTop: 3, color: colors.muted, fontSize: 15 },
-  cardActions: { marginTop: 13, flexDirection: 'row', gap: 8 },
-  cardButton: { flex: 1, minHeight: 56, paddingHorizontal: 8, paddingVertical: 8 },
-  empty: { paddingVertical: 28, color: colors.muted, fontSize: 17, textAlign: 'center' },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14 },
-  loadingText: { color: colors.ink, fontSize: 20, fontWeight: '700' },
+  itemName: { ...typography.h2, marginTop: spacing.sm, color: colors.ink },
+  meta: { ...typography.caption, marginTop: spacing.xxs, color: colors.muted },
+  due: { ...typography.h3, marginTop: spacing.sm, color: colors.ink },
+  staff: { ...typography.caption, marginTop: spacing.xxs, color: colors.muted },
+  cardActions: { marginTop: spacing.sm, flexDirection: 'row', gap: spacing.xs },
+  cardButton: { flex: 1, minHeight: sizes.tapMin, paddingHorizontal: spacing.xs, paddingVertical: spacing.xs },
+  empty: { flex: 1, minHeight: 180, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.xl },
+  emptyShapes: { transform: [{ scale: 0.42 }], marginVertical: -48 },
+  emptyText: { ...typography.bodyStrong, color: colors.muted, textAlign: 'center' },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
+  loadingText: { ...typography.h3, color: colors.ink },
   error: {
-    padding: 12,
-    borderRadius: 10,
+    ...typography.bodyStrong,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
     backgroundColor: colors.dangerSoft,
     color: colors.dangerDark,
-    fontSize: 17,
-    fontWeight: '700',
   },
 });

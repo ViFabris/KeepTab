@@ -114,7 +114,7 @@ export const layout = {
 } as const;
 
 export const cardStyle: ViewStyle = {
-  backgroundColor: colors.surfaceRaised,
+  backgroundColor: colors.surface,
   borderColor: colors.border,
   borderRadius: radii.lg,
   borderWidth: 1,
