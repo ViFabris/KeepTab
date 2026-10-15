@@ -16,4 +16,8 @@ describe('item search', () => {
   it('shows all suggestions for an empty query', () => {
     expect(filterItems(items, '  ')).toEqual(items);
   });
+
+  it('searches the Brazilian Portuguese item name', () => {
+    expect(filterItems(items, 'pepino', 'pt-BR')).toEqual([items[0]]);
+  });
 });

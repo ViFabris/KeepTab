@@ -1,5 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { getFormLabel, getStorageLabel } from '../i18n';
+import { useLanguage } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 import type { ShelfLife, StorageType } from '../types';
 import { formatDateTime, formatShelfLife } from '../utils/dates';
@@ -18,40 +20,43 @@ interface LabelPreviewProps {
 }
 
 export function LabelPreview({ label, shelfLife, compact = false }: LabelPreviewProps) {
+  const { language, copy } = useLanguage();
   return (
     <View style={[styles.label, compact && styles.compact]}>
       <View style={styles.titleRow}>
         <Text numberOfLines={1} style={[styles.itemName, compact && styles.compactItem]}>
           {label.itemName}
         </Text>
-        <Text style={styles.mockBadge}>MOCK LABEL</Text>
+        <Text style={styles.mockBadge}>{copy.sampleLabelBadge}</Text>
       </View>
       <Text style={[styles.detail, compact && styles.compactDetail]}>
-        {label.form} · {label.storageType}
+        {getFormLabel(label.form, language)} · {getStorageLabel(label.storageType, language)}
       </Text>
       <View style={styles.rule} />
       <View style={styles.dateRow}>
         <View style={styles.dateColumn}>
-          <Text style={styles.fieldLabel}>MADE</Text>
+          <Text style={styles.fieldLabel}>{copy.made}</Text>
           <Text style={[styles.fieldValue, compact && styles.compactValue]}>
-            {formatDateTime(label.madeAt)}
+            {formatDateTime(label.madeAt, language)}
           </Text>
         </View>
         <View style={styles.dateColumn}>
-          <Text style={styles.fieldLabel}>USE BY</Text>
+          <Text style={styles.fieldLabel}>{copy.useBy}</Text>
           <Text style={[styles.useBy, compact && styles.compactUseBy]}>
-            {label.useByAt ? formatDateTime(label.useByAt) : 'NOT CONFIGURED'}
+            {label.useByAt ? formatDateTime(label.useByAt, language) : copy.notConfigured}
           </Text>
         </View>
       </View>
       <View style={styles.footer}>
-        <Text style={styles.staff}>Made by {label.staffName}</Text>
+        <Text style={styles.staff}>{copy.madeBy(label.staffName)}</Text>
         {shelfLife ? (
-          <Text style={styles.duration}>Shelf life: {formatShelfLife(shelfLife.hours)}</Text>
+          <Text style={styles.duration}>
+            {copy.shelfLife(formatShelfLife(shelfLife.hours, language))}
+          </Text>
         ) : null}
       </View>
       {shelfLife?.isPlaceholder ? (
-        <Text style={styles.placeholder}>PLACEHOLDER SAMPLE DATA — NOT FOOD-SAFETY VERIFIED</Text>
+        <Text style={styles.placeholder}>{copy.placeholderWarning}</Text>
       ) : null}
     </View>
   );

@@ -1,13 +1,15 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { useLanguage } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 
 export function SafetyBanner({ compact = false }: { compact?: boolean }) {
+  const { copy } = useLanguage();
   return (
     <View style={[styles.banner, compact && styles.compact]}>
-      <Text style={[styles.title, compact && styles.compactTitle]}>SAMPLE DATA</Text>
+      <Text style={[styles.title, compact && styles.compactTitle]}>{copy.safetyTitle}</Text>
       <Text style={[styles.body, compact && styles.compactBody]}>
-        Shelf lives are placeholders and are not verified for food safety.
+        {copy.safetyBody}
       </Text>
     </View>
   );

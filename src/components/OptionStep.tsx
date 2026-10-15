@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { useLanguage } from '../i18n/LanguageContext';
 import type { SelectableOption } from '../types';
 import { BigButton } from './BigButton';
 import { PageHeader } from './PageHeader';
@@ -12,6 +13,7 @@ interface OptionStepProps<T extends string> {
   onSelect: (value: T) => void;
   onConfirm: () => void;
   onBack: () => void;
+  getOptionLabel?: (value: T) => string;
 }
 
 export function OptionStep<T extends string>({
@@ -22,7 +24,10 @@ export function OptionStep<T extends string>({
   onSelect,
   onConfirm,
   onBack,
+  getOptionLabel = (value) => value,
 }: OptionStepProps<T>) {
+  const { copy } = useLanguage();
+  const selectedLabel = getOptionLabel(selected);
   return (
     <View style={styles.container}>
       <PageHeader title={title} subtitle={subtitle} />
@@ -30,7 +35,7 @@ export function OptionStep<T extends string>({
         {options.map((option) => (
           <BigButton
             key={option.value}
-            label={option.value}
+            label={getOptionLabel(option.value)}
             onPress={() => onSelect(option.value)}
             selected={selected === option.value}
             variant="choice"
@@ -39,9 +44,9 @@ export function OptionStep<T extends string>({
         ))}
       </View>
       <View style={styles.actions}>
-        <BigButton label="Back" onPress={onBack} variant="secondary" style={styles.back} />
+        <BigButton label={copy.back} onPress={onBack} variant="secondary" style={styles.back} />
         <BigButton
-          label={`Use ${selected}`}
+          label={copy.confirmChoice(selectedLabel)}
           onPress={onConfirm}
           style={styles.confirm}
         />

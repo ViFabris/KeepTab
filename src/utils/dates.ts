@@ -1,3 +1,6 @@
+import { getLocale } from '../i18n';
+import type { Language } from '../types';
+
 export function addHours(date: Date, hours: number): Date {
   return new Date(date.getTime() + hours * 60 * 60 * 1000);
 }
@@ -14,17 +17,23 @@ export function addLocalDays(date: Date, days: number): Date {
   return result;
 }
 
-export function formatDateTime(iso: string): string {
-  return new Intl.DateTimeFormat(undefined, {
+export function formatDateTime(iso: string, language: Language = 'en'): string {
+  return new Intl.DateTimeFormat(getLocale(language), {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(iso));
 }
 
-export function formatShelfLife(hours: number): string {
+export function formatShelfLife(hours: number, language: Language = 'en'): string {
   if (hours % 24 === 0) {
     const days = hours / 24;
+    if (language === 'pt-BR') {
+      return `${days} ${days === 1 ? 'dia' : 'dias'}`;
+    }
     return `${days} ${days === 1 ? 'day' : 'days'}`;
+  }
+  if (language === 'pt-BR') {
+    return `${hours} ${hours === 1 ? 'hora' : 'horas'}`;
   }
   return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
 }

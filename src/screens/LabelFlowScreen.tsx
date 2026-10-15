@@ -10,6 +10,8 @@ import { PageHeader } from '../components/PageHeader';
 import { SafetyBanner } from '../components/SafetyBanner';
 import { getItems, getShelfLife } from '../database/itemsRepository';
 import { getStaff } from '../database/staffRepository';
+import { getFormLabel, getItemName, getStorageLabel } from '../i18n';
+import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
 import { colors } from '../theme';
 import type {
@@ -39,6 +41,7 @@ function defaultValue<T extends string>(options: { value: T; isDefault: boolean 
 
 export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps) {
   const db = useSQLiteContext();
+  const { language, copy } = useLanguage();
   const [items, setItems] = useState<KitchenItem[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [step, setStep] = useState<FlowStep>('item');
@@ -67,7 +70,7 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
         }
       })
       .catch((caught: unknown) => {
-        if (mounted) setError(errorMessage(caught));
+        if (mounted) setError(errorMessage(caught, copy.genericError));
       })
       .finally(() => {
         if (mounted) setLoading(false);
@@ -75,7 +78,7 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
     return () => {
       mounted = false;
     };
-  }, [db]);
+  }, [copy.genericError, db]);
 
   // Voice input can later resolve an item and call this exact function.
   function selectItem(selectedItem: KitchenItem) {
@@ -95,7 +98,7 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
       const madeAt = new Date();
       const draft = {
         itemId: item.id,
-        itemName: item.name,
+        itemName: getItemName(item.id, item.name, language),
         form,
         storageType,
         madeAt: madeAt.toISOString(),
@@ -114,7 +117,7 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
       );
       setStep('preview');
     } catch (caught) {
-      setError(errorMessage(caught));
+      setError(errorMessage(caught, copy.genericError));
     } finally {
       setBusy(false);
     }
@@ -130,7 +133,7 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
       setStep('printed');
       onPrinted();
     } catch (caught) {
-      setError(errorMessage(caught));
+      setError(errorMessage(caught, copy.genericError));
     } finally {
       setBusy(false);
     }
@@ -147,14 +150,14 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
   }
 
   if (loading) {
-    return <CenteredMessage loading message="Loading kitchen items…" />;
+    return <CenteredMessage loading message={copy.loadingItems} />;
   }
 
   if (step === 'item') {
     return (
       <View style={styles.screen}>
         <View style={styles.headerWithBanner}>
-          <PageHeader title="What are you labeling?" subtitle="Search or tap an item." />
+          <PageHeader title={copy.itemQuestion} subtitle={copy.itemHint} />
           <SafetyBanner compact />
         </View>
         {error ? <ErrorMessage message={error} /> : null}
@@ -164,20 +167,23 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
   }
 
   if (!item) {
-    return <CenteredMessage message="Choose an item to continue." />;
+    return <CenteredMessage message={copy.chooseItem} />;
   }
+
+  const localizedItemName = getItemName(item.id, item.name, language);
 
   if (step === 'storage') {
     return (
       <View style={styles.screen}>
         <OptionStep
-          title="How is it stored?"
-          subtitle={`${item.name} · The most likely option is already selected.`}
+          title={copy.storageQuestion}
+          subtitle={copy.likelyOptionHint(localizedItemName)}
           options={item.storageOptions}
           selected={storageType}
           onSelect={setStorageType}
           onBack={resetFlow}
           onConfirm={() => setStep('form')}
+          getOptionLabel={(value) => getStorageLabel(value, language)}
         />
       </View>
     );
@@ -187,13 +193,14 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
     return (
       <View style={styles.screen}>
         <OptionStep
-          title="What form is it in?"
-          subtitle={`${item.name} · ${storageType}`}
+          title={copy.formQuestion}
+          subtitle={`${localizedItemName} · ${getStorageLabel(storageType, language)}`}
           options={item.formOptions}
           selected={form}
           onSelect={setForm}
           onBack={() => setStep('storage')}
           onConfirm={() => setStep('staff')}
+          getOptionLabel={(value) => getFormLabel(value, language)}
         />
       </View>
     );
@@ -203,8 +210,8 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
     return (
       <View style={styles.screen}>
         <PageHeader
-          title="Who is making it?"
-          subtitle={`${item.name} · ${form} · ${storageType}`}
+          title={copy.staffQuestion}
+          subtitle={`${localizedItemName} · ${getFormLabel(form, language)} · ${getStorageLabel(storageType, language)}`}
         />
         {error ? <ErrorMessage message={error} /> : null}
         {staff.length ? (
@@ -222,13 +229,13 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
           </ScrollView>
         ) : (
           <View style={styles.emptyStaff}>
-            <Text style={styles.emptyTitle}>No staff names yet</Text>
-            <Text style={styles.emptyBody}>Add at least one person before making a label.</Text>
-            <BigButton label="Open Staff" onPress={onOpenStaff} style={styles.inlineButton} />
+            <Text style={styles.emptyTitle}>{copy.noStaffTitle}</Text>
+            <Text style={styles.emptyBody}>{copy.noStaffBody}</Text>
+            <BigButton label={copy.openStaff} onPress={onOpenStaff} style={styles.inlineButton} />
           </View>
         )}
         <BigButton
-          label="Back"
+          label={copy.back}
           onPress={() => setStep('form')}
           variant="secondary"
           style={styles.bottomBack}
@@ -240,7 +247,7 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
   if (step === 'preview' && draftWithoutUseBy) {
     return (
       <View style={styles.screen}>
-        <PageHeader title="Check the label" subtitle="Confirm the details before printing." />
+        <PageHeader title={copy.previewTitle} subtitle={copy.previewHint} />
         {error ? <ErrorMessage message={error} /> : null}
         <ScrollView contentContainerStyle={styles.previewArea}>
           <LabelPreview
@@ -250,23 +257,26 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
           />
           {!shelfLife ? (
             <View style={styles.noShelfLife}>
-              <Text style={styles.noShelfTitle}>No shelf life configured</Text>
+              <Text style={styles.noShelfTitle}>{copy.missingShelfTitle}</Text>
               <Text style={styles.noShelfBody}>
-                There is no value for {item.name} + {form} + {storageType}. Nothing was
-                guessed, and printing is disabled.
+                {copy.missingShelfBody(
+                  localizedItemName,
+                  getFormLabel(form, language),
+                  getStorageLabel(storageType, language),
+                )}
               </Text>
             </View>
           ) : null}
         </ScrollView>
         <View style={styles.actionRow}>
           <BigButton
-            label="Back"
+            label={copy.back}
             onPress={() => setStep('staff')}
             variant="secondary"
             style={styles.backButton}
           />
           <BigButton
-            label={busy ? 'Printing…' : 'Print label'}
+            label={busy ? copy.printing : copy.printLabel}
             onPress={() => void printLabel()}
             disabled={!label || busy}
             style={styles.flexButton}
@@ -279,21 +289,24 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
   if (step === 'printed' && printedLabel) {
     return (
       <View style={styles.screen}>
-        <PageHeader title="Mock print complete" subtitle={`Saved as label #${printedLabel.id}.`} />
+        <PageHeader
+          title={copy.mockPrintComplete}
+          subtitle={copy.savedLabel(printedLabel.id)}
+        />
         <View style={styles.printedNotice}>
           <Text style={styles.printedNoticeText}>
-            No physical printer is connected. This label was saved to the local database.
+            {copy.mockPrinterNotice}
           </Text>
         </View>
         <ScrollView contentContainerStyle={styles.previewArea}>
           <LabelPreview label={printedLabel} shelfLife={shelfLife} compact />
         </ScrollView>
-        <BigButton label="Make another label" onPress={resetFlow} />
+        <BigButton label={copy.makeAnother} onPress={resetFlow} />
       </View>
     );
   }
 
-  return <CenteredMessage message="Unable to show this label step." />;
+  return <CenteredMessage message={copy.unableStep} />;
 }
 
 function ErrorMessage({ message }: { message: string }) {
@@ -309,8 +322,9 @@ function CenteredMessage({ message, loading = false }: { message: string; loadin
   );
 }
 
-function errorMessage(caught: unknown): string {
-  return caught instanceof Error ? caught.message : 'Something went wrong. Please try again.';
+function errorMessage(caught: unknown, fallback: string): string {
+  void caught;
+  return fallback;
 }
 
 const styles = StyleSheet.create({

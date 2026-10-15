@@ -5,6 +5,8 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { BigButton } from '../components/BigButton';
 import { PageHeader } from '../components/PageHeader';
 import { getTodayLabelGroups, updateLabelStatus } from '../database/labelsRepository';
+import { getFormLabel, getItemName, getStorageLabel } from '../i18n';
+import { useLanguage } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 import type { SavedLabel, TodayLabelGroups } from '../types';
 import { formatDateTime } from '../utils/dates';
@@ -17,6 +19,7 @@ interface TodayScreenProps {
 
 export function TodayScreen({ refreshKey }: TodayScreenProps) {
   const db = useSQLiteContext();
+  const { copy } = useLanguage();
   const [groups, setGroups] = useState<TodayLabelGroups>(EMPTY_GROUPS);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
@@ -26,12 +29,12 @@ export function TodayScreen({ refreshKey }: TodayScreenProps) {
     setError('');
     try {
       setGroups(await getTodayLabelGroups(db));
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not load saved labels.');
+    } catch {
+      setError(copy.labelsLoadError);
     } finally {
       setLoading(false);
     }
-  }, [db]);
+  }, [copy.labelsLoadError, db]);
 
   useEffect(() => {
     setLoading(true);
@@ -44,8 +47,8 @@ export function TodayScreen({ refreshKey }: TodayScreenProps) {
     try {
       await updateLabelStatus(db, label.id, status);
       removeFromView(label.id);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not update this label.');
+    } catch {
+      setError(copy.labelUpdateError);
     } finally {
       setUpdatingId(null);
     }
@@ -62,11 +65,11 @@ export function TodayScreen({ refreshKey }: TodayScreenProps) {
   return (
     <View style={styles.screen}>
       <PageHeader
-        title="Today"
-        subtitle="Active labels due now or in the next 3 days. Used and discarded labels leave this list."
+        title={copy.todayTitle}
+        subtitle={copy.todayHint}
         action={
           <BigButton
-            label="Refresh"
+            label={copy.refresh}
             onPress={() => {
               setLoading(true);
               void loadLabels();
@@ -80,26 +83,26 @@ export function TodayScreen({ refreshKey }: TodayScreenProps) {
       {loading ? (
         <View style={styles.loading}>
           <ActivityIndicator color={colors.primary} size="large" />
-          <Text style={styles.loadingText}>Loading labels…</Text>
+          <Text style={styles.loadingText}>{copy.loadingLabels}</Text>
         </View>
       ) : (
         <View style={styles.columns}>
           <LabelSection
-            title="Overdue — throw away"
+            title={copy.overdueSection}
             labels={groups.overdue}
             tone="danger"
             updatingId={updatingId}
             onClose={closeLabel}
           />
           <LabelSection
-            title="Expiring today"
+            title={copy.todaySection}
             labels={groups.today}
             tone="today"
             updatingId={updatingId}
             onClose={closeLabel}
           />
           <LabelSection
-            title="Next 3 days"
+            title={copy.nextThreeDaysSection}
             labels={groups.nextThreeDays}
             tone="upcoming"
             updatingId={updatingId}
@@ -122,6 +125,7 @@ interface LabelSectionProps {
 }
 
 function LabelSection({ title, labels, tone, updatingId, onClose }: LabelSectionProps) {
+  const { language, copy } = useLanguage();
   return (
     <View style={styles.section}>
       <View style={[styles.sectionHeader, toneStyles[tone].header]}>
@@ -129,23 +133,29 @@ function LabelSection({ title, labels, tone, updatingId, onClose }: LabelSection
         <Text style={[styles.count, toneStyles[tone].count]}>{labels.length}</Text>
       </View>
       <ScrollView contentContainerStyle={styles.list}>
-        {labels.length === 0 ? <Text style={styles.empty}>Nothing here.</Text> : null}
+        {labels.length === 0 ? <Text style={styles.empty}>{copy.nothingHere}</Text> : null}
         {labels.map((label) => (
           <View key={label.id} style={[styles.card, toneStyles[tone].card]}>
-            <Text numberOfLines={1} style={styles.itemName}>{label.itemName}</Text>
-            <Text style={styles.meta}>{label.form} · {label.storageType}</Text>
-            <Text style={styles.due}>Use by {formatDateTime(label.useByAt)}</Text>
-            <Text style={styles.staff}>Made by {label.staffName}</Text>
+            <Text numberOfLines={1} style={styles.itemName}>
+              {getItemName(label.itemId, label.itemName, language)}
+            </Text>
+            <Text style={styles.meta}>
+              {getFormLabel(label.form, language)} · {getStorageLabel(label.storageType, language)}
+            </Text>
+            <Text style={styles.due}>
+              {copy.useByValue(formatDateTime(label.useByAt, language))}
+            </Text>
+            <Text style={styles.staff}>{copy.madeBy(label.staffName)}</Text>
             <View style={styles.cardActions}>
               <BigButton
-                label="Used"
+                label={copy.used}
                 onPress={() => void onClose(label, 'used')}
                 disabled={updatingId === label.id}
                 variant="secondary"
                 style={styles.cardButton}
               />
               <BigButton
-                label="Thrown away"
+                label={copy.thrownAway}
                 onPress={() => void onClose(label, 'thrown_away')}
                 disabled={updatingId === label.id}
                 variant="danger"

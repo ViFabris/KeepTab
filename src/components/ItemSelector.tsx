@@ -3,6 +3,8 @@ import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { colors } from '../theme';
 import type { KitchenItem } from '../types';
+import { getItemName } from '../i18n';
+import { useLanguage } from '../i18n/LanguageContext';
 import { filterItems } from '../utils/itemSearch';
 import { BigButton } from './BigButton';
 
@@ -14,18 +16,22 @@ interface ItemSelectorProps {
 // This is the single boundary for item selection. A future voice adapter can call
 // the same onSelectItem callback without changing the rest of the label flow.
 export function ItemSelector({ items, onSelectItem }: ItemSelectorProps) {
+  const { language, copy } = useLanguage();
   const [query, setQuery] = useState('');
-  const suggestions = useMemo(() => filterItems(items, query), [items, query]);
+  const suggestions = useMemo(
+    () => filterItems(items, query, language),
+    [items, language, query],
+  );
 
   return (
     <View style={styles.container}>
       <TextInput
-        accessibilityLabel="Search food items"
+        accessibilityLabel={copy.searchPlaceholder}
         autoCapitalize="none"
         autoCorrect={false}
         clearButtonMode="while-editing"
         onChangeText={setQuery}
-        placeholder="Search items, e.g. cucumber"
+        placeholder={copy.searchPlaceholder}
         placeholderTextColor="#788781"
         returnKeyType="search"
         style={styles.input}
@@ -38,14 +44,14 @@ export function ItemSelector({ items, onSelectItem }: ItemSelectorProps) {
         {suggestions.map((item) => (
           <BigButton
             key={item.id}
-            label={item.name}
+            label={getItemName(item.id, item.name, language)}
             onPress={() => onSelectItem(item)}
             variant="choice"
             style={styles.itemButton}
           />
         ))}
         {suggestions.length === 0 ? (
-          <Text style={styles.empty}>No items match “{query.trim()}”.</Text>
+          <Text style={styles.empty}>{copy.noItemMatches(query.trim())}</Text>
         ) : null}
       </ScrollView>
     </View>

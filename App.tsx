@@ -171,7 +171,11 @@ function NavButton({
   );
 }
 
-function LoadingApp({ message = 'Starting offline database…' }: { message?: string }) {
+function LoadingApp({
+  message = 'Iniciando banco offline… · Starting offline database…',
+}: {
+  message?: string;
+}) {
   return (
     <View style={styles.loading}>
       <ActivityIndicator color={colors.primary} size="large" />

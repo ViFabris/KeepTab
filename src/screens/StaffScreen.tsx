@@ -5,11 +5,13 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { BigButton } from '../components/BigButton';
 import { PageHeader } from '../components/PageHeader';
 import { addStaff, getStaff, removeStaff } from '../database/staffRepository';
+import { useLanguage } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 import type { StaffMember } from '../types';
 
 export function StaffScreen() {
   const db = useSQLiteContext();
+  const { copy } = useLanguage();
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
@@ -18,16 +20,20 @@ export function StaffScreen() {
   const loadStaff = useCallback(async () => {
     try {
       setStaff(await getStaff(db));
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not load staff.');
+    } catch {
+      setError(copy.staffLoadError);
     }
-  }, [db]);
+  }, [copy.staffLoadError, db]);
 
   useEffect(() => {
     void loadStaff();
   }, [loadStaff]);
 
   async function submit() {
+    if (!name.trim()) {
+      setError(copy.enterStaffName);
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -35,7 +41,11 @@ export function StaffScreen() {
       setName('');
       await loadStaff();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not add that name.');
+      setError(
+        caught instanceof Error && caught.message.includes('already exists')
+          ? copy.duplicateStaff
+          : copy.staffAddError,
+      );
     } finally {
       setBusy(false);
     }
@@ -43,12 +53,12 @@ export function StaffScreen() {
 
   function confirmRemove(member: StaffMember) {
     Alert.alert(
-      `Remove ${member.name}?`,
-      'Existing labels will keep the name as a snapshot.',
+      copy.removeStaffTitle(member.name),
+      copy.removeStaffHint,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: copy.cancel, style: 'cancel' },
         {
-          text: 'Remove',
+          text: copy.remove,
           style: 'destructive',
           onPress: () => void remove(member),
         },
@@ -62,8 +72,8 @@ export function StaffScreen() {
     try {
       await removeStaff(db, member.id);
       setStaff((current) => current.filter((person) => person.id !== member.id));
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not remove that name.');
+    } catch {
+      setError(copy.staffRemoveError);
     } finally {
       setBusy(false);
     }
@@ -71,21 +81,21 @@ export function StaffScreen() {
 
   return (
     <View style={styles.screen}>
-      <PageHeader title="Staff" subtitle="Names appear as large buttons during label creation." />
+      <PageHeader title={copy.staffTitle} subtitle={copy.staffHint} />
       <View style={styles.addRow}>
         <TextInput
-          accessibilityLabel="New staff name"
+          accessibilityLabel={copy.staffInputPlaceholder}
           autoCapitalize="words"
           onChangeText={setName}
           onSubmitEditing={() => void submit()}
-          placeholder="Enter a staff name"
+          placeholder={copy.staffInputPlaceholder}
           placeholderTextColor="#788781"
           returnKeyType="done"
           style={styles.input}
           value={name}
         />
         <BigButton
-          label={busy ? 'Saving…' : 'Add staff'}
+          label={busy ? copy.saving : copy.addStaff}
           onPress={() => void submit()}
           disabled={busy || !name.trim()}
           style={styles.addButton}
@@ -100,7 +110,7 @@ export function StaffScreen() {
             </View>
             <Text numberOfLines={1} style={styles.name}>{member.name}</Text>
             <BigButton
-              label="Remove"
+              label={copy.remove}
               onPress={() => confirmRemove(member)}
               disabled={busy}
               variant="danger"
@@ -109,7 +119,7 @@ export function StaffScreen() {
           </View>
         ))}
         {staff.length === 0 ? (
-          <Text style={styles.empty}>No staff yet. Add the first name above.</Text>
+          <Text style={styles.empty}>{copy.noStaffList}</Text>
         ) : null}
       </ScrollView>
     </View>

@@ -12,4 +12,9 @@ describe('label date calculations', () => {
     expect(formatShelfLife(72)).toBe('3 days');
     expect(formatShelfLife(36)).toBe('36 hours');
   });
+
+  it('formats durations in Brazilian Portuguese', () => {
+    expect(formatShelfLife(24, 'pt-BR')).toBe('1 dia');
+    expect(formatShelfLife(36, 'pt-BR')).toBe('36 horas');
+  });
 });
