@@ -30,7 +30,7 @@ export function OptionStep({
   return (
     <View style={styles.container}>
       <PageHeader title={title} subtitle={subtitle} />
-      <ScrollView contentContainerStyle={styles.choices}>
+      <ScrollView style={styles.choiceScroller} contentContainerStyle={styles.choices}>
         {options.map((option) => (
           <BigButton
             key={option.id}
@@ -56,6 +56,7 @@ export function OptionStep({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  choiceScroller: { flex: 1 },
   choices: { flexGrow: 1, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'center', gap: 14 },
   choice: { flexGrow: 1, flexBasis: '30%', minWidth: 190, minHeight: 88 },
   actions: { flexDirection: 'row', gap: 16 },

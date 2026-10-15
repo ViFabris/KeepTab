@@ -50,7 +50,7 @@ function AppShell() {
   }, [db]);
 
   if (!appSettings) {
-    return <LoadingApp message="Iniciando… · Starting…" />;
+    return <LoadingApp />;
   }
 
   return (
@@ -155,15 +155,10 @@ function NavButton({
   );
 }
 
-function LoadingApp({
-  message = 'Iniciando banco offline… · Starting offline database…',
-}: {
-  message?: string;
-}) {
+function LoadingApp() {
   return (
     <View style={styles.loading}>
       <ActivityIndicator color={colors.primary} size="large" />
-      <Text style={styles.loadingText}>{message}</Text>
     </View>
   );
 }
@@ -218,5 +213,4 @@ const styles = StyleSheet.create({
     gap: 16,
     backgroundColor: colors.background,
   },
-  loadingText: { color: colors.ink, fontSize: 21, fontWeight: '700' },
 });

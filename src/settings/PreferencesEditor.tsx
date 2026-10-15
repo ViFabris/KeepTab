@@ -4,6 +4,7 @@ import { BigButton } from '../components/BigButton';
 import { defaultsForLanguage } from '../database/settingsRepository';
 import { getLanguageName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
+import { colors } from '../theme';
 import type { AppSettings, DateOrder, Language, TimeFormat } from '../types';
 
 export function PreferencesEditor({
@@ -102,8 +103,8 @@ function ChoiceGroup<T extends string>({
 const styles = StyleSheet.create({
   container: { gap: 18 },
   group: { gap: 8 },
-  label: { fontSize: 18, fontWeight: '900' },
-  hint: { marginTop: 3, fontSize: 15, lineHeight: 20 },
+  label: { color: colors.ink, fontSize: 18, fontWeight: '900' },
+  hint: { marginTop: 3, color: colors.muted, fontSize: 15, lineHeight: 20 },
   choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   choice: { flex: 1, minWidth: 150, minHeight: 58 },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },

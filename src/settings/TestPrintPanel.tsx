@@ -5,7 +5,6 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { BigButton } from '../components/BigButton';
 import { LabelPreview } from '../components/LabelPreview';
 import { getLabelOptions } from '../database/optionsRepository';
-import { getItemName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
 import { colors } from '../theme';

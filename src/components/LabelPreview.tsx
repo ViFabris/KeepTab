@@ -56,7 +56,7 @@ export function LabelPreview({
         { width: previewWidth, height: previewHeight, padding: Math.max(8, 20 * scale) },
       ]}
     >
-      <View style={styles.titleRow}>
+      <View style={[styles.titleRow, vertical && styles.verticalStack]}>
         <Text
           {...fitText}
           numberOfLines={1}
@@ -90,12 +90,31 @@ export function LabelPreview({
           </Text>
         </View>
       </View>
-      <View style={[styles.footer, { marginTop: Math.max(5, 12 * scale) }]}>
-        <Text {...fitText} numberOfLines={1} style={[styles.staff, { fontSize: 15 * scale }]}>
+      <View
+        style={[
+          styles.footer,
+          vertical && styles.verticalStack,
+          { marginTop: Math.max(5, 12 * scale) },
+        ]}
+      >
+        <Text
+          {...fitText}
+          numberOfLines={1}
+          style={[styles.staff, vertical && styles.verticalText, { fontSize: 15 * scale }]}
+        >
           {copy.madeBy(label.staffName)}
         </Text>
         {shelfLife ? (
-          <Text {...fitText} numberOfLines={1} style={[styles.duration, { fontSize: 14 * scale }]}>
+          <Text
+            {...fitText}
+            numberOfLines={1}
+            style={[
+              styles.duration,
+              vertical && styles.verticalText,
+              vertical && styles.verticalDuration,
+              { fontSize: 14 * scale },
+            ]}
+          >
             {copy.shelfLife(formatShelfLife(shelfLife.hours, language))}
           </Text>
         ) : null}
@@ -124,6 +143,7 @@ const styles = StyleSheet.create({
   },
   compact: {},
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  verticalStack: { flexDirection: 'column', alignItems: 'stretch', gap: 3 },
   itemName: { flex: 1, color: '#000000', fontWeight: '900' },
   mockBadge: {
     paddingHorizontal: 10,
@@ -144,6 +164,8 @@ const styles = StyleSheet.create({
   footer: { marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', gap: 16 },
   staff: { flex: 1, color: '#000000', fontWeight: '800' },
   duration: { flex: 1, color: '#27332e', fontWeight: '600', textAlign: 'right' },
+  verticalDuration: { textAlign: 'left' },
+  verticalText: { flex: 0 },
   placeholder: {
     marginTop: 16,
     paddingTop: 10,

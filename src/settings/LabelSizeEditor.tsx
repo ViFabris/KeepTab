@@ -34,8 +34,13 @@ export function LabelSizeEditor({
   const { copy } = useLanguage();
   const parsed = parseLabelSize(value);
   const ratio = parsed ? parsed.width / parsed.height : 1.5;
-  const previewWidth = Math.min(360, 220 * ratio);
-  const previewHeight = previewWidth / ratio;
+  const previewBounds = { width: 360, height: 230 };
+  const previewWidth = ratio >= previewBounds.width / previewBounds.height
+    ? previewBounds.width
+    : previewBounds.height * ratio;
+  const previewHeight = ratio >= previewBounds.width / previewBounds.height
+    ? previewBounds.width / ratio
+    : previewBounds.height;
 
   return (
     <View style={styles.container}>
@@ -66,7 +71,7 @@ export function LabelSizeEditor({
         <View
           style={[
             styles.preview,
-            { width: previewWidth, height: Math.min(previewHeight, 230) },
+            { width: previewWidth, height: previewHeight },
           ]}
         >
           <Text style={styles.previewSize}>
@@ -137,8 +142,6 @@ const styles = StyleSheet.create({
   previewArea: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   previewTitle: { color: colors.muted, fontSize: 16, fontWeight: '800' },
   preview: {
-    minWidth: 120,
-    minHeight: 80,
     maxWidth: '100%',
     alignItems: 'center',
     justifyContent: 'center',
@@ -146,5 +149,11 @@ const styles = StyleSheet.create({
     borderColor: colors.ink,
     backgroundColor: colors.surface,
   },
-  previewSize: { color: colors.ink, fontSize: 18, fontWeight: '900' },
+  previewSize: {
+    maxWidth: '94%',
+    color: colors.ink,
+    fontSize: 18,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
 });

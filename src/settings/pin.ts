@@ -56,6 +56,12 @@ export async function verifyAdminPin(
 }
 
 async function readCredentials(db: SQLiteDatabase): Promise<PinCredentials | null> {
+  const fallbackRow = await db.getFirstAsync<{ value: string }>(
+    'SELECT value FROM app_metadata WHERE key = ?',
+    SQLITE_KEY,
+  );
+  if (fallbackRow) return parseCredentials(fallbackRow.value);
+
   try {
     if (await SecureStore.isAvailableAsync()) {
       const value = await SecureStore.getItemAsync(SECURE_STORE_KEY);
@@ -65,11 +71,7 @@ async function readCredentials(db: SQLiteDatabase): Promise<PinCredentials | nul
     // Continue to the SQLite fallback.
   }
 
-  const row = await db.getFirstAsync<{ value: string }>(
-    'SELECT value FROM app_metadata WHERE key = ?',
-    SQLITE_KEY,
-  );
-  return row ? parseCredentials(row.value) : null;
+  return null;
 }
 
 function parseCredentials(value: string): PinCredentials | null {
