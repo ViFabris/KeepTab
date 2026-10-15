@@ -12,7 +12,7 @@ import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import * as NavigationBar from 'expo-navigation-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 import { Logo } from './src/components/Logo';
 import { SafetyBanner } from './src/components/SafetyBanner';
@@ -46,7 +46,7 @@ export default function App() {
   }, [fontError, fontsLoaded]);
 
   useEffect(() => {
-    NavigationBar.setStyle('dark');
+    if (Platform.OS === 'android') NavigationBar.setStyle('dark');
   }, []);
 
   if (!fontsLoaded && !fontError) return null;

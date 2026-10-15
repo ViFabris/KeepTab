@@ -1,6 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type { AppSettings, DateOrder, Language, TimeFormat } from '../types';
+import { withWriteTransaction } from './transactions';
 
 interface SettingsRow {
   language: Language;
@@ -28,7 +29,7 @@ export async function saveAppSettings(
   db: SQLiteDatabase,
   settings: AppSettings,
 ): Promise<void> {
-  await db.withExclusiveTransactionAsync(async (transaction) => {
+  await withWriteTransaction(db, async (transaction) => {
     await transaction.runAsync(
       `UPDATE app_settings SET
          language = ?, date_order = ?, time_format = ?, spell_out_month = ?,

@@ -190,7 +190,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
       <View style={styles.screen}>
         <View style={styles.headerWithBanner}>
           <PageHeader title={copy.itemQuestion} subtitle={copy.itemHint} action={progress} />
-          <SafetyBanner compact />
+          <SafetyBanner compact style={styles.headerBanner} />
         </View>
         {error ? <ErrorMessage message={error} /> : null}
         <ItemSelector items={items} onSelectItem={selectItem} />
@@ -375,6 +375,7 @@ function errorMessage(caught: unknown, fallback: string): string {
 const styles = StyleSheet.create({
   screen: { flex: 1, padding: spacing.xxl, gap: spacing.lg, backgroundColor: colors.background },
   headerWithBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xl },
+  headerBanner: { width: sizes.banner, flexShrink: 1 },
   staffGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, paddingVertical: spacing.lg },
   staffButton: { width: '31%', minHeight: sizes.tapMin + spacing.xxl },
   emptyStaff: {

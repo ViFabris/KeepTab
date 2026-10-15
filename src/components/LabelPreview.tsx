@@ -75,7 +75,7 @@ export function LabelPreview({
       </Text>
       <View style={[styles.rule, { marginVertical: Math.max(5, 12 * scale) }]} />
       <View style={[styles.dateRow, vertical && styles.dateColumnLayout]}>
-        <View style={styles.dateColumn}>
+        <View style={[styles.dateColumn, !vertical && styles.madeColumn]}>
           <Text {...fitText} numberOfLines={1} style={[styles.fieldLabel, { fontSize: typography.caption.fontSize * scale }]}> 
             {copy.made}
           </Text>
@@ -83,7 +83,7 @@ export function LabelPreview({
             {formatConfiguredDateTime(label.madeAt, settings)}
           </Text>
         </View>
-        <View style={styles.dateColumn}>
+        <View style={[styles.dateColumn, !vertical && styles.useByColumn]}>
           <Text {...fitText} numberOfLines={1} style={[styles.fieldLabel, { fontSize: typography.caption.fontSize * scale }]}> 
             {copy.useBy}
           </Text>
@@ -161,9 +161,11 @@ const styles = StyleSheet.create({
   },
   detail: { marginTop: spacing.xxs, color: colors.monochromeInk, fontFamily: typography.bodyStrong.fontFamily },
   rule: { height: 2, backgroundColor: colors.monochromeBlack },
-  dateRow: { flexDirection: 'row', gap: spacing.xxl },
+  dateRow: { flexDirection: 'row', gap: spacing.md },
   dateColumnLayout: { flexDirection: 'column', gap: spacing.xs },
   dateColumn: { flex: 1 },
+  madeColumn: { flex: 0.75 },
+  useByColumn: { flex: 1.55 },
   fieldLabel: { color: colors.monochromeInk, fontFamily: typography.bodyStrong.fontFamily, letterSpacing: 1.2 },
   fieldValue: { marginTop: spacing.xxs, color: colors.monochromeBlack, fontFamily: typography.bodyStrong.fontFamily },
   useBy: { marginTop: spacing.xxs, color: colors.monochromeBlack, fontFamily: typography.h1.fontFamily },

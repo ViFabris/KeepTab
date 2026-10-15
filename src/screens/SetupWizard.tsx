@@ -264,6 +264,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, padding: spacing.xl, backgroundColor: colors.background },
   topBar: {
     minHeight: sizes.control,
+    flexShrink: 0,
     marginBottom: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
@@ -271,6 +272,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
+    minHeight: 0,
     padding: spacing.xl,
   },
   page: { flex: 1, gap: spacing.md },

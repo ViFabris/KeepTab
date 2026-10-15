@@ -4,6 +4,7 @@ import sampleData from '../data/sample-data.json';
 import type { StorageType } from '../types';
 import { migrateDatabase } from './migrations';
 import { SCHEMA_SQL } from './schema';
+import { withWriteTransaction } from './transactions';
 
 const PLACEHOLDER_SOURCE_NOTE =
   'PLACEHOLDER SAMPLE DATA — NOT VERIFIED FOR FOOD SAFETY';
@@ -50,7 +51,7 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
     return;
   }
 
-  await db.withExclusiveTransactionAsync(async (transaction) => {
+  await withWriteTransaction(db, async (transaction) => {
     for (const item of seed.items) {
       await transaction.runAsync(
         `INSERT INTO items (id, name) VALUES (?, ?)

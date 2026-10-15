@@ -104,6 +104,7 @@ export const sizes = {
   iconMd: 22,
   iconLg: 28,
   iconXl: 40,
+  banner: 320,
   contentMax: 1180,
 } as const;
 

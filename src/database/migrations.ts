@@ -1,5 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { withWriteTransaction } from './transactions';
+
 interface TableColumn {
   name: string;
 }
@@ -28,7 +30,7 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
 }
 
 async function seedDefaultOptions(db: SQLiteDatabase): Promise<void> {
-  await db.withExclusiveTransactionAsync(async (transaction) => {
+  await withWriteTransaction(db, async (transaction) => {
     for (const option of DEFAULT_OPTIONS) {
       await transaction.runAsync(
         `INSERT OR IGNORE INTO label_options
@@ -46,7 +48,7 @@ async function migrateLabelsTable(db: SQLiteDatabase): Promise<void> {
     return;
   }
 
-  await db.withExclusiveTransactionAsync(async (transaction) => {
+  await withWriteTransaction(db, async (transaction) => {
     await transaction.execAsync(`
       CREATE TABLE labels_migrated (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

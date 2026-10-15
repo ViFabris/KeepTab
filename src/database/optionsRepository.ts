@@ -2,6 +2,7 @@ import * as Crypto from 'expo-crypto';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type { LabelOption, OptionKind } from '../types';
+import { withWriteTransaction } from './transactions';
 
 interface OptionRow {
   id: string;
@@ -83,7 +84,7 @@ export async function reorderLabelOption(
   kind: OptionKind,
   orderedIds: string[],
 ): Promise<void> {
-  await db.withExclusiveTransactionAsync(async (transaction) => {
+  await withWriteTransaction(db, async (transaction) => {
     for (const [index, id] of orderedIds.entries()) {
       await transaction.runAsync(
         'UPDATE label_options SET sort_order = ? WHERE id = ? AND kind = ?',
