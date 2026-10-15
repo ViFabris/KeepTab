@@ -87,7 +87,6 @@ export interface SettingsCopy {
   pinChanged: string;
   addOption: string;
   optionPlaceholder: string;
-  rename: string;
   moveUp: string;
   moveDown: string;
   atLeastOneOption: string;
@@ -262,7 +261,6 @@ const COPY: Record<Language, AppCopy> = {
       pinChanged: 'PIN alterado.',
       addOption: 'Adicionar opção',
       optionPlaceholder: 'Digite o nome da opção',
-      rename: 'Renomear',
       moveUp: 'Subir',
       moveDown: 'Descer',
       atLeastOneOption: 'Não é possível remover a última opção.',
@@ -445,7 +443,6 @@ const COPY: Record<Language, AppCopy> = {
       pinChanged: 'PIN changed.',
       addOption: 'Add option',
       optionPlaceholder: 'Enter an option name',
-      rename: 'Rename',
       moveUp: 'Move up',
       moveDown: 'Move down',
       atLeastOneOption: 'The last option cannot be removed.',

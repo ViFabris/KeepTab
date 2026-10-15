@@ -109,12 +109,13 @@ function OptionList({
     setNewName('');
   }
 
-  async function rename(option: LabelOption) {
+  async function saveName(option: LabelOption) {
     const value = drafts[option.id] ?? '';
     if (!value.trim()) {
       setLocalError(copy.settings.optionNameRequired);
       return;
     }
+    if (value.trim() === getLabelOptionName(option, language)) return;
     setLocalError('');
     await onChanged(() => renameLabelOption(db, option.id, value));
   }
@@ -160,20 +161,13 @@ function OptionList({
       <ScrollView contentContainerStyle={styles.list}>
         {options.map((option, index) => (
           <ListRow key={option.id} style={styles.optionCard}>
-            <View style={styles.optionRow}>
-              <Input
-                accessibilityLabel={getLabelOptionName(option, language)}
-                onChangeText={(value) => setDrafts((current) => ({ ...current, [option.id]: value }))}
-                containerStyle={styles.renameInput}
-                value={drafts[option.id] ?? ''}
-              />
-              <BigButton
-                label={copy.settings.rename}
-                onPress={() => void rename(option)}
-                variant="secondary"
-                style={styles.renameButton}
-              />
-            </View>
+            <Input
+              accessibilityLabel={getLabelOptionName(option, language)}
+              onBlur={() => void saveName(option)}
+              onChangeText={(value) => setDrafts((current) => ({ ...current, [option.id]: value }))}
+              returnKeyType="done"
+              value={drafts[option.id] ?? ''}
+            />
             <View style={styles.optionActions}>
               <BigButton
                 label={copy.settings.moveUp}
@@ -237,13 +231,7 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     padding: spacing.xs,
   },
-  optionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   optionActions: { flexDirection: 'row', gap: spacing.xs },
-  renameInput: {
-    flex: 1,
-    minWidth: 90,
-  },
-  renameButton: { width: 130, minHeight: sizes.tapMin, paddingHorizontal: spacing.xs },
   actionButton: { flex: 1, minHeight: sizes.tapMin, paddingHorizontal: spacing.xs },
   error: { ...typography.bodyStrong, color: colors.dangerDark },
   localError: { ...typography.caption, marginTop: spacing.xs, color: colors.dangerDark },
