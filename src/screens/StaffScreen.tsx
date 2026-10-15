@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Trash2, UserPlus } from 'lucide-react-native';
 
 import { BigButton } from '../components/BigButton';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Input } from '../components/Input';
 import { ListRow } from '../components/ListRow';
 import { PageHeader } from '../components/PageHeader';
@@ -25,6 +26,7 @@ export function StaffScreen({
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [pendingRemove, setPendingRemove] = useState<StaffMember | null>(null);
 
   const loadStaff = useCallback(async () => {
     try {
@@ -65,18 +67,7 @@ export function StaffScreen({
   }
 
   function confirmRemove(member: StaffMember) {
-    Alert.alert(
-      copy.removeStaffTitle(member.name),
-      copy.removeStaffHint,
-      [
-        { text: copy.cancel, style: 'cancel' },
-        {
-          text: copy.remove,
-          style: 'destructive',
-          onPress: () => void remove(member),
-        },
-      ],
-    );
+    setPendingRemove(member);
   }
 
   async function remove(member: StaffMember) {
@@ -89,6 +80,7 @@ export function StaffScreen({
       setError(copy.staffRemoveError);
     } finally {
       setBusy(false);
+      setPendingRemove(null);
     }
   }
 
@@ -143,6 +135,18 @@ export function StaffScreen({
           <Text style={styles.empty}>{copy.noStaffList}</Text>
         ) : null}
       </ScrollView>
+      <ConfirmDialog
+        body={copy.removeStaffHint}
+        busy={busy}
+        cancelLabel={copy.cancel}
+        confirmLabel={copy.remove}
+        onCancel={() => setPendingRemove(null)}
+        onConfirm={() => {
+          if (pendingRemove) void remove(pendingRemove);
+        }}
+        title={pendingRemove ? copy.removeStaffTitle(pendingRemove.name) : ''}
+        visible={pendingRemove !== null}
+      />
     </View>
   );
 }

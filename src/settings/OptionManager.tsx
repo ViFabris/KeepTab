@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { BigButton } from '../components/BigButton';
 import { Card } from '../components/Card';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Input } from '../components/Input';
 import { ListRow } from '../components/ListRow';
 import {
@@ -90,6 +91,7 @@ function OptionList({
   const [newName, setNewName] = useState('');
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [localError, setLocalError] = useState('');
+  const [pendingRemove, setPendingRemove] = useState<LabelOption | null>(null);
 
   useEffect(() => {
     setDrafts(
@@ -134,15 +136,7 @@ function OptionList({
       setLocalError(copy.settings.atLeastOneOption);
       return;
     }
-    const name = getLabelOptionName(option, language);
-    Alert.alert(copy.settings.removeOptionTitle(name), copy.settings.removeOptionHint, [
-      { text: copy.cancel, style: 'cancel' },
-      {
-        text: copy.remove,
-        style: 'destructive',
-        onPress: () => void onChanged(() => removeLabelOption(db, option.id)),
-      },
-    ]);
+    setPendingRemove(option);
   }
 
   return (
@@ -205,6 +199,20 @@ function OptionList({
           </ListRow>
         ))}
       </ScrollView>
+      <ConfirmDialog
+        body={copy.settings.removeOptionHint}
+        cancelLabel={copy.cancel}
+        confirmLabel={copy.remove}
+        onCancel={() => setPendingRemove(null)}
+        onConfirm={() => {
+          if (!pendingRemove) return;
+          const option = pendingRemove;
+          setPendingRemove(null);
+          void onChanged(() => removeLabelOption(db, option.id));
+        }}
+        title={pendingRemove ? copy.settings.removeOptionTitle(getLabelOptionName(pendingRemove, language)) : ''}
+        visible={pendingRemove !== null}
+      />
     </Card>
   );
 }

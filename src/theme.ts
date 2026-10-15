@@ -33,6 +33,7 @@ export const colors = {
   monochromeBorder: '#9A9A9A',
   monochromeSurface: '#FFFFFF',
   transparent: 'transparent',
+  overlay: 'rgba(31, 36, 30, 0.44)',
 } as const;
 
 export const fonts = {
