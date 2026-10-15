@@ -4,7 +4,9 @@ import { getLabelOptionName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import type { ItemLabelOption } from '../types';
 import { BigButton } from './BigButton';
+import { OptionChip } from './OptionChip';
 import { PageHeader } from './PageHeader';
+import { spacing } from '../theme';
 
 interface OptionStepProps {
   title: string;
@@ -32,12 +34,11 @@ export function OptionStep({
       <PageHeader title={title} subtitle={subtitle} />
       <ScrollView style={styles.choiceScroller} contentContainerStyle={styles.choices}>
         {options.map((option) => (
-          <BigButton
+          <OptionChip
             key={option.id}
             label={getLabelOptionName(option, language)}
             onPress={() => onSelect(option)}
             selected={selected.id === option.id}
-            variant="choice"
             style={styles.choice}
           />
         ))}
@@ -57,9 +58,9 @@ export function OptionStep({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   choiceScroller: { flex: 1 },
-  choices: { flexGrow: 1, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'center', gap: 14 },
+  choices: { flexGrow: 1, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'center', gap: spacing.md },
   choice: { flexGrow: 1, flexBasis: '30%', minWidth: 190, minHeight: 88 },
-  actions: { flexDirection: 'row', gap: 16 },
+  actions: { flexDirection: 'row', gap: spacing.md },
   back: { width: 180 },
   confirm: { flex: 1 },
 });

@@ -5,13 +5,36 @@
     "version": "0.1.0",
     "orientation": "landscape",
     "userInterfaceStyle": "light",
+    "icon": "./assets/brand/keeptab-icon.png",
+    "androidStatusBar": {
+      "backgroundColor": "#F5F3EA",
+      "barStyle": "dark-content"
+    },
+    "androidNavigationBar": {
+      "backgroundColor": "#F5F3EA",
+      "barStyle": "dark-content"
+    },
     "android": {
       "package": "com.keeptab.kitchenlabels",
-      "versionCode": 1
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/brand/keeptab-adaptive-foreground.png",
+        "backgroundColor": "#F5F3EA"
+      }
     },
     "plugins": [
       "expo-sqlite",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F5F3EA",
+          "image": "./assets/brand/keeptab-splash.png",
+          "imageWidth": 360,
+          "resizeMode": "contain"
+        }
+      ]
     ]
   }
 }

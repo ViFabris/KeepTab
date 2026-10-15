@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { colors } from '../theme';
+import { colors, spacing, typography } from '../theme';
 import type { KitchenItem } from '../types';
 import { getItemName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { filterItems } from '../utils/itemSearch';
 import { BigButton } from './BigButton';
+import { Input } from './Input';
 
 interface ItemSelectorProps {
   items: KitchenItem[];
@@ -25,14 +26,14 @@ export function ItemSelector({ items, onSelectItem }: ItemSelectorProps) {
 
   return (
     <View style={styles.container}>
-      <TextInput
+      <Input
         accessibilityLabel={copy.searchPlaceholder}
         autoCapitalize="none"
         autoCorrect={false}
         clearButtonMode="while-editing"
         onChangeText={setQuery}
         placeholder={copy.searchPlaceholder}
-        placeholderTextColor="#788781"
+        icon="search"
         returnKeyType="search"
         style={styles.input}
         value={query}
@@ -60,24 +61,14 @@ export function ItemSelector({ items, onSelectItem }: ItemSelectorProps) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, minHeight: 0 },
-  input: {
-    minHeight: 70,
-    paddingHorizontal: 22,
-    borderWidth: 3,
-    borderColor: colors.primary,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    color: colors.ink,
-    fontSize: 24,
-    fontWeight: '600',
-  },
   suggestions: {
-    paddingTop: 18,
-    paddingBottom: 28,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xxl,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: spacing.sm,
   },
+  input: { ...typography.bodyStrong },
   itemButton: { width: '31%', minHeight: 72 },
-  empty: { padding: 22, color: colors.muted, fontSize: 21 },
+  empty: { ...typography.body, padding: spacing.xl, color: colors.muted },
 });

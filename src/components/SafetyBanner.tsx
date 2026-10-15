@@ -1,32 +1,38 @@
+import { AlertTriangle } from 'lucide-react-native';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useLanguage } from '../i18n/LanguageContext';
-import { colors } from '../theme';
+import { colors, radii, sizes, spacing, typography } from '../theme';
 
 export function SafetyBanner({ compact = false }: { compact?: boolean }) {
   const { copy } = useLanguage();
   return (
     <View style={[styles.banner, compact && styles.compact]}>
-      <Text style={[styles.title, compact && styles.compactTitle]}>{copy.safetyTitle}</Text>
-      <Text style={[styles.body, compact && styles.compactBody]}>
-        {copy.safetyBody}
-      </Text>
+      <AlertTriangle color={colors.warning} size={compact ? sizes.iconSm : sizes.iconMd} strokeWidth={2} />
+      <View style={styles.copy}>
+        <Text style={[styles.title, compact && styles.compactTitle]}>{copy.safetyTitle}</Text>
+        <Text style={[styles.body, compact && styles.compactBody]}>{copy.safetyBody}</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   banner: {
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderWidth: 2,
-    borderColor: '#e5b84b',
-    borderRadius: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    borderRadius: radii.md,
     backgroundColor: colors.warningBackground,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
   },
-  compact: { paddingHorizontal: 12, paddingVertical: 10 },
-  title: { color: colors.warning, fontSize: 17, fontWeight: '900' },
-  compactTitle: { fontSize: 14 },
-  body: { marginTop: 3, color: colors.warning, fontSize: 16, lineHeight: 21 },
+  copy: { flex: 1 },
+  compact: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  title: { ...typography.overline, color: colors.warning },
+  compactTitle: { ...typography.caption, color: colors.warning },
+  body: { ...typography.caption, marginTop: spacing.xxs, color: colors.warning },
   compactBody: { fontSize: 13, lineHeight: 17 },
 });

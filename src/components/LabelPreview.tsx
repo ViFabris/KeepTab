@@ -3,9 +3,10 @@ import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { getFormLabel, getLabelOptionName, getStorageLabel } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useSettings } from '../settings/SettingsContext';
-import { colors } from '../theme';
+import { colors, radii, spacing, typography } from '../theme';
 import type { LabelOption, ShelfLife } from '../types';
 import { formatConfiguredDateTime, formatLabelUseBy, formatShelfLife } from '../utils/dates';
+import { Card } from './Card';
 
 interface LabelPreviewProps {
   label: {
@@ -49,43 +50,44 @@ export function LabelPreview({
     : getStorageLabel(label.storageType, language);
   const fitText = { adjustsFontSizeToFit: true, minimumFontScale: 0.35 } as const;
   return (
-    <View
-      style={[
-        styles.label,
-        compact && styles.compact,
-        { width: previewWidth, height: previewHeight, padding: Math.max(8, 20 * scale) },
-      ]}
-    >
+    <Card style={styles.previewCard}>
+      <View
+        style={[
+          styles.label,
+          compact && styles.compact,
+          { width: previewWidth, height: previewHeight, padding: Math.max(spacing.xs, spacing.lg * scale) },
+        ]}
+      >
       <View style={[styles.titleRow, vertical && styles.verticalStack]}>
         <Text
           {...fitText}
           numberOfLines={1}
-          style={[styles.itemName, { fontSize: 29 * scale }]}
+          style={[styles.itemName, { fontSize: typography.h2.fontSize * scale }]}
         >
           {label.itemName}
         </Text>
-        <Text {...fitText} numberOfLines={1} style={[styles.mockBadge, { fontSize: 10 * scale }]}>
+        <Text {...fitText} numberOfLines={1} style={[styles.mockBadge, { fontSize: typography.caption.fontSize * scale }]}> 
           {copy.sampleLabelBadge}
         </Text>
       </View>
-      <Text {...fitText} numberOfLines={1} style={[styles.detail, { fontSize: 19 * scale }]}>
+      <Text {...fitText} numberOfLines={1} style={[styles.detail, { fontSize: typography.body.fontSize * scale }]}> 
         {formName} · {storageName}
       </Text>
       <View style={[styles.rule, { marginVertical: Math.max(5, 12 * scale) }]} />
       <View style={[styles.dateRow, vertical && styles.dateColumnLayout]}>
         <View style={styles.dateColumn}>
-          <Text {...fitText} numberOfLines={1} style={[styles.fieldLabel, { fontSize: 11 * scale }]}>
+          <Text {...fitText} numberOfLines={1} style={[styles.fieldLabel, { fontSize: typography.caption.fontSize * scale }]}> 
             {copy.made}
           </Text>
-          <Text {...fitText} numberOfLines={1} style={[styles.fieldValue, { fontSize: 17 * scale }]}>
+          <Text {...fitText} numberOfLines={1} style={[styles.fieldValue, { fontSize: typography.body.fontSize * scale }]}> 
             {formatConfiguredDateTime(label.madeAt, settings)}
           </Text>
         </View>
         <View style={styles.dateColumn}>
-          <Text {...fitText} numberOfLines={1} style={[styles.fieldLabel, { fontSize: 12 * scale }]}>
+          <Text {...fitText} numberOfLines={1} style={[styles.fieldLabel, { fontSize: typography.caption.fontSize * scale }]}> 
             {copy.useBy}
           </Text>
-          <Text {...fitText} numberOfLines={1} style={[styles.useBy, { fontSize: 38 * scale }]}>
+          <Text {...fitText} numberOfLines={1} style={[styles.useBy, { fontSize: typography.h1.fontSize * scale }]}> 
             {label.useByAt ? formatLabelUseBy(label.useByAt, settings) : copy.notConfigured}
           </Text>
         </View>
@@ -100,7 +102,7 @@ export function LabelPreview({
         <Text
           {...fitText}
           numberOfLines={1}
-          style={[styles.staff, vertical && styles.verticalText, { fontSize: 15 * scale }]}
+          style={[styles.staff, vertical && styles.verticalText, { fontSize: typography.body.fontSize * scale }]}
         >
           {copy.madeBy(label.staffName)}
         </Text>
@@ -112,7 +114,7 @@ export function LabelPreview({
               styles.duration,
               vertical && styles.verticalText,
               vertical && styles.verticalDuration,
-              { fontSize: 14 * scale },
+              { fontSize: typography.caption.fontSize * scale },
             ]}
           >
             {copy.shelfLife(formatShelfLife(shelfLife.hours, language))}
@@ -123,56 +125,60 @@ export function LabelPreview({
         <Text
           {...fitText}
           numberOfLines={2}
-          style={[styles.placeholder, { fontSize: 10 * scale, marginTop: Math.max(3, 8 * scale) }]}
+          style={[styles.placeholder, { fontSize: typography.caption.fontSize * scale, marginTop: Math.max(spacing.xxs, spacing.xs * scale) }]}
         >
           {copy.placeholderWarning}
         </Text>
       ) : null}
-    </View>
+      </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
+  previewCard: { alignSelf: 'center', padding: spacing.lg },
   label: {
     alignSelf: 'center',
     borderWidth: 3,
-    borderColor: colors.ink,
-    borderRadius: 8,
-    backgroundColor: colors.surface,
+    borderColor: colors.monochromeBlack,
+    borderRadius: radii.xs,
+    backgroundColor: colors.monochromeSurface,
     overflow: 'hidden',
   },
   compact: {},
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  verticalStack: { flexDirection: 'column', alignItems: 'stretch', gap: 3 },
-  itemName: { flex: 1, color: '#000000', fontWeight: '900' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  verticalStack: { flexDirection: 'column', alignItems: 'stretch', gap: spacing.xxs },
+  itemName: { flex: 1, color: colors.monochromeBlack, fontFamily: typography.h1.fontFamily },
   mockBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 5,
-    backgroundColor: '#ecefec',
-    color: '#27332e',
-    fontWeight: '900',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.xs,
+    backgroundColor: colors.monochromeSurface,
+    borderWidth: 1,
+    borderColor: colors.monochromeInk,
+    color: colors.monochromeBlack,
+    fontFamily: typography.bodyStrong.fontFamily,
   },
-  detail: { marginTop: 3, color: '#18231f', fontWeight: '700' },
-  rule: { height: 2, backgroundColor: '#000000' },
-  dateRow: { flexDirection: 'row', gap: 32 },
-  dateColumnLayout: { flexDirection: 'column', gap: 5 },
+  detail: { marginTop: spacing.xxs, color: colors.monochromeInk, fontFamily: typography.bodyStrong.fontFamily },
+  rule: { height: 2, backgroundColor: colors.monochromeBlack },
+  dateRow: { flexDirection: 'row', gap: spacing.xxl },
+  dateColumnLayout: { flexDirection: 'column', gap: spacing.xs },
   dateColumn: { flex: 1 },
-  fieldLabel: { color: '#36423d', fontWeight: '900', letterSpacing: 1.2 },
-  fieldValue: { marginTop: 2, color: '#000000', fontWeight: '700' },
-  useBy: { marginTop: 2, color: colors.dangerDark, fontWeight: '900' },
-  footer: { marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', gap: 16 },
-  staff: { flex: 1, color: '#000000', fontWeight: '800' },
-  duration: { flex: 1, color: '#27332e', fontWeight: '600', textAlign: 'right' },
+  fieldLabel: { color: colors.monochromeInk, fontFamily: typography.bodyStrong.fontFamily, letterSpacing: 1.2 },
+  fieldValue: { marginTop: spacing.xxs, color: colors.monochromeBlack, fontFamily: typography.bodyStrong.fontFamily },
+  useBy: { marginTop: spacing.xxs, color: colors.monochromeBlack, fontFamily: typography.h1.fontFamily },
+  footer: { marginTop: spacing.lg, flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md },
+  staff: { flex: 1, color: colors.monochromeBlack, fontFamily: typography.bodyStrong.fontFamily },
+  duration: { flex: 1, color: colors.monochromeInk, fontFamily: typography.caption.fontFamily, textAlign: 'right' },
   verticalDuration: { textAlign: 'left' },
   verticalText: { flex: 0 },
   placeholder: {
-    marginTop: 16,
-    paddingTop: 10,
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: '#9ca49f',
-    color: colors.danger,
-    fontWeight: '900',
+    borderTopColor: colors.monochromeBorder,
+    color: colors.monochromeBlack,
+    fontFamily: typography.bodyStrong.fontFamily,
     textAlign: 'center',
   },
 });
