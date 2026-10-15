@@ -3,7 +3,11 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { BigButton } from '../components/BigButton';
+import { BrandShapes } from '../components/BrandShapes';
+import { Card } from '../components/Card';
+import { Logo } from '../components/Logo';
 import { PageHeader } from '../components/PageHeader';
+import { StepProgress } from '../components/StepProgress';
 import { getLabelOptions } from '../database/optionsRepository';
 import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
@@ -14,7 +18,7 @@ import { isValidPin, saveAdminPin } from '../settings/pin';
 import { PreferencesEditor } from '../settings/PreferencesEditor';
 import { useSettings } from '../settings/SettingsContext';
 import { TestPrintPanel } from '../settings/TestPrintPanel';
-import { colors } from '../theme';
+import { colors, radii, sizes, spacing, typography } from '../theme';
 import { StaffScreen } from './StaffScreen';
 
 const TOTAL_STEPS = 6;
@@ -103,19 +107,29 @@ export function SetupWizard() {
   return (
     <View style={styles.screen}>
       <View style={styles.topBar}>
-        <Text style={styles.brand}>KeepTab</Text>
-        <Text style={styles.progress}>{copy.setup.step(step, TOTAL_STEPS)}</Text>
+        <Logo size="small" />
+        <StepProgress
+          current={step}
+          total={TOTAL_STEPS}
+          label={copy.setup.step(step, TOTAL_STEPS)}
+        />
       </View>
-      <View style={styles.card}>
+      <Card style={styles.card}>
         {step === 1 ? (
           <WizardPage title={copy.setup.languageDateTitle} hint={copy.setup.languageDateHint}>
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-              <PreferencesEditor
-                settings={settings}
-                applyLanguageDefaults
-                onChange={(patch) => void updateSettings(patch)}
-              />
-            </ScrollView>
+            <View style={styles.welcomeLayout}>
+              <View style={styles.welcomeBrand}>
+                <Logo size="large" tagline={copy.appTagline} />
+                <BrandShapes style={styles.brandShapes} />
+              </View>
+              <ScrollView style={styles.welcomeSettings} contentContainerStyle={styles.scrollContent}>
+                <PreferencesEditor
+                  settings={settings}
+                  applyLanguageDefaults
+                  onChange={(patch) => void updateSettings(patch)}
+                />
+              </ScrollView>
+            </View>
             <BigButton label={copy.setup.next} onPress={() => setStep(2)} />
           </WizardPage>
         ) : null}
@@ -204,7 +218,7 @@ export function SetupWizard() {
             </View>
           </WizardPage>
         ) : null}
-      </View>
+      </Card>
     </View>
   );
 }
@@ -247,26 +261,38 @@ function WizardActions({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, padding: 22, backgroundColor: colors.background },
-  topBar: { height: 50, flexDirection: 'row', justifyContent: 'space-between' },
-  brand: { color: colors.primary, fontSize: 30, fontWeight: '900' },
-  progress: { color: colors.muted, fontSize: 17, fontWeight: '800' },
+  screen: { flex: 1, padding: spacing.xl, backgroundColor: colors.background },
+  topBar: {
+    minHeight: sizes.control,
+    marginBottom: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   card: {
     flex: 1,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
+    padding: spacing.xl,
   },
-  page: { flex: 1, gap: 16 },
-  scrollContent: { paddingVertical: 4 },
-  pinFields: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 20 },
-  actions: { flexDirection: 'row', gap: 14 },
-  back: { width: 170 },
+  page: { flex: 1, gap: spacing.md },
+  welcomeLayout: { flex: 1, flexDirection: 'row', gap: spacing.xxl, minHeight: 0 },
+  welcomeBrand: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+    borderRadius: radii.lg,
+    backgroundColor: colors.secondarySoft,
+  },
+  brandShapes: { alignSelf: 'flex-end', marginTop: spacing.md },
+  welcomeSettings: { flex: 1, minWidth: 0 },
+  scrollContent: { paddingVertical: spacing.xxs },
+  pinFields: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  actions: { flexDirection: 'row', gap: spacing.md },
+  back: { width: sizes.control * 3 },
   next: { flex: 1 },
-  testActions: { flexDirection: 'row', gap: 14 },
+  testActions: { flexDirection: 'row', gap: spacing.md },
   changeSize: { flex: 1 },
   finish: { flex: 1 },
-  error: { color: colors.danger, fontSize: 17, fontWeight: '800' },
+  error: { ...typography.bodyStrong, color: colors.dangerDark },
 });

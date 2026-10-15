@@ -7,7 +7,7 @@ import { LabelPreview } from '../components/LabelPreview';
 import { getLabelOptions } from '../database/optionsRepository';
 import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
-import { colors } from '../theme';
+import { colors, spacing, typography } from '../theme';
 import type { LabelOption, PrintableLabel, SavedLabel, ShelfLife } from '../types';
 import { addHours } from '../utils/dates';
 import { useSettings } from './SettingsContext';
@@ -93,7 +93,7 @@ export function TestPrintPanel({ autoPrint = false }: { autoPrint?: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14 },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
   printButton: { minWidth: 260 },
-  error: { color: colors.danger, fontSize: 17, fontWeight: '800' },
+  error: { ...typography.bodyStrong, color: colors.dangerDark },
 });

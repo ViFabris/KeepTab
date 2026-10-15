@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
+import { Trash2, UserPlus } from 'lucide-react-native';
 
 import { BigButton } from '../components/BigButton';
+import { Input } from '../components/Input';
+import { ListRow } from '../components/ListRow';
 import { PageHeader } from '../components/PageHeader';
 import { addStaff, getStaff, removeStaff } from '../database/staffRepository';
 import { useLanguage } from '../i18n/LanguageContext';
-import { colors } from '../theme';
+import { colors, radii, sizes, spacing, typography } from '../theme';
 import type { StaffMember } from '../types';
 
 export function StaffScreen({
@@ -93,15 +96,14 @@ export function StaffScreen({
     <View style={[styles.screen, embedded && styles.embedded]}>
       {!embedded ? <PageHeader title={copy.staffTitle} subtitle={copy.staffHint} /> : null}
       <View style={styles.addRow}>
-        <TextInput
+        <Input
           accessibilityLabel={copy.staffInputPlaceholder}
           autoCapitalize="words"
           onChangeText={setName}
           onSubmitEditing={() => void submit()}
           placeholder={copy.staffInputPlaceholder}
-          placeholderTextColor="#788781"
           returnKeyType="done"
-          style={styles.input}
+          containerStyle={styles.input}
           value={name}
         />
         <BigButton
@@ -109,24 +111,33 @@ export function StaffScreen({
           onPress={() => void submit()}
           disabled={busy || !name.trim()}
           style={styles.addButton}
+          leading={<UserPlus color={colors.background} size={sizes.iconMd} strokeWidth={2} />}
         />
       </View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <ScrollView contentContainerStyle={styles.list}>
         {staff.map((member) => (
-          <View key={member.id} style={styles.row}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{member.name.charAt(0).toLocaleUpperCase()}</Text>
-            </View>
+          <ListRow
+            key={member.id}
+            style={styles.row}
+            leading={(
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{member.name.charAt(0).toLocaleUpperCase()}</Text>
+              </View>
+            )}
+            trailing={(
+              <BigButton
+                label={copy.remove}
+                onPress={() => confirmRemove(member)}
+                disabled={busy}
+                variant="danger"
+                style={styles.removeButton}
+                leading={<Trash2 color={colors.background} size={sizes.iconSm} strokeWidth={2} />}
+              />
+            )}
+          >
             <Text numberOfLines={1} style={styles.name}>{member.name}</Text>
-            <BigButton
-              label={copy.remove}
-              onPress={() => confirmRemove(member)}
-              disabled={busy}
-              variant="danger"
-              style={styles.removeButton}
-            />
-          </View>
+          </ListRow>
         ))}
         {staff.length === 0 ? (
           <Text style={styles.empty}>{copy.noStaffList}</Text>
@@ -137,52 +148,34 @@ export function StaffScreen({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, padding: 28, gap: 18 },
-  embedded: { padding: 0 },
-  addRow: { flexDirection: 'row', gap: 14 },
+  screen: { flex: 1, padding: spacing.xxl, gap: spacing.lg, backgroundColor: colors.background },
+  embedded: { padding: spacing.none },
+  addRow: { flexDirection: 'row', gap: spacing.md },
   input: {
     flex: 1,
-    minHeight: 68,
-    paddingHorizontal: 20,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: 14,
-    backgroundColor: colors.surface,
-    color: colors.ink,
-    fontSize: 23,
-    fontWeight: '600',
   },
   addButton: { width: 210 },
-  list: { gap: 12, paddingBottom: 24 },
+  list: { gap: spacing.sm, paddingBottom: spacing.xl },
   row: {
-    minHeight: 86,
-    padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    backgroundColor: colors.surface,
+    minHeight: sizes.control + spacing.lg,
   },
   avatar: {
-    width: 58,
-    height: 58,
+    width: sizes.tapMin,
+    height: sizes.tapMin,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 29,
+    borderRadius: radii.pill,
     backgroundColor: colors.primarySoft,
   },
-  avatarText: { color: colors.primaryDark, fontSize: 25, fontWeight: '900' },
-  name: { flex: 1, color: colors.ink, fontSize: 25, fontWeight: '800' },
-  removeButton: { width: 150, minHeight: 58 },
-  empty: { padding: 34, color: colors.muted, fontSize: 20, textAlign: 'center' },
+  avatarText: { ...typography.h2, color: colors.primaryDark },
+  name: { ...typography.h2, flex: 1, color: colors.ink },
+  removeButton: { width: 160, minHeight: sizes.tapMin },
+  empty: { ...typography.body, padding: spacing.xxl, color: colors.muted, textAlign: 'center' },
   error: {
-    padding: 12,
-    borderRadius: 10,
+    ...typography.bodyStrong,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
     backgroundColor: colors.dangerSoft,
     color: colors.dangerDark,
-    fontSize: 17,
-    fontWeight: '700',
   },
 });

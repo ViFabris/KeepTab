@@ -1,10 +1,10 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { BigButton } from '../components/BigButton';
+import { OptionChip } from '../components/OptionChip';
 import { defaultsForLanguage } from '../database/settingsRepository';
 import { getLanguageName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
-import { colors } from '../theme';
+import { colors, sizes, spacing, typography } from '../theme';
 import type { AppSettings, DateOrder, Language, TimeFormat } from '../types';
 
 export function PreferencesEditor({
@@ -58,11 +58,10 @@ export function PreferencesEditor({
           <Text style={styles.label}>{copy.setup.spellMonth}</Text>
           <Text style={styles.hint}>{copy.setup.spellMonthHint}</Text>
         </View>
-        <BigButton
+        <OptionChip
           label={settings.spellOutMonth ? copy.setup.on : copy.setup.off}
           onPress={() => onChange({ spellOutMonth: !settings.spellOutMonth })}
           selected={settings.spellOutMonth}
-          variant="choice"
           style={styles.toggleButton}
         />
       </View>
@@ -86,12 +85,11 @@ function ChoiceGroup<T extends string>({
       <Text style={styles.label}>{label}</Text>
       <View style={styles.choices}>
         {values.map((choice) => (
-          <BigButton
+          <OptionChip
             key={choice.value}
             label={choice.label}
             onPress={() => onSelect(choice.value)}
             selected={selected === choice.value}
-            variant="choice"
             style={styles.choice}
           />
         ))}
@@ -101,13 +99,13 @@ function ChoiceGroup<T extends string>({
 }
 
 const styles = StyleSheet.create({
-  container: { gap: 18 },
-  group: { gap: 8 },
-  label: { color: colors.ink, fontSize: 18, fontWeight: '900' },
-  hint: { marginTop: 3, color: colors.muted, fontSize: 15, lineHeight: 20 },
-  choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  choice: { flex: 1, minWidth: 150, minHeight: 58 },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  container: { gap: spacing.lg },
+  group: { gap: spacing.xs },
+  label: { ...typography.bodyStrong, color: colors.ink },
+  hint: { ...typography.caption, marginTop: spacing.xxs, color: colors.muted },
+  choices: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  choice: { flex: 1, minWidth: 150, minHeight: sizes.tapMin },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   toggleCopy: { flex: 1 },
-  toggleButton: { width: 180, minHeight: 58 },
+  toggleButton: { width: sizes.control * 3, minHeight: sizes.tapMin },
 });

@@ -1,7 +1,7 @@
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useLanguage } from '../i18n/LanguageContext';
-import { colors } from '../theme';
+import { colors, radii, sizes, spacing, typography } from '../theme';
 
 export interface LabelSizeDraft {
   width: string;
@@ -112,48 +112,45 @@ function NumericField({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, gap: 14 },
-  fields: { flexDirection: 'row', gap: 18 },
-  field: { flex: 1, gap: 7 },
-  fieldLabel: { color: colors.ink, fontSize: 18, fontWeight: '900' },
-  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  container: { flex: 1, gap: spacing.md },
+  fields: { flexDirection: 'row', gap: spacing.lg },
+  field: { flex: 1, gap: spacing.xs },
+  fieldLabel: { ...typography.bodyStrong, color: colors.ink },
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   input: {
+    ...typography.h2,
     flex: 1,
-    minHeight: 64,
-    paddingHorizontal: 18,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: 13,
-    backgroundColor: colors.surface,
+    minHeight: sizes.control,
+    paddingHorizontal: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.md,
+    backgroundColor: colors.surfaceRaised,
     color: colors.ink,
-    fontSize: 25,
-    fontWeight: '800',
   },
-  unit: { color: colors.muted, fontSize: 20, fontWeight: '800' },
-  error: { color: colors.danger, fontSize: 17, fontWeight: '800' },
+  unit: { ...typography.bodyStrong, color: colors.muted },
+  error: { ...typography.bodyStrong, color: colors.dangerDark },
   warning: {
-    padding: 12,
-    borderRadius: 10,
+    ...typography.bodyStrong,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
     backgroundColor: colors.warningBackground,
     color: colors.warning,
-    fontSize: 16,
-    fontWeight: '800',
   },
-  previewArea: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
-  previewTitle: { color: colors.muted, fontSize: 16, fontWeight: '800' },
+  previewArea: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
+  previewTitle: { ...typography.overline, color: colors.muted },
   preview: {
     maxWidth: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
     borderColor: colors.ink,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.monochromeSurface,
   },
   previewSize: {
+    ...typography.bodyStrong,
     maxWidth: '94%',
-    color: colors.ink,
-    fontSize: 18,
-    fontWeight: '900',
+    color: colors.monochromeBlack,
     textAlign: 'center',
   },
 });

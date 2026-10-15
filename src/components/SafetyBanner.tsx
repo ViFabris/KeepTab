@@ -34,5 +34,5 @@ const styles = StyleSheet.create({
   title: { ...typography.overline, color: colors.warning },
   compactTitle: { ...typography.caption, color: colors.warning },
   body: { ...typography.caption, marginTop: spacing.xxs, color: colors.warning },
-  compactBody: { fontSize: 13, lineHeight: 17 },
+  compactBody: { ...typography.caption },
 });

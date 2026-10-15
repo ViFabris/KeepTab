@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { BigButton } from '../components/BigButton';
+import { Card } from '../components/Card';
+import { Input } from '../components/Input';
+import { ListRow } from '../components/ListRow';
 import {
   addLabelOption,
   getLabelOptions,
@@ -12,7 +15,7 @@ import {
 } from '../database/optionsRepository';
 import { getLabelOptionName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
-import { colors } from '../theme';
+import { colors, radii, sizes, spacing, typography } from '../theme';
 import type { LabelOption, OptionKind } from '../types';
 
 export function OptionManager({ onOptionsChange }: { onOptionsChange?: () => void }) {
@@ -143,15 +146,14 @@ function OptionList({
   }
 
   return (
-    <View style={styles.listPanel}>
+    <Card style={styles.listPanel}>
       <Text style={styles.title}>{title}</Text>
       <View style={styles.addRow}>
-        <TextInput
+        <Input
           accessibilityLabel={copy.settings.optionPlaceholder}
           onChangeText={setNewName}
           placeholder={copy.settings.optionPlaceholder}
-          placeholderTextColor="#788781"
-          style={styles.addInput}
+          containerStyle={styles.addInput}
           value={newName}
         />
         <BigButton
@@ -163,12 +165,12 @@ function OptionList({
       {localError ? <Text style={styles.localError}>{localError}</Text> : null}
       <ScrollView contentContainerStyle={styles.list}>
         {options.map((option, index) => (
-          <View key={option.id} style={styles.optionCard}>
+          <ListRow key={option.id} style={styles.optionCard}>
             <View style={styles.optionRow}>
-              <TextInput
+              <Input
                 accessibilityLabel={getLabelOptionName(option, language)}
                 onChangeText={(value) => setDrafts((current) => ({ ...current, [option.id]: value }))}
-                style={styles.renameInput}
+                containerStyle={styles.renameInput}
                 value={drafts[option.id] ?? ''}
               />
               <BigButton
@@ -200,63 +202,41 @@ function OptionList({
                 style={styles.actionButton}
               />
             </View>
-          </View>
+          </ListRow>
         ))}
       </ScrollView>
-    </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, minHeight: 0, gap: 10 },
-  columns: { flex: 1, flexDirection: 'row', gap: 14, minHeight: 0 },
+  container: { flex: 1, minHeight: 0, gap: spacing.sm },
+  columns: { flex: 1, flexDirection: 'row', gap: spacing.md, minHeight: 0 },
   listPanel: {
     flex: 1,
     minWidth: 0,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    backgroundColor: colors.surface,
+    padding: spacing.md,
   },
-  title: { color: colors.ink, fontSize: 22, fontWeight: '900' },
-  addRow: { marginTop: 10, flexDirection: 'row', gap: 8 },
+  title: { ...typography.h3, color: colors.ink },
+  addRow: { marginTop: spacing.sm, flexDirection: 'row', gap: spacing.xs },
   addInput: {
     flex: 1,
     minWidth: 0,
-    minHeight: 56,
-    paddingHorizontal: 12,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: 10,
-    color: colors.ink,
-    fontSize: 17,
   },
-  addButton: { width: 150, minHeight: 56, paddingHorizontal: 8 },
-  list: { paddingTop: 12, gap: 9, paddingBottom: 20 },
+  addButton: { width: 160, minHeight: sizes.tapMin, paddingHorizontal: spacing.xs },
+  list: { paddingTop: spacing.sm, gap: spacing.sm, paddingBottom: spacing.lg },
   optionCard: {
-    padding: 8,
-    gap: 7,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
+    alignItems: 'stretch',
+    padding: spacing.xs,
   },
-  optionRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  optionActions: { flexDirection: 'row', gap: 7 },
+  optionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  optionActions: { flexDirection: 'row', gap: spacing.xs },
   renameInput: {
     flex: 1,
     minWidth: 90,
-    minHeight: 52,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 9,
-    color: colors.ink,
-    fontSize: 16,
-    fontWeight: '700',
   },
-  renameButton: { width: 125, minHeight: 52, paddingHorizontal: 5 },
-  actionButton: { flex: 1, minHeight: 52, paddingHorizontal: 4 },
-  error: { color: colors.danger, fontSize: 17, fontWeight: '800' },
-  localError: { marginTop: 7, color: colors.danger, fontSize: 15, fontWeight: '800' },
+  renameButton: { width: 130, minHeight: sizes.tapMin, paddingHorizontal: spacing.xs },
+  actionButton: { flex: 1, minHeight: sizes.tapMin, paddingHorizontal: spacing.xs },
+  error: { ...typography.bodyStrong, color: colors.dangerDark },
+  localError: { ...typography.caption, marginTop: spacing.xs, color: colors.dangerDark },
 });
