@@ -15,7 +15,6 @@ interface OptionStepProps {
   options: ItemLabelOption[];
   selected: ItemLabelOption;
   onSelect: (value: ItemLabelOption) => void;
-  onConfirm: () => void;
   onBack: () => void;
   progress?: ReactNode;
 }
@@ -26,12 +25,10 @@ export function OptionStep({
   options,
   selected,
   onSelect,
-  onConfirm,
   onBack,
   progress,
 }: OptionStepProps) {
   const { language, copy } = useLanguage();
-  const selectedLabel = getLabelOptionName(selected, language);
   return (
     <View style={styles.container}>
       <PageHeader title={title} subtitle={subtitle} action={progress} />
@@ -46,14 +43,7 @@ export function OptionStep({
           />
         ))}
       </ScrollView>
-      <View style={styles.actions}>
-        <BigButton label={copy.back} onPress={onBack} variant="secondary" style={styles.back} />
-        <BigButton
-          label={copy.confirmChoice(selectedLabel)}
-          onPress={onConfirm}
-          style={styles.confirm}
-        />
-      </View>
+      <BigButton label={copy.back} onPress={onBack} variant="secondary" style={styles.back} />
     </View>
   );
 }
@@ -63,7 +53,5 @@ const styles = StyleSheet.create({
   choiceScroller: { flex: 1 },
   choices: { flexGrow: 1, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'center', gap: spacing.md },
   choice: { flexGrow: 1, flexBasis: '30%', minWidth: 190, minHeight: 88 },
-  actions: { flexDirection: 'row', gap: spacing.md },
   back: { width: 180 },
-  confirm: { flex: 1 },
 });

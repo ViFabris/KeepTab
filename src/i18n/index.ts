@@ -118,7 +118,6 @@ export interface AppCopy {
   searchPlaceholder: string;
   noItemMatches: (query: string) => string;
   back: string;
-  confirmChoice: (choice: string) => string;
   loadingItems: string;
   itemQuestion: string;
   itemHint: string;
@@ -301,7 +300,6 @@ const COPY: Record<Language, AppCopy> = {
     searchPlaceholder: 'Buscar itens, ex.: pepino',
     noItemMatches: (query) => `Nenhum item corresponde a “${query}”.`,
     back: 'Voltar',
-    confirmChoice: (choice) => `Usar ${choice}`,
     loadingItems: 'Carregando itens da cozinha…',
     itemQuestion: 'O que você vai etiquetar?',
     itemHint: 'Busque ou toque em um item.',
@@ -483,7 +481,6 @@ const COPY: Record<Language, AppCopy> = {
     searchPlaceholder: 'Search items, e.g. cucumber',
     noItemMatches: (query) => `No items match “${query}”.`,
     back: 'Back',
-    confirmChoice: (choice) => `Use ${choice}`,
     loadingItems: 'Loading kitchen items…',
     itemQuestion: 'What are you labeling?',
     itemHint: 'Search or tap an item.',

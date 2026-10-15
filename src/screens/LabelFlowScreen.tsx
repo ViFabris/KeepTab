@@ -216,9 +216,11 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
           subtitle={copy.likelyOptionHint(localizedItemName)}
           options={item.storageOptions}
           selected={storageOption}
-          onSelect={setStorageOption}
+          onSelect={(option) => {
+            setStorageOption(option);
+            setStep('form');
+          }}
           onBack={resetFlow}
-          onConfirm={() => setStep('form')}
           progress={progress}
         />
       </View>
@@ -233,9 +235,11 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
           subtitle={`${localizedItemName} · ${getLabelOptionName(storageOption, language)}`}
           options={item.formOptions}
           selected={formOption}
-          onSelect={setFormOption}
+          onSelect={(option) => {
+            setFormOption(option);
+            setStep('staff');
+          }}
           onBack={() => setStep('storage')}
-          onConfirm={() => setStep('staff')}
           progress={progress}
         />
       </View>
