@@ -9,6 +9,8 @@ built with Expo, React Native, TypeScript, and the tablet's local SQLite databas
 
 ## What this version includes
 
+- A first-launch language picker for **Português (Brasil)** or **English**. The
+  choice is saved in SQLite and can be changed later from the sidebar.
 - A low-tap flow for item, applicable storage, configurable form, staff member,
   preview, and print.
 - 15 searchable sample items. Storage/form options and shelf lives are stored as
@@ -42,7 +44,8 @@ npx expo start
 ```
 
 Open Expo Go on the tablet, choose **Scan QR code**, and scan the terminal's QR
-code. The app locks itself to landscape. If the local network blocks device
+code. The app locks itself to landscape and asks you to choose **Português
+(Brasil)** or **English** on first launch. If the local network blocks device
 discovery, stop Expo and use `npx expo start --tunnel` instead; the tunnel is only
 for development delivery, not for the app's data.
 
