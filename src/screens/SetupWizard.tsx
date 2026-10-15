@@ -11,6 +11,7 @@ import { StepProgress } from '../components/StepProgress';
 import { getLabelOptions } from '../database/optionsRepository';
 import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
+import { DateTimeEditor } from '../settings/DateTimeEditor';
 import { LabelSizeEditor, parseLabelSize, type LabelSizeDraft } from '../settings/LabelSizeEditor';
 import { OptionManager } from '../settings/OptionManager';
 import { PinInput } from '../settings/PinInput';
@@ -19,6 +20,8 @@ import { PreferencesEditor } from '../settings/PreferencesEditor';
 import { useSettings } from '../settings/SettingsContext';
 import { TestPrintPanel } from '../settings/TestPrintPanel';
 import { colors, radii, sizes, spacing, typography } from '../theme';
+import type { AppSettings } from '../types';
+import { createClockDraft, parseClockDraft } from '../utils/appClock';
 import { StaffScreen } from './StaffScreen';
 
 const TOTAL_STEPS = 6;
@@ -32,6 +35,11 @@ export function SetupWizard() {
     width: String(settings.labelWidthMm),
     height: String(settings.labelHeightMm),
   });
+  const [clockDraft, setClockDraft] = useState(() => createClockDraft(settings));
+  const [pendingClockPatch, setPendingClockPatch] = useState<Pick<
+    AppSettings,
+    'clockOffsetMs' | 'timeZone'
+  > | null>(null);
   const [showSizeValidation, setShowSizeValidation] = useState(false);
   const [staffCount, setStaffCount] = useState(0);
   const [pin, setPin] = useState('');
@@ -39,6 +47,17 @@ export function SetupWizard() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const printer = useMemo(() => new MockPrinter(db), [db]);
+
+  function continueFromWelcome() {
+    const patch = parseClockDraft(clockDraft);
+    if (!patch) {
+      setError(copy.setup.clockValidation);
+      return;
+    }
+    setPendingClockPatch(patch);
+    setError('');
+    setStep(2);
+  }
 
   async function saveSizeAndContinue() {
     const parsed = parseLabelSize(sizeDraft);
@@ -67,10 +86,17 @@ export function SetupWizard() {
       setError(copy.setup.pinMismatchError);
       return;
     }
+    const clockPatch = pendingClockPatch ?? parseClockDraft(clockDraft);
+    if (!clockPatch) {
+      setError(copy.setup.clockValidation);
+      setStep(1);
+      return;
+    }
     setBusy(true);
     setError('');
     try {
       await saveAdminPin(db, pin);
+      await updateSettings(clockPatch);
       setStep(5);
     } catch {
       setError(copy.genericError);
@@ -128,9 +154,19 @@ export function SetupWizard() {
                   applyLanguageDefaults
                   onChange={(patch) => void updateSettings(patch)}
                 />
+                <DateTimeEditor
+                  deferredUntilPin
+                  settings={settings}
+                  value={clockDraft}
+                  onChange={(value) => {
+                    setClockDraft(value);
+                    setError('');
+                  }}
+                />
+                {error ? <Text style={styles.error}>{error}</Text> : null}
               </ScrollView>
             </View>
-            <BigButton label={copy.setup.next} onPress={() => setStep(2)} />
+            <BigButton label={copy.setup.next} onPress={continueFromWelcome} />
           </WizardPage>
         ) : null}
 

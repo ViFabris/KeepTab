@@ -8,6 +8,7 @@ import { Card } from '../components/Card';
 import { OptionChip } from '../components/OptionChip';
 import { PageHeader } from '../components/PageHeader';
 import { useLanguage } from '../i18n/LanguageContext';
+import { DateTimeEditor } from '../settings/DateTimeEditor';
 import { LabelSizeEditor, parseLabelSize, type LabelSizeDraft } from '../settings/LabelSizeEditor';
 import { OptionManager } from '../settings/OptionManager';
 import { PinInput } from '../settings/PinInput';
@@ -17,6 +18,7 @@ import { useSettings } from '../settings/SettingsContext';
 import { TestPrintPanel } from '../settings/TestPrintPanel';
 import { MockPrinter } from '../printing/MockPrinter';
 import { colors, radii, sizes, spacing, typography } from '../theme';
+import { createClockDraft } from '../utils/appClock';
 import { StaffScreen } from './StaffScreen';
 
 type SettingsSection = 'preferences' | 'size' | 'people' | 'options' | 'security' | 'test';
@@ -30,6 +32,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
     width: String(settings.labelWidthMm),
     height: String(settings.labelHeightMm),
   });
+  const [clockDraft, setClockDraft] = useState(() => createClockDraft(settings));
   const [showSizeValidation, setShowSizeValidation] = useState(false);
   const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
@@ -149,6 +152,12 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
                   setMessage(copy.settings.settingsError);
                 });
               }}
+            />
+            <DateTimeEditor
+              settings={settings}
+              value={clockDraft}
+              onChange={setClockDraft}
+              onApply={(patch) => updateSettings(patch)}
             />
           </ScrollView>
         ) : null}

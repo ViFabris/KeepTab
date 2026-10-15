@@ -16,6 +16,21 @@ export interface SetupCopy {
   spellMonthHint: string;
   on: string;
   off: string;
+  clockTitle: string;
+  clockHint: string;
+  currentDate: string;
+  currentTime: string;
+  timeZone: string;
+  datePlaceholder: string;
+  timePlaceholder: string;
+  timeZonePlaceholder: string;
+  commonTimeZones: string;
+  liveClock: (value: string, timeZone: string) => string;
+  clockPin: string;
+  applyClock: string;
+  clockValidation: string;
+  clockApplied: string;
+  clockPendingPin: string;
   sizeTitle: string;
   sizeHint: string;
   width: string;
@@ -176,6 +191,21 @@ const COPY: Record<Language, AppCopy> = {
       spellMonthHint: 'Exemplo: 20 OUT em vez de 20/10.',
       on: 'Ativado',
       off: 'Desativado',
+      clockTitle: 'Data, hora e fuso do app',
+      clockHint: 'Defina o relógio usado nas etiquetas e na lista de hoje. Depois de salvo, ele continua avançando normalmente.',
+      currentDate: 'Data atual',
+      currentTime: 'Hora atual',
+      timeZone: 'Fuso horário',
+      datePlaceholder: 'AAAA-MM-DD',
+      timePlaceholder: 'HH:MM',
+      timeZonePlaceholder: 'America/Sao_Paulo',
+      commonTimeZones: 'Fusos comuns',
+      liveClock: (value, timeZone) => `Agora no app: ${value} · ${timeZone}`,
+      clockPin: 'PIN do administrador para alterar o relógio',
+      applyClock: 'Aplicar data e hora',
+      clockValidation: 'Digite uma data, uma hora e um fuso IANA válidos.',
+      clockApplied: 'Data, hora e fuso atualizados.',
+      clockPendingPin: 'A alteração será aplicada somente depois que o PIN do administrador for criado.',
       sizeTitle: 'Tamanho da etiqueta',
       sizeHint: 'Digite a largura e a altura da etiqueta em milímetros.',
       width: 'Largura',
@@ -343,6 +373,21 @@ const COPY: Record<Language, AppCopy> = {
       spellMonthHint: 'Example: OCT 20 instead of 10/20.',
       on: 'On',
       off: 'Off',
+      clockTitle: 'App date, time, and time zone',
+      clockHint: 'Set the clock used on labels and the Today list. After it is saved, time continues advancing normally.',
+      currentDate: 'Current date',
+      currentTime: 'Current time',
+      timeZone: 'Time zone',
+      datePlaceholder: 'YYYY-MM-DD',
+      timePlaceholder: 'HH:MM',
+      timeZonePlaceholder: 'America/Sao_Paulo',
+      commonTimeZones: 'Common time zones',
+      liveClock: (value, timeZone) => `App time now: ${value} · ${timeZone}`,
+      clockPin: 'Admin PIN to change the clock',
+      applyClock: 'Apply date and time',
+      clockValidation: 'Enter a valid date, time, and IANA time zone.',
+      clockApplied: 'Date, time, and time zone updated.',
+      clockPendingPin: 'The change will only be applied after the admin PIN is created.',
       sizeTitle: 'Label size',
       sizeHint: 'Enter the label width and height in millimeters.',
       width: 'Width',
