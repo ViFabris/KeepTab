@@ -5,12 +5,10 @@ import { Clock3, Globe2 } from 'lucide-react-native';
 
 import { BigButton } from '../components/BigButton';
 import { Input } from '../components/Input';
-import { OptionChip } from '../components/OptionChip';
 import { useLanguage } from '../i18n/LanguageContext';
 import { colors, radii, sizes, spacing, typography } from '../theme';
 import type { AppSettings } from '../types';
 import {
-  COMMON_TIME_ZONES,
   getAppNow,
   parseClockDraft,
   type ClockDraft,
@@ -18,6 +16,7 @@ import {
 import { formatConfiguredDateTime } from '../utils/dates';
 import { PinInput } from './PinInput';
 import { verifyAdminPin } from './pin';
+import { TimeZoneSelect } from './TimeZoneSelect';
 
 type ClockPatch = Pick<AppSettings, 'clockOffsetMs' | 'timeZone'>;
 
@@ -59,7 +58,7 @@ export function DateTimeEditor({
   }
 
   async function applyClock() {
-    const patch = parseClockDraft(value);
+    const patch = parseClockDraft(value, settings);
     if (!patch) {
       setIsError(true);
       setMessage(copy.setup.clockValidation);
@@ -110,42 +109,24 @@ export function DateTimeEditor({
           label={copy.setup.currentDate}
           maxLength={10}
           onChangeText={(date) => change({ date })}
-          placeholder={copy.setup.datePlaceholder}
+          placeholder={copy.setup.datePlaceholder(settings.dateOrder)}
           value={value.date}
         />
         <Input
           accessibilityLabel={copy.setup.currentTime}
           containerStyle={styles.timeField}
           label={copy.setup.currentTime}
-          maxLength={5}
+          maxLength={settings.timeFormat === '12h' ? 8 : 5}
           onChangeText={(time) => change({ time })}
-          placeholder={copy.setup.timePlaceholder}
+          placeholder={copy.setup.timePlaceholder(settings.timeFormat)}
           value={value.time}
         />
       </View>
-      <Input
-        accessibilityLabel={copy.setup.timeZone}
-        autoCapitalize="none"
-        autoCorrect={false}
+      <TimeZoneSelect
         label={copy.setup.timeZone}
-        onChangeText={(timeZone) => change({ timeZone })}
-        placeholder={copy.setup.timeZonePlaceholder}
+        onChange={(timeZone) => change({ timeZone })}
         value={value.timeZone}
       />
-      <View style={styles.zoneGroup}>
-        <Text style={styles.zoneLabel}>{copy.setup.commonTimeZones}</Text>
-        <View style={styles.zoneChoices}>
-          {COMMON_TIME_ZONES.map((timeZone) => (
-            <OptionChip
-              key={timeZone}
-              label={timeZone}
-              onPress={() => change({ timeZone })}
-              selected={value.timeZone === timeZone}
-              style={styles.zoneChip}
-            />
-          ))}
-        </View>
-      </View>
 
       {deferredUntilPin ? (
         <Text style={styles.pending}>{copy.setup.clockPendingPin}</Text>
@@ -199,10 +180,6 @@ const styles = StyleSheet.create({
   dateTimeRow: { flexDirection: 'row', gap: spacing.md },
   dateField: { flex: 2 },
   timeField: { flex: 1 },
-  zoneGroup: { gap: spacing.xs },
-  zoneLabel: { ...typography.bodyStrong, color: colors.ink },
-  zoneChoices: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  zoneChip: { minHeight: sizes.tapMin, paddingHorizontal: spacing.sm },
   pending: {
     ...typography.bodyStrong,
     padding: spacing.md,

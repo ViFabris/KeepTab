@@ -1,15 +1,6 @@
-import type { AppSettings } from '../types';
+import type { AppSettings, DateOrder, TimeFormat } from '../types';
 
 export const DEFAULT_TIME_ZONE = 'America/Sao_Paulo';
-
-export const COMMON_TIME_ZONES = [
-  'America/Sao_Paulo',
-  'America/Manaus',
-  'America/Cuiaba',
-  'America/Rio_Branco',
-  'America/Noronha',
-  'UTC',
-] as const;
 
 export interface ClockDraft {
   date: string;
@@ -34,32 +25,30 @@ export function getAppNow(
 }
 
 export function createClockDraft(
-  settings: Pick<AppSettings, 'clockOffsetMs' | 'timeZone'>,
+  settings: Pick<AppSettings, 'clockOffsetMs' | 'timeZone' | 'dateOrder' | 'timeFormat'>,
   systemNow = new Date(),
 ): ClockDraft {
   const parts = getZonedDateTimeParts(getAppNow(settings, systemNow), settings.timeZone);
   return {
-    date: `${parts.year}-${pad(parts.month)}-${pad(parts.day)}`,
-    time: `${pad(parts.hour)}:${pad(parts.minute)}`,
+    date: formatDraftDate(parts, settings.dateOrder),
+    time: formatDraftTime(parts, settings.timeFormat),
     timeZone: settings.timeZone,
   };
 }
 
 export function parseClockDraft(
   draft: ClockDraft,
+  settings: Pick<AppSettings, 'dateOrder' | 'timeFormat'>,
   systemNow = new Date(),
 ): Pick<AppSettings, 'clockOffsetMs' | 'timeZone'> | null {
-  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(draft.date.trim());
-  const timeMatch = /^(\d{2}):(\d{2})$/.exec(draft.time.trim());
+  const dateParts = parseDraftDate(draft.date, settings.dateOrder);
+  const timeParts = parseDraftTime(draft.time, settings.timeFormat);
   const timeZone = draft.timeZone.trim();
-  if (!dateMatch || !timeMatch || !isValidTimeZone(timeZone)) return null;
+  if (!dateParts || !timeParts || !isValidTimeZone(timeZone)) return null;
 
   const desired: ZonedDateTimeParts = {
-    year: Number(dateMatch[1]),
-    month: Number(dateMatch[2]),
-    day: Number(dateMatch[3]),
-    hour: Number(timeMatch[1]),
-    minute: Number(timeMatch[2]),
+    ...dateParts,
+    ...timeParts,
     second: 0,
   };
   if (!isValidWallTime(desired)) return null;
@@ -69,6 +58,22 @@ export function parseClockDraft(
   return {
     timeZone,
     clockOffsetMs: instant.getTime() - systemNow.getTime(),
+  };
+}
+
+export function reformatClockDraft(
+  draft: ClockDraft,
+  previous: Pick<AppSettings, 'dateOrder' | 'timeFormat'>,
+  next: Pick<AppSettings, 'dateOrder' | 'timeFormat'>,
+): ClockDraft {
+  const dateParts = parseDraftDate(draft.date, previous.dateOrder);
+  const timeParts = parseDraftTime(draft.time, previous.timeFormat);
+  if (!dateParts || !timeParts) return draft;
+  const parts: ZonedDateTimeParts = { ...dateParts, ...timeParts, second: 0 };
+  return {
+    ...draft,
+    date: formatDraftDate(parts, next.dateOrder),
+    time: formatDraftTime(parts, next.timeFormat),
   };
 }
 
@@ -139,6 +144,52 @@ function isValidWallTime(parts: ZonedDateTimeParts): boolean {
     date.getUTCMonth() === parts.month - 1 &&
     date.getUTCDate() === parts.day
   );
+}
+
+function parseDraftDate(
+  value: string,
+  dateOrder: DateOrder,
+): Pick<ZonedDateTimeParts, 'year' | 'month' | 'day'> | null {
+  const match = /^(\d{2,4})[/-](\d{2})[/-](\d{2,4})$/.exec(value.trim());
+  if (!match) return null;
+  if (dateOrder === 'YYYY-MM-DD') {
+    return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
+  }
+  if (dateOrder === 'MM/DD/YYYY') {
+    return { year: Number(match[3]), month: Number(match[1]), day: Number(match[2]) };
+  }
+  return { year: Number(match[3]), month: Number(match[2]), day: Number(match[1]) };
+}
+
+function parseDraftTime(
+  value: string,
+  timeFormat: TimeFormat,
+): Pick<ZonedDateTimeParts, 'hour' | 'minute'> | null {
+  if (timeFormat === '24h') {
+    const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+    return match ? { hour: Number(match[1]), minute: Number(match[2]) } : null;
+  }
+  const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(value.trim());
+  if (!match) return null;
+  const twelveHour = Number(match[1]);
+  if (twelveHour < 1 || twelveHour > 12) return null;
+  const hour = (twelveHour % 12) + (match[3]?.toUpperCase() === 'PM' ? 12 : 0);
+  return { hour, minute: Number(match[2]) };
+}
+
+function formatDraftDate(parts: ZonedDateTimeParts, dateOrder: DateOrder): string {
+  const day = pad(parts.day);
+  const month = pad(parts.month);
+  if (dateOrder === 'YYYY-MM-DD') return `${parts.year}-${month}-${day}`;
+  if (dateOrder === 'MM/DD/YYYY') return `${month}/${day}/${parts.year}`;
+  return `${day}/${month}/${parts.year}`;
+}
+
+function formatDraftTime(parts: ZonedDateTimeParts, timeFormat: TimeFormat): string {
+  if (timeFormat === '24h') return `${pad(parts.hour)}:${pad(parts.minute)}`;
+  const suffix = parts.hour >= 12 ? 'PM' : 'AM';
+  const hour = parts.hour % 12 || 12;
+  return `${pad(hour)}:${pad(parts.minute)} ${suffix}`;
 }
 
 function partsAsUtc(parts: ZonedDateTimeParts): number {

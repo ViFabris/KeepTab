@@ -21,7 +21,7 @@ import { useSettings } from '../settings/SettingsContext';
 import { TestPrintPanel } from '../settings/TestPrintPanel';
 import { colors, radii, sizes, spacing, typography } from '../theme';
 import type { AppSettings } from '../types';
-import { createClockDraft, parseClockDraft } from '../utils/appClock';
+import { createClockDraft, parseClockDraft, reformatClockDraft } from '../utils/appClock';
 import { StaffScreen } from './StaffScreen';
 
 const TOTAL_STEPS = 6;
@@ -49,7 +49,7 @@ export function SetupWizard() {
   const printer = useMemo(() => new MockPrinter(db), [db]);
 
   function continueFromWelcome() {
-    const patch = parseClockDraft(clockDraft);
+    const patch = parseClockDraft(clockDraft, settings);
     if (!patch) {
       setError(copy.setup.clockValidation);
       return;
@@ -86,7 +86,7 @@ export function SetupWizard() {
       setError(copy.setup.pinMismatchError);
       return;
     }
-    const clockPatch = pendingClockPatch ?? parseClockDraft(clockDraft);
+    const clockPatch = pendingClockPatch ?? parseClockDraft(clockDraft, settings);
     if (!clockPatch) {
       setError(copy.setup.clockValidation);
       setStep(1);
@@ -152,7 +152,12 @@ export function SetupWizard() {
                 <PreferencesEditor
                   settings={settings}
                   applyLanguageDefaults
-                  onChange={(patch) => void updateSettings(patch)}
+                  onChange={(patch) => {
+                    setClockDraft((draft) =>
+                      reformatClockDraft(draft, settings, { ...settings, ...patch }),
+                    );
+                    void updateSettings(patch);
+                  }}
                 />
                 <DateTimeEditor
                   deferredUntilPin

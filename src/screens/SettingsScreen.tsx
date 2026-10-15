@@ -18,7 +18,7 @@ import { useSettings } from '../settings/SettingsContext';
 import { TestPrintPanel } from '../settings/TestPrintPanel';
 import { MockPrinter } from '../printing/MockPrinter';
 import { colors, radii, sizes, spacing, typography } from '../theme';
-import { createClockDraft } from '../utils/appClock';
+import { createClockDraft, reformatClockDraft } from '../utils/appClock';
 import { StaffScreen } from './StaffScreen';
 
 type SettingsSection = 'preferences' | 'size' | 'people' | 'options' | 'security' | 'test';
@@ -147,6 +147,9 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
               settings={settings}
               onChange={(patch) => {
                 setMessage('');
+                setClockDraft((draft) =>
+                  reformatClockDraft(draft, settings, { ...settings, ...patch }),
+                );
                 void updateSettings(patch).catch(() => {
                   setIsError(true);
                   setMessage(copy.settings.settingsError);

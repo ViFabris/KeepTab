@@ -21,10 +21,11 @@ export interface SetupCopy {
   currentDate: string;
   currentTime: string;
   timeZone: string;
-  datePlaceholder: string;
-  timePlaceholder: string;
-  timeZonePlaceholder: string;
-  commonTimeZones: string;
+  datePlaceholder: (dateOrder: string) => string;
+  timePlaceholder: (timeFormat: string) => string;
+  selectTimeZone: string;
+  searchTimeZones: string;
+  noTimeZones: string;
   liveClock: (value: string, timeZone: string) => string;
   clockPin: string;
   applyClock: string;
@@ -196,10 +197,11 @@ const COPY: Record<Language, AppCopy> = {
       currentDate: 'Data atual',
       currentTime: 'Hora atual',
       timeZone: 'Fuso horário',
-      datePlaceholder: 'AAAA-MM-DD',
-      timePlaceholder: 'HH:MM',
-      timeZonePlaceholder: 'America/Sao_Paulo',
-      commonTimeZones: 'Fusos comuns',
+      datePlaceholder: (dateOrder) => dateOrder.replace('YYYY', 'AAAA'),
+      timePlaceholder: (timeFormat) => timeFormat === '12h' ? 'HH:MM AM/PM' : 'HH:MM',
+      selectTimeZone: 'Selecionar fuso horário',
+      searchTimeZones: 'Buscar cidade ou região',
+      noTimeZones: 'Nenhum fuso corresponde à busca.',
       liveClock: (value, timeZone) => `Agora no app: ${value} · ${timeZone}`,
       clockPin: 'PIN do administrador para alterar o relógio',
       applyClock: 'Aplicar data e hora',
@@ -378,10 +380,11 @@ const COPY: Record<Language, AppCopy> = {
       currentDate: 'Current date',
       currentTime: 'Current time',
       timeZone: 'Time zone',
-      datePlaceholder: 'YYYY-MM-DD',
-      timePlaceholder: 'HH:MM',
-      timeZonePlaceholder: 'America/Sao_Paulo',
-      commonTimeZones: 'Common time zones',
+      datePlaceholder: (dateOrder) => dateOrder,
+      timePlaceholder: (timeFormat) => timeFormat === '12h' ? 'HH:MM AM/PM' : 'HH:MM',
+      selectTimeZone: 'Select time zone',
+      searchTimeZones: 'Search city or region',
+      noTimeZones: 'No time zones match your search.',
       liveClock: (value, timeZone) => `App time now: ${value} · ${timeZone}`,
       clockPin: 'Admin PIN to change the clock',
       applyClock: 'Apply date and time',

@@ -6,7 +6,10 @@ import {
   getZonedDateTimeParts,
   isValidTimeZone,
   parseClockDraft,
+  reformatClockDraft,
 } from './appClock';
+
+const ISO_FORMAT = { dateOrder: 'YYYY-MM-DD' as const, timeFormat: '24h' as const };
 
 describe('app clock', () => {
   it('accepts IANA time zones and rejects unknown ones', () => {
@@ -19,6 +22,7 @@ describe('app clock', () => {
     const systemNow = new Date('2026-10-15T12:34:30.000Z');
     const patch = parseClockDraft(
       { date: '2026-10-20', time: '09:15', timeZone: 'America/Sao_Paulo' },
+      ISO_FORMAT,
       systemNow,
     );
 
@@ -40,8 +44,27 @@ describe('app clock', () => {
   });
 
   it('creates editable values in the configured time zone', () => {
-    const settings = { timeZone: 'America/Sao_Paulo', clockOffsetMs: 0 };
+    const settings = {
+      timeZone: 'America/Sao_Paulo',
+      clockOffsetMs: 0,
+      dateOrder: 'DD/MM/YYYY' as const,
+      timeFormat: '12h' as const,
+    };
     expect(createClockDraft(settings, new Date('2026-10-15T22:45:00.000Z'))).toEqual({
+      date: '15/10/2026',
+      time: '07:45 PM',
+      timeZone: 'America/Sao_Paulo',
+    });
+  });
+
+  it('reformats an existing draft when display preferences change', () => {
+    expect(
+      reformatClockDraft(
+        { date: '10/15/2026', time: '07:45 PM', timeZone: 'America/Sao_Paulo' },
+        { dateOrder: 'MM/DD/YYYY', timeFormat: '12h' },
+        { dateOrder: 'YYYY-MM-DD', timeFormat: '24h' },
+      ),
+    ).toEqual({
       date: '2026-10-15',
       time: '19:45',
       timeZone: 'America/Sao_Paulo',
@@ -53,12 +76,14 @@ describe('app clock', () => {
     expect(
       parseClockDraft(
         { date: '2026-02-30', time: '09:00', timeZone: 'America/Sao_Paulo' },
+        ISO_FORMAT,
         now,
       ),
     ).toBeNull();
     expect(
       parseClockDraft(
         { date: '2026-01-20', time: '25:00', timeZone: 'America/Sao_Paulo' },
+        ISO_FORMAT,
         now,
       ),
     ).toBeNull();
