@@ -17,6 +17,7 @@ interface SeedShelfLife {
   storageType: StorageType;
   hours: number;
   placeholder: boolean;
+  sourceNote?: string;
 }
 
 interface SeedItem {
@@ -50,16 +51,20 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
   await db.withExclusiveTransactionAsync(async (transaction) => {
     for (const item of seed.items) {
       await transaction.runAsync(
-        'INSERT OR IGNORE INTO items (id, name) VALUES (?, ?)',
+        `INSERT INTO items (id, name) VALUES (?, ?)
+         ON CONFLICT(id) DO UPDATE SET name = excluded.name`,
         item.id,
         item.name,
       );
 
       for (const [index, option] of item.storageOptions.entries()) {
         await transaction.runAsync(
-          `INSERT OR IGNORE INTO item_storage_options
+          `INSERT INTO item_storage_options
             (item_id, storage_type, sort_order, is_default)
-           VALUES (?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?)
+           ON CONFLICT(item_id, storage_type) DO UPDATE SET
+             sort_order = excluded.sort_order,
+             is_default = excluded.is_default`,
           item.id,
           option.value,
           index,
@@ -69,9 +74,12 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
 
       for (const [index, option] of item.formOptions.entries()) {
         await transaction.runAsync(
-          `INSERT OR IGNORE INTO item_form_options
+          `INSERT INTO item_form_options
             (item_id, form, sort_order, is_default)
-           VALUES (?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?)
+           ON CONFLICT(item_id, form) DO UPDATE SET
+             sort_order = excluded.sort_order,
+             is_default = excluded.is_default`,
           item.id,
           option.value,
           index,
@@ -80,16 +88,28 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
       }
 
       for (const shelfLife of item.shelfLives) {
+        const sourceNote = shelfLife.placeholder
+          ? PLACEHOLDER_SOURCE_NOTE
+          : shelfLife.sourceNote;
+        if (!sourceNote) {
+          throw new Error(
+            `A non-placeholder shelf life for ${item.id}/${shelfLife.form}/${shelfLife.storageType} requires a sourceNote.`,
+          );
+        }
         await transaction.runAsync(
-          `INSERT OR IGNORE INTO shelf_lives
+          `INSERT INTO shelf_lives
             (item_id, form, storage_type, shelf_life_hours, is_placeholder, source_note)
-           VALUES (?, ?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?)
+           ON CONFLICT(item_id, form, storage_type) DO UPDATE SET
+             shelf_life_hours = excluded.shelf_life_hours,
+             is_placeholder = excluded.is_placeholder,
+             source_note = excluded.source_note`,
           item.id,
           shelfLife.form,
           shelfLife.storageType,
           shelfLife.hours,
           shelfLife.placeholder ? 1 : 0,
-          PLACEHOLDER_SOURCE_NOTE,
+          sourceNote,
         );
       }
     }
