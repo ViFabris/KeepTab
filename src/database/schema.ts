@@ -7,6 +7,28 @@ export const SCHEMA_SQL = `
     value TEXT NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS app_settings (
+    id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1),
+    language TEXT NOT NULL CHECK (language IN ('en', 'pt-BR')),
+    date_order TEXT NOT NULL CHECK (date_order IN ('DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD')),
+    time_format TEXT NOT NULL CHECK (time_format IN ('12h', '24h')),
+    spell_out_month INTEGER NOT NULL CHECK (spell_out_month IN (0, 1)),
+    label_width_mm REAL NOT NULL,
+    label_height_mm REAL NOT NULL,
+    setup_complete INTEGER NOT NULL DEFAULT 0 CHECK (setup_complete IN (0, 1))
+  );
+
+  CREATE TABLE IF NOT EXISTS label_options (
+    id TEXT PRIMARY KEY NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('storage', 'form')),
+    translation_key TEXT,
+    custom_label TEXT,
+    legacy_value TEXT NOT NULL,
+    sort_order INTEGER NOT NULL,
+    applies_to_all INTEGER NOT NULL DEFAULT 0 CHECK (applies_to_all IN (0, 1)),
+    enabled INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1))
+  );
+
   CREATE TABLE IF NOT EXISTS items (
     id TEXT PRIMARY KEY NOT NULL,
     name TEXT NOT NULL UNIQUE COLLATE NOCASE
@@ -53,15 +75,21 @@ export const SCHEMA_SQL = `
     item_id TEXT NOT NULL,
     item_name TEXT NOT NULL,
     form TEXT NOT NULL,
-    storage_type TEXT NOT NULL CHECK (storage_type IN ('Refrigerated', 'Frozen')),
+    form_option_id TEXT,
+    storage_type TEXT NOT NULL,
+    storage_option_id TEXT,
     made_at TEXT NOT NULL,
     use_by_at TEXT NOT NULL,
     staff_id INTEGER,
     staff_name TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'used', 'thrown_away')),
     printed_at TEXT NOT NULL,
+    label_width_mm REAL NOT NULL DEFAULT 60,
+    label_height_mm REAL NOT NULL DEFAULT 40,
     FOREIGN KEY (item_id) REFERENCES items(id),
-    FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE SET NULL
+    FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE SET NULL,
+    FOREIGN KEY (form_option_id) REFERENCES label_options(id),
+    FOREIGN KEY (storage_option_id) REFERENCES label_options(id)
   );
 
   CREATE INDEX IF NOT EXISTS labels_active_use_by_idx

@@ -9,7 +9,13 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 import type { StaffMember } from '../types';
 
-export function StaffScreen() {
+export function StaffScreen({
+  embedded = false,
+  onStaffCountChange,
+}: {
+  embedded?: boolean;
+  onStaffCountChange?: (count: number) => void;
+}) {
   const db = useSQLiteContext();
   const { copy } = useLanguage();
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -28,6 +34,10 @@ export function StaffScreen() {
   useEffect(() => {
     void loadStaff();
   }, [loadStaff]);
+
+  useEffect(() => {
+    onStaffCountChange?.(staff.length);
+  }, [onStaffCountChange, staff.length]);
 
   async function submit() {
     if (!name.trim()) {
@@ -80,8 +90,8 @@ export function StaffScreen() {
   }
 
   return (
-    <View style={styles.screen}>
-      <PageHeader title={copy.staffTitle} subtitle={copy.staffHint} />
+    <View style={[styles.screen, embedded && styles.embedded]}>
+      {!embedded ? <PageHeader title={copy.staffTitle} subtitle={copy.staffHint} /> : null}
       <View style={styles.addRow}>
         <TextInput
           accessibilityLabel={copy.staffInputPlaceholder}
@@ -128,6 +138,7 @@ export function StaffScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, padding: 28, gap: 18 },
+  embedded: { padding: 0 },
   addRow: { flexDirection: 'row', gap: 14 },
   input: {
     flex: 1,

@@ -2,6 +2,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import sampleData from '../data/sample-data.json';
 import type { StorageType } from '../types';
+import { migrateDatabase } from './migrations';
 import { SCHEMA_SQL } from './schema';
 
 const PLACEHOLDER_SOURCE_NOTE =
@@ -37,6 +38,7 @@ interface SeedData {
 
 export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
   await db.execAsync(SCHEMA_SQL);
+  await migrateDatabase(db);
 
   const seed = sampleData as SeedData;
   const currentSeed = await db.getFirstAsync<{ value: string }>(

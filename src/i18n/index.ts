@@ -1,6 +1,90 @@
-import type { Language, StorageType } from '../types';
+import type { LabelOption, Language } from '../types';
+
+export interface SetupCopy {
+  title: string;
+  step: (current: number, total: number) => string;
+  next: string;
+  continue: string;
+  languageDateTitle: string;
+  languageDateHint: string;
+  language: string;
+  dateOrder: string;
+  timeFormat: string;
+  twelveHour: string;
+  twentyFourHour: string;
+  spellMonth: string;
+  spellMonthHint: string;
+  on: string;
+  off: string;
+  sizeTitle: string;
+  sizeHint: string;
+  width: string;
+  height: string;
+  millimeters: string;
+  sizeValidation: string;
+  livePreview: string;
+  printerWidthWarning: (maximum: number) => string;
+  peopleTitle: string;
+  peopleHint: string;
+  personRequired: string;
+  pinTitle: string;
+  pinHint: string;
+  pin: string;
+  confirmPin: string;
+  pinLengthError: string;
+  pinMismatchError: string;
+  optionsTitle: string;
+  optionsHint: string;
+  storageOptions: string;
+  formOptions: string;
+  optionRequired: string;
+  testTitle: string;
+  testHint: string;
+  looksGood: string;
+  changeSize: string;
+  sampleItem: string;
+  samplePerson: string;
+  finishError: string;
+}
+
+export interface SettingsCopy {
+  title: string;
+  open: string;
+  unlockTitle: string;
+  unlockHint: string;
+  unlock: string;
+  wrongPin: string;
+  preferences: string;
+  labelSize: string;
+  people: string;
+  options: string;
+  security: string;
+  testPrint: string;
+  close: string;
+  save: string;
+  saved: string;
+  changePin: string;
+  currentPin: string;
+  newPin: string;
+  confirmNewPin: string;
+  currentPinWrong: string;
+  pinChanged: string;
+  addOption: string;
+  optionPlaceholder: string;
+  rename: string;
+  moveUp: string;
+  moveDown: string;
+  atLeastOneOption: string;
+  optionNameRequired: string;
+  removeOptionTitle: (name: string) => string;
+  removeOptionHint: string;
+  settingsError: string;
+}
 
 export interface AppCopy {
+  setup: SetupCopy;
+  settings: SettingsCopy;
+  optionNames: Record<string, string>;
   appTagline: string;
   navNewLabel: string;
   navToday: string;
@@ -76,6 +160,99 @@ export interface AppCopy {
 
 const COPY: Record<Language, AppCopy> = {
   'pt-BR': {
+    setup: {
+      title: 'Configuração inicial',
+      step: (current, total) => `Etapa ${current} de ${total}`,
+      next: 'Avançar',
+      continue: 'Continuar',
+      languageDateTitle: 'Idioma, data e hora',
+      languageDateHint: 'Escolha como as datas e os horários aparecem no app e nas etiquetas.',
+      language: 'Idioma',
+      dateOrder: 'Formato da data',
+      timeFormat: 'Formato da hora',
+      twelveHour: '12 horas',
+      twentyFourHour: '24 horas',
+      spellMonth: 'Escrever o mês nas etiquetas',
+      spellMonthHint: 'Exemplo: 20 OUT em vez de 20/10.',
+      on: 'Ativado',
+      off: 'Desativado',
+      sizeTitle: 'Tamanho da etiqueta',
+      sizeHint: 'Digite a largura e a altura da etiqueta em milímetros.',
+      width: 'Largura',
+      height: 'Altura',
+      millimeters: 'mm',
+      sizeValidation: 'Digite um número entre 20 e 100 mm em cada campo.',
+      livePreview: 'Prévia proporcional',
+      printerWidthWarning: (maximum) => `Esta impressora aceita no máximo ${maximum} mm de largura.`,
+      peopleTitle: 'Adicionar pessoas',
+      peopleHint: 'Cadastre quem prepara os alimentos. É necessário ter pelo menos uma pessoa.',
+      personRequired: 'Adicione pelo menos uma pessoa para continuar.',
+      pinTitle: 'PIN do administrador',
+      pinHint: 'Crie um PIN de 4 a 6 números para proteger as configurações.',
+      pin: 'PIN',
+      confirmPin: 'Confirmar PIN',
+      pinLengthError: 'O PIN deve ter de 4 a 6 números.',
+      pinMismatchError: 'Os PINs não são iguais.',
+      optionsTitle: 'Opções de armazenamento e preparo',
+      optionsHint: 'Organize as opções usadas ao criar uma etiqueta.',
+      storageOptions: 'Armazenamento',
+      formOptions: 'Estado ou preparo',
+      optionRequired: 'Mantenha pelo menos uma opção em cada lista.',
+      testTitle: 'Impressão de teste',
+      testHint: 'Confira a proporção e a leitura da etiqueta antes de terminar.',
+      looksGood: 'Parece bom',
+      changeSize: 'Alterar tamanho',
+      sampleItem: 'Alimento de teste',
+      samplePerson: 'Teste',
+      finishError: 'Não foi possível concluir a configuração. Tente novamente.',
+    },
+    settings: {
+      title: 'Configurações',
+      open: 'Abrir configurações',
+      unlockTitle: 'Configurações protegidas',
+      unlockHint: 'Digite o PIN do administrador para continuar.',
+      unlock: 'Desbloquear',
+      wrongPin: 'PIN incorreto. Tente novamente.',
+      preferences: 'Idioma, data e hora',
+      labelSize: 'Tamanho da etiqueta',
+      people: 'Equipe',
+      options: 'Opções',
+      security: 'PIN do administrador',
+      testPrint: 'Imprimir teste',
+      close: 'Fechar',
+      save: 'Salvar',
+      saved: 'Alterações salvas.',
+      changePin: 'Alterar PIN',
+      currentPin: 'PIN atual',
+      newPin: 'Novo PIN',
+      confirmNewPin: 'Confirmar novo PIN',
+      currentPinWrong: 'O PIN atual está incorreto.',
+      pinChanged: 'PIN alterado.',
+      addOption: 'Adicionar opção',
+      optionPlaceholder: 'Digite o nome da opção',
+      rename: 'Renomear',
+      moveUp: 'Subir',
+      moveDown: 'Descer',
+      atLeastOneOption: 'Não é possível remover a última opção.',
+      optionNameRequired: 'Digite um nome para a opção.',
+      removeOptionTitle: (name) => `Remover ${name}?`,
+      removeOptionHint: 'Etiquetas já salvas continuarão ligadas ao mesmo identificador.',
+      settingsError: 'Não foi possível salvar esta alteração.',
+    },
+    optionNames: {
+      'storage.refrigerated': 'Refrigerado',
+      'storage.frozen': 'Congelado',
+      'form.whole': 'Inteiro',
+      'form.cut': 'Cortado',
+      'form.other': 'Outro',
+      'form.cooked': 'Cozido',
+      'form.raw': 'Cru',
+      'form.inShell': 'Com casca',
+      'form.peeled': 'Descascado',
+      'form.opened': 'Aberto',
+      'form.unopened': 'Fechado',
+      'form.shredded': 'Ralado',
+    },
     appTagline: 'Etiquetas de cozinha',
     navNewLabel: 'Nova etiqueta',
     navToday: 'Hoje',
@@ -150,6 +327,99 @@ const COPY: Record<Language, AppCopy> = {
     startingDatabase: 'Iniciando banco de dados offline…',
   },
   en: {
+    setup: {
+      title: 'First-time setup',
+      step: (current, total) => `Step ${current} of ${total}`,
+      next: 'Next',
+      continue: 'Continue',
+      languageDateTitle: 'Language, date, and time',
+      languageDateHint: 'Choose how dates and times appear in the app and on labels.',
+      language: 'Language',
+      dateOrder: 'Date format',
+      timeFormat: 'Time format',
+      twelveHour: '12-hour',
+      twentyFourHour: '24-hour',
+      spellMonth: 'Spell out month on labels',
+      spellMonthHint: 'Example: OCT 20 instead of 10/20.',
+      on: 'On',
+      off: 'Off',
+      sizeTitle: 'Label size',
+      sizeHint: 'Enter the label width and height in millimeters.',
+      width: 'Width',
+      height: 'Height',
+      millimeters: 'mm',
+      sizeValidation: 'Enter a number from 20 to 100 mm in each field.',
+      livePreview: 'Scaled preview',
+      printerWidthWarning: (maximum) => `This printer supports a maximum width of ${maximum} mm.`,
+      peopleTitle: 'Add people',
+      peopleHint: 'Add the people who prepare food. At least one person is required.',
+      personRequired: 'Add at least one person to continue.',
+      pinTitle: 'Admin PIN',
+      pinHint: 'Create a 4–6 digit PIN to protect settings.',
+      pin: 'PIN',
+      confirmPin: 'Confirm PIN',
+      pinLengthError: 'The PIN must contain 4–6 digits.',
+      pinMismatchError: 'The PINs do not match.',
+      optionsTitle: 'Storage and form options',
+      optionsHint: 'Organize the choices used when making a label.',
+      storageOptions: 'Storage',
+      formOptions: 'Form',
+      optionRequired: 'Keep at least one option in each list.',
+      testTitle: 'Test print',
+      testHint: 'Check the label proportions and readability before finishing.',
+      looksGood: 'Looks good',
+      changeSize: 'Change size',
+      sampleItem: 'Sample food',
+      samplePerson: 'Test',
+      finishError: 'Could not finish setup. Please try again.',
+    },
+    settings: {
+      title: 'Settings',
+      open: 'Open settings',
+      unlockTitle: 'Protected settings',
+      unlockHint: 'Enter the admin PIN to continue.',
+      unlock: 'Unlock',
+      wrongPin: 'Incorrect PIN. Try again.',
+      preferences: 'Language, date, and time',
+      labelSize: 'Label size',
+      people: 'Staff',
+      options: 'Options',
+      security: 'Admin PIN',
+      testPrint: 'Test print',
+      close: 'Close',
+      save: 'Save',
+      saved: 'Changes saved.',
+      changePin: 'Change PIN',
+      currentPin: 'Current PIN',
+      newPin: 'New PIN',
+      confirmNewPin: 'Confirm new PIN',
+      currentPinWrong: 'The current PIN is incorrect.',
+      pinChanged: 'PIN changed.',
+      addOption: 'Add option',
+      optionPlaceholder: 'Enter an option name',
+      rename: 'Rename',
+      moveUp: 'Move up',
+      moveDown: 'Move down',
+      atLeastOneOption: 'The last option cannot be removed.',
+      optionNameRequired: 'Enter an option name.',
+      removeOptionTitle: (name) => `Remove ${name}?`,
+      removeOptionHint: 'Existing labels stay linked to the same stable identifier.',
+      settingsError: 'Could not save this change.',
+    },
+    optionNames: {
+      'storage.refrigerated': 'Refrigerated',
+      'storage.frozen': 'Frozen',
+      'form.whole': 'Whole',
+      'form.cut': 'Cut',
+      'form.other': 'Other',
+      'form.cooked': 'Cooked',
+      'form.raw': 'Raw',
+      'form.inShell': 'In shell',
+      'form.peeled': 'Peeled',
+      'form.opened': 'Opened',
+      'form.unopened': 'Unopened',
+      'form.shredded': 'Shredded',
+    },
     appTagline: 'Kitchen labels',
     navNewLabel: 'New label',
     navToday: 'Today',
@@ -267,9 +537,17 @@ export function getItemName(
   return language === 'pt-BR' ? (PORTUGUESE_ITEM_NAMES[itemId] ?? englishName) : englishName;
 }
 
-export function getStorageLabel(storage: StorageType, language: Language): string {
+export function getStorageLabel(storage: string, language: Language): string {
   if (language === 'en') return storage;
   return storage === 'Refrigerated' ? 'Refrigerado' : 'Congelado';
+}
+
+export function getLabelOptionName(option: LabelOption, language: Language): string {
+  if (option.customLabel) return option.customLabel;
+  if (option.translationKey) {
+    return COPY[language].optionNames[option.translationKey] ?? option.legacyValue;
+  }
+  return option.legacyValue;
 }
 
 export function getFormLabel(form: string, language: Language): string {

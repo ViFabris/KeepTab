@@ -4,7 +4,6 @@ import type {
   LabelStatus,
   PrintableLabel,
   SavedLabel,
-  StorageType,
   TodayLabelGroups,
 } from '../types';
 import { addLocalDays, startOfLocalDay } from '../utils/dates';
@@ -14,13 +13,17 @@ interface LabelRow {
   item_id: string;
   item_name: string;
   form: string;
-  storage_type: StorageType;
+  form_option_id: string | null;
+  storage_type: string;
+  storage_option_id: string | null;
   made_at: string;
   use_by_at: string;
   staff_id: number | null;
   staff_name: string;
   status: LabelStatus;
   printed_at: string;
+  label_width_mm: number;
+  label_height_mm: number;
 }
 
 export async function savePrintedLabel(
@@ -30,18 +33,23 @@ export async function savePrintedLabel(
 ): Promise<SavedLabel> {
   const result = await db.runAsync(
     `INSERT INTO labels
-      (item_id, item_name, form, storage_type, made_at, use_by_at,
-       staff_id, staff_name, status, printed_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
+      (item_id, item_name, form, form_option_id, storage_type, storage_option_id,
+       made_at, use_by_at, staff_id, staff_name, status, printed_at,
+       label_width_mm, label_height_mm)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
     label.itemId,
     label.itemName,
     label.form,
+    label.formOptionId,
     label.storageType,
+    label.storageOptionId,
     label.madeAt,
     label.useByAt,
     label.staffId,
     label.staffName,
     printedAt,
+    label.labelWidthMm,
+    label.labelHeightMm,
   );
 
   return {
@@ -94,12 +102,16 @@ function mapLabelRow(row: LabelRow): SavedLabel {
     itemId: row.item_id,
     itemName: row.item_name,
     form: row.form,
+    formOptionId: row.form_option_id,
     storageType: row.storage_type,
+    storageOptionId: row.storage_option_id,
     madeAt: row.made_at,
     useByAt: row.use_by_at,
     staffId: row.staff_id,
     staffName: row.staff_name,
     status: row.status,
     printedAt: row.printed_at,
+    labelWidthMm: row.label_width_mm,
+    labelHeightMm: row.label_height_mm,
   };
 }

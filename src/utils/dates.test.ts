@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { addHours, formatShelfLife } from './dates';
+import { addHours, formatLabelUseBy, formatShelfLife } from './dates';
 
 describe('label date calculations', () => {
   it('adds the configured shelf-life hours to the made time', () => {
@@ -16,5 +16,19 @@ describe('label date calculations', () => {
   it('formats durations in Brazilian Portuguese', () => {
     expect(formatShelfLife(24, 'pt-BR')).toBe('1 dia');
     expect(formatShelfLife(36, 'pt-BR')).toBe('36 horas');
+  });
+
+  it('uses the exact Portuguese month abbreviations on labels', () => {
+    expect(
+      formatLabelUseBy('2026-10-20T15:30:00', {
+        language: 'pt-BR',
+        dateOrder: 'DD/MM/YYYY',
+        timeFormat: '24h',
+        spellOutMonth: true,
+        labelWidthMm: 60,
+        labelHeightMm: 40,
+        setupComplete: true,
+      }),
+    ).toContain('20 OUT 2026');
   });
 });

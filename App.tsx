@@ -5,17 +5,18 @@ import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } fr
 
 import { SafetyBanner } from './src/components/SafetyBanner';
 import { initializeDatabase } from './src/database/initialize';
-import { getLanguage, saveLanguage } from './src/database/settingsRepository';
-import { getLanguageName } from './src/i18n';
+import { getAppSettings } from './src/database/settingsRepository';
 import { LanguageProvider, useLanguage } from './src/i18n/LanguageContext';
 import { LabelFlowScreen } from './src/screens/LabelFlowScreen';
-import { LanguageSelectionScreen } from './src/screens/LanguageSelectionScreen';
-import { StaffScreen } from './src/screens/StaffScreen';
+import { SettingsScreen } from './src/screens/SettingsScreen';
+import { SettingsUnlockScreen } from './src/screens/SettingsUnlockScreen';
+import { SetupWizard } from './src/screens/SetupWizard';
 import { TodayScreen } from './src/screens/TodayScreen';
+import { SettingsProvider } from './src/settings/SettingsContext';
 import { colors } from './src/theme';
-import type { Language } from './src/types';
+import type { AppSettings } from './src/types';
 
-type Screen = 'label' | 'today' | 'staff';
+type Screen = 'label' | 'today' | 'settings-unlock' | 'settings';
 
 export default function App() {
   return (
@@ -34,64 +35,43 @@ export default function App() {
 
 function AppShell() {
   const db = useSQLiteContext();
-  const [language, setLanguage] = useState<Language | null | undefined>(undefined);
-  const [savingLanguage, setSavingLanguage] = useState(false);
-  const [languageError, setLanguageError] = useState('');
+  const [appSettings, setAppSettings] = useState<AppSettings>();
 
   useEffect(() => {
     let mounted = true;
-    getLanguage(db)
-      .then((savedLanguage) => {
-        if (mounted) setLanguage(savedLanguage);
+    getAppSettings(db)
+      .then((loadedSettings) => {
+        if (mounted) setAppSettings(loadedSettings);
       })
-      .catch(() => {
-        if (mounted) setLanguage(null);
-      });
+      .catch(() => undefined);
     return () => {
       mounted = false;
     };
   }, [db]);
 
-  async function selectLanguage(selectedLanguage: Language) {
-    setSavingLanguage(true);
-    setLanguageError('');
-    try {
-      await saveLanguage(db, selectedLanguage);
-      setLanguage(selectedLanguage);
-    } catch {
-      setLanguageError(
-        'Não foi possível salvar o idioma. · Could not save the language.',
-      );
-    } finally {
-      setSavingLanguage(false);
-    }
-  }
-
-  if (language === undefined) {
+  if (!appSettings) {
     return <LoadingApp message="Iniciando… · Starting…" />;
   }
 
-  if (language === null) {
-    return (
-      <LanguageSelectionScreen
-        onSelect={(selectedLanguage) => void selectLanguage(selectedLanguage)}
-        busy={savingLanguage}
-        error={languageError}
-      />
-    );
-  }
-
   return (
-    <LanguageProvider language={language}>
-      <LocalizedAppShell onChangeLanguage={() => setLanguage(null)} />
-    </LanguageProvider>
+    <SettingsProvider initialSettings={appSettings} onSettingsChange={setAppSettings}>
+      <LanguageProvider language={appSettings.language}>
+        {appSettings.setupComplete ? <LocalizedAppShell /> : <SetupWizard />}
+      </LanguageProvider>
+    </SettingsProvider>
   );
 }
 
-function LocalizedAppShell({ onChangeLanguage }: { onChangeLanguage: () => void }) {
-  const { language, copy } = useLanguage();
+function LocalizedAppShell() {
+  const { copy } = useLanguage();
   const [screen, setScreen] = useState<Screen>('label');
   const [labelsVersion, setLabelsVersion] = useState(0);
+  const [configurationVersion, setConfigurationVersion] = useState(0);
+
+  function closeSettings() {
+    setConfigurationVersion((version) => version + 1);
+    setScreen('label');
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -112,20 +92,16 @@ function LocalizedAppShell({ onChangeLanguage }: { onChangeLanguage: () => void 
               selected={screen === 'today'}
               onPress={() => setScreen('today')}
             />
-            <NavButton
-              label={copy.navStaff}
-              selected={screen === 'staff'}
-              onPress={() => setScreen('staff')}
-            />
           </View>
           <View style={styles.sidebarFooter}>
             <Pressable
               accessibilityRole="button"
-              onPress={onChangeLanguage}
-              style={({ pressed }) => [styles.languageButton, pressed && styles.navButtonPressed]}
+              accessibilityLabel={copy.settings.open}
+              onPress={() => setScreen('settings-unlock')}
+              style={({ pressed }) => [styles.settingsButton, pressed && styles.navButtonPressed]}
             >
-              <Text style={styles.languageTitle}>{copy.changeLanguage}</Text>
-              <Text style={styles.languageValue}>{getLanguageName(language)}</Text>
+              <Text style={styles.settingsIcon}>⚙</Text>
+              <Text style={styles.settingsLabel}>{copy.settings.title}</Text>
             </Pressable>
             <Text style={styles.offline}>{copy.offlineDatabase}</Text>
             <SafetyBanner compact />
@@ -134,12 +110,20 @@ function LocalizedAppShell({ onChangeLanguage }: { onChangeLanguage: () => void 
         <View style={styles.content}>
           {screen === 'label' ? (
             <LabelFlowScreen
+              key={configurationVersion}
               onPrinted={() => setLabelsVersion((version) => version + 1)}
-              onOpenStaff={() => setScreen('staff')}
             />
           ) : null}
-          {screen === 'today' ? <TodayScreen refreshKey={labelsVersion} /> : null}
-          {screen === 'staff' ? <StaffScreen /> : null}
+          {screen === 'today' ? (
+            <TodayScreen refreshKey={labelsVersion + configurationVersion} />
+          ) : null}
+          {screen === 'settings-unlock' ? (
+            <SettingsUnlockScreen
+              onUnlocked={() => setScreen('settings')}
+              onCancel={() => setScreen('label')}
+            />
+          ) : null}
+          {screen === 'settings' ? <SettingsScreen onClose={closeSettings} /> : null}
         </View>
       </View>
     </SafeAreaView>
@@ -210,7 +194,7 @@ const styles = StyleSheet.create({
   navLabel: { color: colors.ink, fontSize: 21, fontWeight: '800' },
   navLabelSelected: { color: '#ffffff' },
   sidebarFooter: { flex: 1, justifyContent: 'flex-end', gap: 12 },
-  languageButton: {
+  settingsButton: {
     minHeight: 58,
     paddingHorizontal: 12,
     paddingVertical: 9,
@@ -219,9 +203,12 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 11,
     backgroundColor: colors.background,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
   },
-  languageTitle: { color: colors.muted, fontSize: 13, fontWeight: '800' },
-  languageValue: { marginTop: 2, color: colors.ink, fontSize: 15, fontWeight: '800' },
+  settingsIcon: { color: colors.ink, fontSize: 25, fontWeight: '900' },
+  settingsLabel: { flex: 1, color: colors.ink, fontSize: 16, fontWeight: '800' },
   offline: { color: colors.primaryDark, fontSize: 14, fontWeight: '800' },
   content: { flex: 1, minWidth: 0 },
   loading: {

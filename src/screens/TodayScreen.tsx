@@ -5,11 +5,13 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { BigButton } from '../components/BigButton';
 import { PageHeader } from '../components/PageHeader';
 import { getTodayLabelGroups, updateLabelStatus } from '../database/labelsRepository';
-import { getFormLabel, getItemName, getStorageLabel } from '../i18n';
+import { getLabelOptions } from '../database/optionsRepository';
+import { getFormLabel, getItemName, getLabelOptionName, getStorageLabel } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useSettings } from '../settings/SettingsContext';
 import { colors } from '../theme';
-import type { SavedLabel, TodayLabelGroups } from '../types';
-import { formatDateTime } from '../utils/dates';
+import type { LabelOption, SavedLabel, TodayLabelGroups } from '../types';
+import { formatConfiguredDateTime } from '../utils/dates';
 
 const EMPTY_GROUPS: TodayLabelGroups = { overdue: [], today: [], nextThreeDays: [] };
 
@@ -20,6 +22,7 @@ interface TodayScreenProps {
 export function TodayScreen({ refreshKey }: TodayScreenProps) {
   const db = useSQLiteContext();
   const { copy } = useLanguage();
+  const [options, setOptions] = useState<LabelOption[]>([]);
   const [groups, setGroups] = useState<TodayLabelGroups>(EMPTY_GROUPS);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
@@ -28,7 +31,12 @@ export function TodayScreen({ refreshKey }: TodayScreenProps) {
   const loadLabels = useCallback(async () => {
     setError('');
     try {
-      setGroups(await getTodayLabelGroups(db));
+      const [nextGroups, nextOptions] = await Promise.all([
+        getTodayLabelGroups(db),
+        getLabelOptions(db, undefined, true),
+      ]);
+      setGroups(nextGroups);
+      setOptions(nextOptions);
     } catch {
       setError(copy.labelsLoadError);
     } finally {
@@ -92,6 +100,7 @@ export function TodayScreen({ refreshKey }: TodayScreenProps) {
             labels={groups.overdue}
             tone="danger"
             updatingId={updatingId}
+            options={options}
             onClose={closeLabel}
           />
           <LabelSection
@@ -99,6 +108,7 @@ export function TodayScreen({ refreshKey }: TodayScreenProps) {
             labels={groups.today}
             tone="today"
             updatingId={updatingId}
+            options={options}
             onClose={closeLabel}
           />
           <LabelSection
@@ -106,6 +116,7 @@ export function TodayScreen({ refreshKey }: TodayScreenProps) {
             labels={groups.nextThreeDays}
             tone="upcoming"
             updatingId={updatingId}
+            options={options}
             onClose={closeLabel}
           />
         </View>
@@ -121,11 +132,13 @@ interface LabelSectionProps {
   labels: SavedLabel[];
   tone: SectionTone;
   updatingId: number | null;
+  options: LabelOption[];
   onClose: (label: SavedLabel, status: 'used' | 'thrown_away') => Promise<void>;
 }
 
-function LabelSection({ title, labels, tone, updatingId, onClose }: LabelSectionProps) {
+function LabelSection({ title, labels, tone, updatingId, options, onClose }: LabelSectionProps) {
   const { language, copy } = useLanguage();
+  const { settings } = useSettings();
   return (
     <View style={styles.section}>
       <View style={[styles.sectionHeader, toneStyles[tone].header]}>
@@ -140,10 +153,38 @@ function LabelSection({ title, labels, tone, updatingId, onClose }: LabelSection
               {getItemName(label.itemId, label.itemName, language)}
             </Text>
             <Text style={styles.meta}>
-              {getFormLabel(label.form, language)} · {getStorageLabel(label.storageType, language)}
+              {label.formOptionId
+                ? getLabelOptionName(
+                    options.find((option) => option.id === label.formOptionId) ?? {
+                      id: label.formOptionId,
+                      kind: 'form',
+                      translationKey: null,
+                      customLabel: null,
+                      legacyValue: label.form,
+                      sortOrder: 0,
+                      appliesToAll: false,
+                    },
+                    language,
+                  )
+                : getFormLabel(label.form, language)}{' '}
+              ·{' '}
+              {label.storageOptionId
+                ? getLabelOptionName(
+                    options.find((option) => option.id === label.storageOptionId) ?? {
+                      id: label.storageOptionId,
+                      kind: 'storage',
+                      translationKey: null,
+                      customLabel: null,
+                      legacyValue: label.storageType,
+                      sortOrder: 0,
+                      appliesToAll: false,
+                    },
+                    language,
+                  )
+                : getStorageLabel(label.storageType, language)}
             </Text>
             <Text style={styles.due}>
-              {copy.useByValue(formatDateTime(label.useByAt, language))}
+              {copy.useByValue(formatConfiguredDateTime(label.useByAt, settings))}
             </Text>
             <Text style={styles.staff}>{copy.madeBy(label.staffName)}</Text>
             <View style={styles.cardActions}>

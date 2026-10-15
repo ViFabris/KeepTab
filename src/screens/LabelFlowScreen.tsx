@@ -10,17 +10,18 @@ import { PageHeader } from '../components/PageHeader';
 import { SafetyBanner } from '../components/SafetyBanner';
 import { getItems, getShelfLife } from '../database/itemsRepository';
 import { getStaff } from '../database/staffRepository';
-import { getFormLabel, getItemName, getStorageLabel } from '../i18n';
+import { getItemName, getLabelOptionName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
+import { useSettings } from '../settings/SettingsContext';
 import { colors } from '../theme';
 import type {
   KitchenItem,
+  ItemLabelOption,
   PrintableLabel,
   SavedLabel,
   ShelfLife,
   StaffMember,
-  StorageType,
 } from '../types';
 import { addHours } from '../utils/dates';
 
@@ -28,26 +29,26 @@ type FlowStep = 'item' | 'storage' | 'form' | 'staff' | 'preview' | 'printed';
 
 interface LabelFlowScreenProps {
   onPrinted: () => void;
-  onOpenStaff: () => void;
 }
 
-function defaultValue<T extends string>(options: { value: T; isDefault: boolean }[]): T {
+function defaultOption(options: ItemLabelOption[]): ItemLabelOption {
   const option = options.find((candidate) => candidate.isDefault) ?? options[0];
   if (!option) {
     throw new Error('This item has no configured options.');
   }
-  return option.value;
+  return option;
 }
 
-export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps) {
+export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
   const db = useSQLiteContext();
   const { language, copy } = useLanguage();
+  const { settings } = useSettings();
   const [items, setItems] = useState<KitchenItem[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [step, setStep] = useState<FlowStep>('item');
   const [item, setItem] = useState<KitchenItem | null>(null);
-  const [storageType, setStorageType] = useState<StorageType>('Refrigerated');
-  const [form, setForm] = useState('Whole');
+  const [storageOption, setStorageOption] = useState<ItemLabelOption | null>(null);
+  const [formOption, setFormOption] = useState<ItemLabelOption | null>(null);
   const [label, setLabel] = useState<PrintableLabel | null>(null);
   const [draftWithoutUseBy, setDraftWithoutUseBy] = useState<
     Omit<PrintableLabel, 'useByAt'> | null
@@ -83,27 +84,36 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
   // Voice input can later resolve an item and call this exact function.
   function selectItem(selectedItem: KitchenItem) {
     setItem(selectedItem);
-    setStorageType(defaultValue(selectedItem.storageOptions));
-    setForm(defaultValue(selectedItem.formOptions));
+    setStorageOption(defaultOption(selectedItem.storageOptions));
+    setFormOption(defaultOption(selectedItem.formOptions));
     setError('');
     setStep('storage');
   }
 
   async function selectStaff(member: StaffMember) {
-    if (!item) return;
+    if (!item || !formOption || !storageOption) return;
     setBusy(true);
     setError('');
     try {
-      const configuredShelfLife = await getShelfLife(db, item.id, form, storageType);
+      const configuredShelfLife = await getShelfLife(
+        db,
+        item.id,
+        formOption.id,
+        storageOption.id,
+      );
       const madeAt = new Date();
       const draft = {
         itemId: item.id,
         itemName: getItemName(item.id, item.name, language),
-        form,
-        storageType,
+        form: formOption.legacyValue,
+        formOptionId: formOption.id,
+        storageType: storageOption.legacyValue,
+        storageOptionId: storageOption.id,
         madeAt: madeAt.toISOString(),
         staffId: member.id,
         staffName: member.name,
+        labelWidthMm: settings.labelWidthMm,
+        labelHeightMm: settings.labelHeightMm,
       };
       setDraftWithoutUseBy(draft);
       setShelfLife(configuredShelfLife);
@@ -141,6 +151,8 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
 
   function resetFlow() {
     setItem(null);
+    setStorageOption(null);
+    setFormOption(null);
     setLabel(null);
     setDraftWithoutUseBy(null);
     setShelfLife(null);
@@ -166,7 +178,7 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
     );
   }
 
-  if (!item) {
+  if (!item || !storageOption || !formOption) {
     return <CenteredMessage message={copy.chooseItem} />;
   }
 
@@ -179,11 +191,10 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
           title={copy.storageQuestion}
           subtitle={copy.likelyOptionHint(localizedItemName)}
           options={item.storageOptions}
-          selected={storageType}
-          onSelect={setStorageType}
+          selected={storageOption}
+          onSelect={setStorageOption}
           onBack={resetFlow}
           onConfirm={() => setStep('form')}
-          getOptionLabel={(value) => getStorageLabel(value, language)}
         />
       </View>
     );
@@ -194,13 +205,12 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
       <View style={styles.screen}>
         <OptionStep
           title={copy.formQuestion}
-          subtitle={`${localizedItemName} · ${getStorageLabel(storageType, language)}`}
+          subtitle={`${localizedItemName} · ${getLabelOptionName(storageOption, language)}`}
           options={item.formOptions}
-          selected={form}
-          onSelect={setForm}
+          selected={formOption}
+          onSelect={setFormOption}
           onBack={() => setStep('storage')}
           onConfirm={() => setStep('staff')}
-          getOptionLabel={(value) => getFormLabel(value, language)}
         />
       </View>
     );
@@ -211,7 +221,7 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
       <View style={styles.screen}>
         <PageHeader
           title={copy.staffQuestion}
-          subtitle={`${localizedItemName} · ${getFormLabel(form, language)} · ${getStorageLabel(storageType, language)}`}
+          subtitle={`${localizedItemName} · ${getLabelOptionName(formOption, language)} · ${getLabelOptionName(storageOption, language)}`}
         />
         {error ? <ErrorMessage message={error} /> : null}
         {staff.length ? (
@@ -231,7 +241,6 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
           <View style={styles.emptyStaff}>
             <Text style={styles.emptyTitle}>{copy.noStaffTitle}</Text>
             <Text style={styles.emptyBody}>{copy.noStaffBody}</Text>
-            <BigButton label={copy.openStaff} onPress={onOpenStaff} style={styles.inlineButton} />
           </View>
         )}
         <BigButton
@@ -253,6 +262,8 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
           <LabelPreview
             label={label ?? draftWithoutUseBy}
             shelfLife={shelfLife}
+            formOption={formOption}
+            storageOption={storageOption}
             compact
           />
           {!shelfLife ? (
@@ -261,8 +272,8 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
               <Text style={styles.noShelfBody}>
                 {copy.missingShelfBody(
                   localizedItemName,
-                  getFormLabel(form, language),
-                  getStorageLabel(storageType, language),
+                  getLabelOptionName(formOption, language),
+                  getLabelOptionName(storageOption, language),
                 )}
               </Text>
             </View>
@@ -299,7 +310,13 @@ export function LabelFlowScreen({ onPrinted, onOpenStaff }: LabelFlowScreenProps
           </Text>
         </View>
         <ScrollView contentContainerStyle={styles.previewArea}>
-          <LabelPreview label={printedLabel} shelfLife={shelfLife} compact />
+          <LabelPreview
+            label={printedLabel}
+            shelfLife={shelfLife}
+            formOption={formOption}
+            storageOption={storageOption}
+            compact
+          />
         </ScrollView>
         <BigButton label={copy.makeAnother} onPress={resetFlow} />
       </View>

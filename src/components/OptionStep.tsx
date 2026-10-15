@@ -1,22 +1,22 @@
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { getLabelOptionName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
-import type { SelectableOption } from '../types';
+import type { ItemLabelOption } from '../types';
 import { BigButton } from './BigButton';
 import { PageHeader } from './PageHeader';
 
-interface OptionStepProps<T extends string> {
+interface OptionStepProps {
   title: string;
   subtitle: string;
-  options: SelectableOption<T>[];
-  selected: T;
-  onSelect: (value: T) => void;
+  options: ItemLabelOption[];
+  selected: ItemLabelOption;
+  onSelect: (value: ItemLabelOption) => void;
   onConfirm: () => void;
   onBack: () => void;
-  getOptionLabel?: (value: T) => string;
 }
 
-export function OptionStep<T extends string>({
+export function OptionStep({
   title,
   subtitle,
   options,
@@ -24,25 +24,24 @@ export function OptionStep<T extends string>({
   onSelect,
   onConfirm,
   onBack,
-  getOptionLabel = (value) => value,
-}: OptionStepProps<T>) {
-  const { copy } = useLanguage();
-  const selectedLabel = getOptionLabel(selected);
+}: OptionStepProps) {
+  const { language, copy } = useLanguage();
+  const selectedLabel = getLabelOptionName(selected, language);
   return (
     <View style={styles.container}>
       <PageHeader title={title} subtitle={subtitle} />
-      <View style={styles.choices}>
+      <ScrollView contentContainerStyle={styles.choices}>
         {options.map((option) => (
           <BigButton
-            key={option.value}
-            label={getOptionLabel(option.value)}
-            onPress={() => onSelect(option.value)}
-            selected={selected === option.value}
+            key={option.id}
+            label={getLabelOptionName(option, language)}
+            onPress={() => onSelect(option)}
+            selected={selected.id === option.id}
             variant="choice"
             style={styles.choice}
           />
         ))}
-      </View>
+      </ScrollView>
       <View style={styles.actions}>
         <BigButton label={copy.back} onPress={onBack} variant="secondary" style={styles.back} />
         <BigButton
@@ -57,8 +56,8 @@ export function OptionStep<T extends string>({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  choices: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 18 },
-  choice: { flex: 1, minHeight: 120 },
+  choices: { flexGrow: 1, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'center', gap: 14 },
+  choice: { flexGrow: 1, flexBasis: '30%', minWidth: 190, minHeight: 88 },
   actions: { flexDirection: 'row', gap: 16 },
   back: { width: 180 },
   confirm: { flex: 1 },
