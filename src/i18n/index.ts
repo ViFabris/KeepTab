@@ -539,7 +539,9 @@ export function getItemName(
 
 export function getStorageLabel(storage: string, language: Language): string {
   if (language === 'en') return storage;
-  return storage === 'Refrigerated' ? 'Refrigerado' : 'Congelado';
+  if (storage === 'Refrigerated') return 'Refrigerado';
+  if (storage === 'Frozen') return 'Congelado';
+  return storage;
 }
 
 export function getLabelOptionName(option: LabelOption, language: Language): string {

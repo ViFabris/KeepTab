@@ -14,4 +14,8 @@ describe('Brazilian Portuguese localization', () => {
     expect(getFormLabel('Cooked', 'en')).toBe('Cooked');
     expect(getStorageLabel('Frozen', 'en')).toBe('Frozen');
   });
+
+  it('keeps user-defined option names exactly as typed', () => {
+    expect(getStorageLabel('Temperatura ambiente', 'pt-BR')).toBe('Temperatura ambiente');
+  });
 });
