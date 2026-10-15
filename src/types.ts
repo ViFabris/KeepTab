@@ -1,5 +1,7 @@
 export type StorageType = 'Refrigerated' | 'Frozen';
 
+export type Language = 'pt-BR' | 'en';
+
 export type LabelStatus = 'active' | 'used' | 'thrown_away';
 
 export interface SelectableOption<T extends string> {
