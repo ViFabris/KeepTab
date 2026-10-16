@@ -5,6 +5,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { BigButton } from '../components/BigButton';
 import { LabelPreview } from '../components/LabelPreview';
 import { getLabelOptions } from '../database/optionsRepository';
+import { getStaff } from '../database/staffRepository';
 import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
 import { colors, spacing, typography } from '../theme';
@@ -37,9 +38,10 @@ export function TestPrintPanel({ autoPrint = false }: { autoPrint?: boolean }) {
   const printTest = useCallback(async () => {
     setError('');
     try {
-      const [forms, storage] = await Promise.all([
+      const [forms, storage, staff] = await Promise.all([
         getLabelOptions(db, 'form'),
         getLabelOptions(db, 'storage'),
+        getStaff(db),
       ]);
       const selectedForm = forms[0];
       const selectedStorage = storage[0];
@@ -60,7 +62,7 @@ export function TestPrintPanel({ autoPrint = false }: { autoPrint?: boolean }) {
         madeAt: madeAt.toISOString(),
         useByAt: addHours(madeAt, TEST_SHELF_LIFE.hours).toISOString(),
         staffId: 0,
-        staffName: copy.setup.samplePerson,
+        staffName: staff[0]?.name ?? copy.setup.samplePerson,
         labelWidthMm: settings.labelWidthMm,
         labelHeightMm: settings.labelHeightMm,
         testOnly: true,

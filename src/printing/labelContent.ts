@@ -65,7 +65,7 @@ export function buildFittedLabelFields({
     madeValue: template.id === 'small'
       ? formatCompactLabelDate(label.madeAt, settings)
       : formatLabelUseBy(label.madeAt, settings),
-    staff: template.id === 'small' ? getInitials(label.staffName) : copy.madeBy(label.staffName),
+    staff: template.id === 'small' ? label.staffName : copy.madeBy(label.staffName),
   };
 
   return resolved.textZones.map((zone) => {
@@ -107,16 +107,6 @@ function compactQrDate(value: string): string {
   const milliseconds = Date.parse(value);
   if (!Number.isFinite(milliseconds)) return '-';
   return Math.floor(milliseconds / 60_000).toString(36);
-}
-
-export function getInitials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 3)
-    .map((part) => part[0]?.toLocaleUpperCase() ?? '')
-    .join('');
 }
 
 function isFrozen(label: LabelContentInput, storageOption?: LabelOption): boolean {

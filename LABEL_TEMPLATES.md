@@ -4,30 +4,30 @@ All coordinates and dimensions below are in millimetres, measured from the label
 
 The printer conversion is centralized in `src/printing/labelLayout.ts`: `dots = round(mm / 25.4 × dpi)`. The default is 203 dpi (about 8 dots/mm). Preview and print layouts resolve from these same zones. The print layout rotates the landscape design 90 degrees so its shorter side crosses the print head.
 
-Legend: `I` item, `U` USE BY / VALIDADE, `M` made date, `S` staff, `D` form/storage, `Q` QR code.
+Legend: `I` item, `U` USE BY / VALIDADE, `M` made date, `S` maker name, `D` form/storage, `Q` QR code.
 
 ## Small — 50 × 30 mm
 
 ```text
 ┌──────────────────────────────────────────────────┐
-│  ┌──────────── I 27×4.5 ───────────┐   ┌──────┐  │
-│  ├────────── U label 27×3.5 ───────┤   │      │  │
-│  │                                 │   │ Q 16²│  │
-│  │        U value 27×10            │   │      │  │
-│  │                                 │   └──────┘  │
-│  ├────────── M label 27×3.5 ───────┤ ┌D 18×9 ┐  │
-│  ├──── M value 21×4.5 ────┬S 5.5──┤ └────────┘  │
+│  ┌──────────── I 27×4.2 ───────────┐   ┌──────┐  │
+│  ├────────── U label 27×3.4 ───────┤   │      │  │
+│  ├────────── U value 27×5 ─────────┤   │ Q 16²│  │
+│  ├────────── M label 27×3.4 ───────┤   │      │  │
+│  ├────────── M value 27×3.4 ───────┤   └──────┘  │
+│  └──────── maker name 27×6.6 ──────┘ ┌D 18×9 ┐  │
+│                                      └────────┘  │
 └──────────────────────────────────────────────────┘
 ```
 
 | Zone | x, y | Size | Font | Lines | Alignment |
 | --- | --- | --- | --- | --- | --- |
-| Item | 2, 2 | 27 × 4.5 | 8–10 pt | 1 | left |
-| USE BY label | 2, 6.5 | 27 × 3.5 | 8 pt | 1 | left |
-| USE BY value | 2, 10 | 27 × 10 | 12–14 pt | 2 | left |
-| Made label | 2, 20 | 27 × 3.5 | 8 pt | 1 | left |
-| Made date | 2, 23.5 | 21 × 4.5 | 8–9 pt | 1 | left |
-| Staff initials | 23.5, 23.5 | 5.5 × 4.5 | 8–9 pt | 1 | center |
+| Item | 2, 2 | 27 × 4.2 | 8–10 pt | 1 | left |
+| USE BY label | 2, 6.2 | 27 × 3.4 | 8 pt | 1 | left |
+| USE BY value | 2, 9.6 | 27 × 5 | 10–12 pt | 1 | left |
+| Made label | 2, 14.6 | 27 × 3.4 | 8 pt | 1 | left |
+| Made date | 2, 18 | 27 × 3.4 | 8 pt | 1 | left |
+| Maker name | 2, 21.4 | 27 × 6.6 | 8 pt | 2 | left |
 | Form/storage | 30, 19 | 18 × 9 | 8 pt | 2 | center |
 | QR outer zone | 32, 2 | 16 × 16 | 1 mm quiet margin; 14 mm code | — | center |
 
@@ -85,4 +85,4 @@ The form/storage details use up to two lines at 8 pt. If unusually long custom d
 
 ## Fit priorities
 
-USE BY values always have a minimum font size larger than the maximum font size of every other field in the same template. The item, USE BY value, made date, staff identifier/name, and QR zone are always present. Small may replace only unusually long custom form/storage detail as described above. QR content is never smaller than 14 mm.
+USE BY values always have a minimum font size larger than the maximum font size of every other field in the same template. The item, USE BY value, made date, maker name, and QR zone are always present. Small may replace only unusually long custom form/storage detail as described above. QR content is never smaller than 14 mm.

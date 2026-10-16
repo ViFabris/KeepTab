@@ -4,7 +4,7 @@ import QRCode from 'qrcode';
 import { getCopy } from '../i18n';
 import type { AppSettings, Language } from '../types';
 import { DEFAULT_PRINTER_PROFILE } from './PrinterProfile';
-import { buildFittedLabelFields, createLabelQrValue, getInitials } from './labelContent';
+import { buildFittedLabelFields, createLabelQrValue } from './labelContent';
 import { MIN_LABEL_FONT_PT, resolveLabelTemplate } from './labelLayout';
 import { LABEL_TEMPLATES } from './labelTemplates';
 import { fitQrModules } from './qrGeometry';
@@ -44,7 +44,7 @@ describe('label content fitting', () => {
     },
   );
 
-  it('uses initials and the frozen symbol when Small cannot fit the detail line', () => {
+  it('uses the maker name and frozen symbol when Small cannot fit the detail line', () => {
     const template = LABEL_TEMPLATES[0]!;
     const fields = buildFittedLabelFields({
       template,
@@ -59,7 +59,8 @@ describe('label content fitting', () => {
         staffName: 'Ana Beatriz Costa',
       },
     });
-    expect(fields.find((field) => field.id === 'staff')?.text).toBe('ABC');
+    expect(fields.find((field) => field.id === 'staff')?.text).toBe('Ana Beatriz Costa');
+    expect(fields.find((field) => field.id === 'staff')?.lines.length).toBeLessThanOrEqual(2);
     expect(fields.find((field) => field.id === 'formStorage')?.text).toBe('❄');
   });
 
@@ -88,10 +89,6 @@ describe('label content fitting', () => {
       expect(details?.lines.length).toBeLessThanOrEqual(2);
     },
   );
-
-  it('creates at most three initials', () => {
-    expect(getInitials('Ana Beatriz Costa de Souza')).toBe('ABC');
-  });
 
   it.each(LABEL_TEMPLATES)('fits the generated QR payload inside the $id template', (template) => {
     const value = createLabelQrValue({
