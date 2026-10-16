@@ -45,6 +45,9 @@ export interface AppSettings {
   clockOffsetMs: number;
   labelWidthMm: number;
   labelHeightMm: number;
+  printerProfile: PrinterProfile;
+  printerThresholdPercent: number;
+  defaultPrintCopies: number;
   setupComplete: boolean;
 }
 
@@ -88,3 +91,5 @@ export interface TodayLabelGroups {
   today: SavedLabel[];
   nextThreeDays: SavedLabel[];
 }
+import type { PrinterProfile } from './printing/PrinterProfile';
+

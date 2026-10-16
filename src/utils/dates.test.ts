@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { DEFAULT_PRINTER_PROFILE } from '../printing/PrinterProfile';
 import { addHours, formatLabelUseBy, formatShelfLife } from './dates';
 
 describe('label date calculations', () => {
@@ -29,6 +30,9 @@ describe('label date calculations', () => {
         clockOffsetMs: 0,
         labelWidthMm: 60,
         labelHeightMm: 40,
+        printerProfile: DEFAULT_PRINTER_PROFILE,
+        printerThresholdPercent: 50,
+        defaultPrintCopies: 1,
         setupComplete: true,
       }),
     ).toContain('20 OUT 2026');

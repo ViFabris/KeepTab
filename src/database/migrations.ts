@@ -1,6 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { findNearestLabelTemplate } from '../printing/labelTemplates';
+import { DEFAULT_PRINTER_PROFILE } from '../printing/PrinterProfile';
 import { withWriteTransaction } from './transactions';
 
 interface TableColumn {
@@ -26,10 +27,28 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await seedDefaultOptions(db);
   await migrateLabelsTable(db);
   await migrateClockSettings(db);
+  await migratePrinterSettings(db);
   await initializeSettings(db);
   await migrateLabelSizeSetting(db);
   await linkExistingLabelsToOptions(db);
-  await db.execAsync('PRAGMA user_version = 4');
+  await db.execAsync('PRAGMA user_version = 5');
+}
+
+async function migratePrinterSettings(db: SQLiteDatabase): Promise<void> {
+  const columns = await db.getAllAsync<TableColumn>('PRAGMA table_info(app_settings)');
+  if (!columns.some((column) => column.name === 'printer_profile_json')) {
+    await db.execAsync("ALTER TABLE app_settings ADD COLUMN printer_profile_json TEXT NOT NULL DEFAULT ''");
+  }
+  if (!columns.some((column) => column.name === 'printer_threshold_percent')) {
+    await db.execAsync('ALTER TABLE app_settings ADD COLUMN printer_threshold_percent INTEGER NOT NULL DEFAULT 50');
+  }
+  if (!columns.some((column) => column.name === 'default_print_copies')) {
+    await db.execAsync('ALTER TABLE app_settings ADD COLUMN default_print_copies INTEGER NOT NULL DEFAULT 1');
+  }
+  await db.runAsync(
+    "UPDATE app_settings SET printer_profile_json = ? WHERE printer_profile_json = ''",
+    JSON.stringify(DEFAULT_PRINTER_PROFILE),
+  );
 }
 
 async function migrateLabelSizeSetting(db: SQLiteDatabase): Promise<void> {
@@ -138,11 +157,13 @@ async function initializeSettings(db: SQLiteDatabase): Promise<void> {
   await db.runAsync(
     `INSERT OR IGNORE INTO app_settings
       (id, language, date_order, time_format, spell_out_month,
-       time_zone, clock_offset_ms, label_width_mm, label_height_mm, setup_complete)
-     VALUES (1, ?, ?, ?, 1, 'America/Sao_Paulo', 0, 60, 40, 0)`,
+       time_zone, clock_offset_ms, label_width_mm, label_height_mm,
+       printer_profile_json, printer_threshold_percent, default_print_copies, setup_complete)
+     VALUES (1, ?, ?, ?, 1, 'America/Sao_Paulo', 0, 60, 40, ?, 50, 1, 0)`,
     language,
     dateOrder,
     timeFormat,
+    JSON.stringify(DEFAULT_PRINTER_PROFILE),
   );
 }
 

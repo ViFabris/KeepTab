@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { getCopy } from '../i18n';
 import type { AppSettings, Language } from '../types';
+import { DEFAULT_PRINTER_PROFILE } from './PrinterProfile';
 import { buildFittedLabelFields, getInitials } from './labelContent';
 import { MIN_LABEL_FONT_PT } from './labelLayout';
 import { LABEL_TEMPLATES } from './labelTemplates';
@@ -75,6 +76,9 @@ function settingsFor(language: Language, labelWidthMm: number, labelHeightMm: nu
     clockOffsetMs: 0,
     labelWidthMm,
     labelHeightMm,
+    printerProfile: DEFAULT_PRINTER_PROFILE,
+    printerThresholdPercent: 50,
+    defaultPrintCopies: 1,
     setupComplete: true,
   };
 }

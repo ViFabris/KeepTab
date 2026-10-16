@@ -17,6 +17,9 @@ export const SCHEMA_SQL = `
     clock_offset_ms INTEGER NOT NULL DEFAULT 0,
     label_width_mm REAL NOT NULL,
     label_height_mm REAL NOT NULL,
+    printer_profile_json TEXT NOT NULL DEFAULT '',
+    printer_threshold_percent INTEGER NOT NULL DEFAULT 50,
+    default_print_copies INTEGER NOT NULL DEFAULT 1,
     setup_complete INTEGER NOT NULL DEFAULT 0 CHECK (setup_complete IN (0, 1))
   );
 

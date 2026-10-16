@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { clonePrinterProfile, DEFAULT_PRINTER_PROFILE, type PrinterProfile } from '../printing/PrinterProfile';
 import type { AppSettings, DateOrder, Language, TimeFormat } from '../types';
 import { withWriteTransaction } from './transactions';
 
@@ -12,13 +13,17 @@ interface SettingsRow {
   clock_offset_ms: number;
   label_width_mm: number;
   label_height_mm: number;
+  printer_profile_json: string;
+  printer_threshold_percent: number;
+  default_print_copies: number;
   setup_complete: number;
 }
 
 export async function getAppSettings(db: SQLiteDatabase): Promise<AppSettings> {
   const row = await db.getFirstAsync<SettingsRow>(
     `SELECT language, date_order, time_format, spell_out_month,
-            time_zone, clock_offset_ms, label_width_mm, label_height_mm, setup_complete
+            time_zone, clock_offset_ms, label_width_mm, label_height_mm,
+            printer_profile_json, printer_threshold_percent, default_print_copies, setup_complete
      FROM app_settings WHERE id = 1`,
   );
   if (!row) {
@@ -36,6 +41,7 @@ export async function saveAppSettings(
       `UPDATE app_settings SET
          language = ?, date_order = ?, time_format = ?, spell_out_month = ?,
          time_zone = ?, clock_offset_ms = ?, label_width_mm = ?, label_height_mm = ?,
+         printer_profile_json = ?, printer_threshold_percent = ?, default_print_copies = ?,
          setup_complete = ?
        WHERE id = 1`,
       settings.language,
@@ -46,6 +52,9 @@ export async function saveAppSettings(
       settings.clockOffsetMs,
       settings.labelWidthMm,
       settings.labelHeightMm,
+      JSON.stringify(settings.printerProfile),
+      settings.printerThresholdPercent,
+      settings.defaultPrintCopies,
       settings.setupComplete ? 1 : 0,
     );
     await transaction.runAsync(
@@ -77,6 +86,24 @@ function mapSettings(row: SettingsRow): AppSettings {
     clockOffsetMs: row.clock_offset_ms,
     labelWidthMm: row.label_width_mm,
     labelHeightMm: row.label_height_mm,
+    printerProfile: parsePrinterProfile(row.printer_profile_json),
+    printerThresholdPercent: row.printer_threshold_percent,
+    defaultPrintCopies: row.default_print_copies,
     setupComplete: row.setup_complete === 1,
   };
+}
+
+function parsePrinterProfile(value: string): PrinterProfile {
+  if (!value) return clonePrinterProfile(DEFAULT_PRINTER_PROFILE);
+  try {
+    const parsed = JSON.parse(value) as Partial<PrinterProfile>;
+    return {
+      ...clonePrinterProfile(DEFAULT_PRINTER_PROFILE),
+      ...parsed,
+      prePrintBytes: Array.isArray(parsed.prePrintBytes) ? parsed.prePrintBytes : [],
+      postPrintBytes: Array.isArray(parsed.postPrintBytes) ? parsed.postPrintBytes : [],
+    };
+  } catch {
+    return clonePrinterProfile(DEFAULT_PRINTER_PROFILE);
+  }
 }

@@ -34,7 +34,8 @@
           "imageWidth": 360,
           "resizeMode": "contain"
         }
-      ]
+      ],
+      "expo-sharing"
     ]
   }
 }
