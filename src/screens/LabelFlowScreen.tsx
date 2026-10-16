@@ -324,7 +324,6 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
             shelfLife={shelfLife}
             formOption={formOption}
             storageOption={storageOption}
-            bitmap={preparedJob?.bitmap}
             compact
           />
           {preparing ? (
@@ -385,7 +384,6 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
             shelfLife={shelfLife}
             formOption={formOption}
             storageOption={storageOption}
-            bitmap={preparedJob?.bitmap}
             compact
           />
         </ScrollView>

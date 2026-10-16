@@ -7,7 +7,6 @@ import { LabelPreview } from '../components/LabelPreview';
 import { getLabelOptions } from '../database/optionsRepository';
 import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
-import type { PreparedPrintJob } from '../printing/EscPosPrinter';
 import { colors, spacing, typography } from '../theme';
 import type { LabelOption, PrintableLabel, SavedLabel, ShelfLife } from '../types';
 import { getAppNow } from '../utils/appClock';
@@ -26,7 +25,6 @@ export function TestPrintPanel({ autoPrint = false }: { autoPrint?: boolean }) {
   const { settings } = useSettings();
   const { language, copy } = useLanguage();
   const [printedLabel, setPrintedLabel] = useState<SavedLabel | null>(null);
-  const [preparedJob, setPreparedJob] = useState<PreparedPrintJob | null>(null);
   const [formOption, setFormOption] = useState<LabelOption>();
   const [storageOption, setStorageOption] = useState<LabelOption>();
   const [error, setError] = useState('');
@@ -68,7 +66,6 @@ export function TestPrintPanel({ autoPrint = false }: { autoPrint?: boolean }) {
         testOnly: true,
       };
       setPrintedLabel(await printer.print(label, { formOption: selectedForm, storageOption: selectedStorage }));
-      setPreparedJob(printer.lastPreparedJob);
     } catch {
       setError(copy.genericError);
     }
@@ -115,7 +112,6 @@ export function TestPrintPanel({ autoPrint = false }: { autoPrint?: boolean }) {
               shelfLife={TEST_SHELF_LIFE}
               formOption={formOption}
               storageOption={storageOption}
-              bitmap={preparedJob?.bitmap}
               compact
             />
           ) : null}
