@@ -8,7 +8,7 @@ import { withWriteTransaction } from './transactions';
 
 const PLACEHOLDER_SOURCE_NOTE =
   'PLACEHOLDER SAMPLE DATA — NOT VERIFIED FOR FOOD SAFETY';
-const DATABASE_RESET_VERSION = 1;
+const DATABASE_RESET_VERSION = 2;
 
 interface SeedOption<T extends string> {
   value: T;
