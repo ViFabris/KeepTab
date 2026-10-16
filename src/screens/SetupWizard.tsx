@@ -45,7 +45,7 @@ export function SetupWizard() {
   const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const printer = useMemo(() => new MockPrinter(db), [db]);
+  const printer = useMemo(() => new MockPrinter(db, settings), [db, settings]);
 
   function continueFromWelcome() {
     const patch = parseClockDraft(clockDraft, settings);

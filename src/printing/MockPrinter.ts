@@ -1,36 +1,16 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { savePrintedLabel } from '../database/labelsRepository';
-import type { PrintableLabel, SavedLabel } from '../types';
-import type { LabelPrinter } from './LabelPrinter';
-import { resolveLabelTemplate, type ResolvedLabelLayout } from './labelLayout';
-import { findNearestLabelTemplate, isTemplateAvailable } from './labelTemplates';
+import type { AppSettings } from '../types';
+import { EscPosPrinter } from './EscPosPrinter';
+import { MockTransport } from './MockTransport';
 
-export class MockPrinter implements LabelPrinter {
-  readonly maxPrintableWidthMm = 104;
-  readonly resolutionDpi = 203;
-  lastPreparedLayout: ResolvedLabelLayout | null = null;
+/** Compatibility wrapper for callers that need the real pipeline with an in-memory transport. */
+export class MockPrinter extends EscPosPrinter {
+  readonly mockTransport: MockTransport;
 
-  constructor(
-    private readonly db: SQLiteDatabase,
-    private readonly now: () => Date = () => new Date(),
-  ) {}
-
-  async print(label: PrintableLabel): Promise<SavedLabel> {
-    const template = findNearestLabelTemplate(label.labelWidthMm, label.labelHeightMm);
-    if (!isTemplateAvailable(template, this.maxPrintableWidthMm)) {
-      throw new Error('LABEL_SIZE_EXCEEDS_PRINT_HEAD');
-    }
-    this.lastPreparedLayout = resolveLabelTemplate(template, this.resolutionDpi, 'printer');
-    const printedAt = this.now().toISOString();
-    if (label.testOnly) {
-      return {
-        ...label,
-        id: 0,
-        status: 'active',
-        printedAt,
-      };
-    }
-    return savePrintedLabel(this.db, label, printedAt);
+  constructor(db: SQLiteDatabase, settings: AppSettings, now: () => Date = () => new Date()) {
+    const mockTransport = new MockTransport();
+    super(db, settings, mockTransport, undefined, now);
+    this.mockTransport = mockTransport;
   }
 }

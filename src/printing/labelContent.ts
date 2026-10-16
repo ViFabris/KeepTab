@@ -51,7 +51,7 @@ export function buildFittedLabelFields({
   const storageName = storageOption
     ? getLabelOptionName(storageOption, language)
     : getStorageLabel(label.storageType, language);
-  const resolved = resolveLabelTemplate(template);
+  const resolved = resolveLabelTemplate(template, settings.printerProfile.dpi);
   const values: Record<LabelTextZoneId, string> = {
     itemName: getItemName(label.itemId ?? '', label.itemName, language),
     formStorage: `${formName} · ${storageName}`,

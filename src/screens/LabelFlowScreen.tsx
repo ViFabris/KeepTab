@@ -74,7 +74,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
   const [error, setError] = useState('');
 
   const printer = useMemo(
-    () => new MockPrinter(db, () => getAppNow(settings)),
+    () => new MockPrinter(db, settings, () => getAppNow(settings)),
     [db, settings.clockOffsetMs],
   );
   const progress = (

@@ -42,7 +42,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
   const [confirmNewPin, setConfirmNewPin] = useState('');
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
-  const printer = new MockPrinter(db);
+  const printer = new MockPrinter(db, settings);
 
   function openSection(nextSection: SettingsSection) {
     if (nextSection === section) return;

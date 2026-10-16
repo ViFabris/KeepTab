@@ -20,6 +20,7 @@ import { initializeDatabase } from './src/database/initialize';
 import { getAppSettings } from './src/database/settingsRepository';
 import { LanguageProvider, useLanguage } from './src/i18n/LanguageContext';
 import { LabelFlowScreen } from './src/screens/LabelFlowScreen';
+import { LabelRasterizerHost } from './src/printing/LabelRasterizer';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { SetupWizard } from './src/screens/SetupWizard';
 import { TodayScreen } from './src/screens/TodayScreen';
@@ -81,6 +82,7 @@ function AppShell() {
   return (
     <SettingsProvider initialSettings={appSettings} onSettingsChange={setAppSettings}>
       <LanguageProvider language={appSettings.language}>
+        <LabelRasterizerHost />
         {appSettings.setupComplete ? <LocalizedAppShell /> : <SetupWizard />}
       </LanguageProvider>
     </SettingsProvider>

@@ -49,7 +49,7 @@ export function LabelPreview({
     label.labelWidthMm ?? settings.labelWidthMm,
     label.labelHeightMm ?? settings.labelHeightMm,
   );
-  const layout = resolveLabelTemplate(template);
+  const layout = resolveLabelTemplate(template, settings.printerProfile.dpi);
   const widthLimit = maxWidthOverride ?? Math.min(
     window.width - sizes.sidebar - spacing.huge,
     compact ? sizes.labelPreviewCompactMaxWidth : sizes.labelPreviewMaxWidth,

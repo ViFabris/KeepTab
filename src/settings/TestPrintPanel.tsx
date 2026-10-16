@@ -30,7 +30,7 @@ export function TestPrintPanel({ autoPrint = false }: { autoPrint?: boolean }) {
   const [error, setError] = useState('');
   const [showVerification, setShowVerification] = useState(false);
   const printer = useMemo(
-    () => new MockPrinter(db, () => getAppNow(settings)),
+    () => new MockPrinter(db, settings, () => getAppNow(settings)),
     [db, settings.clockOffsetMs],
   );
 
