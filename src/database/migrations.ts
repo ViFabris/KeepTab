@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { findNearestLabelTemplate } from '../printing/labelTemplates';
 import { withWriteTransaction } from './transactions';
 
 interface TableColumn {
@@ -26,8 +27,33 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await migrateLabelsTable(db);
   await migrateClockSettings(db);
   await initializeSettings(db);
+  await migrateLabelSizeSetting(db);
   await linkExistingLabelsToOptions(db);
-  await db.execAsync('PRAGMA user_version = 3');
+  await db.execAsync('PRAGMA user_version = 4');
+}
+
+async function migrateLabelSizeSetting(db: SQLiteDatabase): Promise<void> {
+  const version = await db.getFirstAsync<{ value: string }>(
+    `SELECT value FROM app_metadata WHERE key = 'label_size_preset_version'`,
+  );
+  if (version?.value === '1') return;
+
+  const current = await db.getFirstAsync<{ label_width_mm: number; label_height_mm: number }>(
+    'SELECT label_width_mm, label_height_mm FROM app_settings WHERE id = 1',
+  );
+  if (!current) return;
+  const nearest = findNearestLabelTemplate(current.label_width_mm, current.label_height_mm);
+  await withWriteTransaction(db, async (transaction) => {
+    await transaction.runAsync(
+      'UPDATE app_settings SET label_width_mm = ?, label_height_mm = ? WHERE id = 1',
+      nearest.widthMm,
+      nearest.heightMm,
+    );
+    await transaction.runAsync(
+      `INSERT INTO app_metadata (key, value) VALUES ('label_size_preset_version', '1')
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    );
+  });
 }
 
 async function migrateClockSettings(db: SQLiteDatabase): Promise<void> {

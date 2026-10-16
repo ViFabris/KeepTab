@@ -1,6 +1,7 @@
 import type { PrintableLabel, SavedLabel } from '../types';
 
 export interface LabelPrinter {
-  readonly maxWidthMm: number;
+  readonly maxPrintableWidthMm: number;
+  readonly resolutionDpi: number;
   print(label: PrintableLabel): Promise<SavedLabel>;
 }
