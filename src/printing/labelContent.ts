@@ -8,8 +8,8 @@ import {
 import type { AppSettings, LabelOption, Language } from '../types';
 import {
   formatCompactLabelDate,
-  formatConfiguredDateTime,
   formatLabelDate,
+  formatLabelUseBy,
 } from '../utils/dates';
 import { fitTextToZone, resolveLabelTemplate, type FittedText } from './labelLayout';
 import type { LabelTemplate, LabelTextZoneId } from './labelTemplates';
@@ -60,7 +60,7 @@ export function buildFittedLabelFields({
     madeLabel: copy.made,
     madeValue: template.id === 'small'
       ? formatCompactLabelDate(label.madeAt, settings)
-      : formatConfiguredDateTime(label.madeAt, settings),
+      : formatLabelUseBy(label.madeAt, settings),
     staff: template.id === 'small' ? getInitials(label.staffName) : copy.madeBy(label.staffName),
   };
 

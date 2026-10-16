@@ -79,6 +79,10 @@ export interface LabelSizeCopy {
   fitTruncated: string;
   languageEnglish: string;
   languagePortuguese: string;
+  customItemValue: string;
+  openVerification: string;
+  closeVerification: string;
+  longestStaff: string;
 }
 
 export interface SettingsCopy {
@@ -304,6 +308,10 @@ const COPY: Record<Language, AppCopy> = {
       fitTruncated: 'Ajustado com reticências na zona',
       languageEnglish: 'Inglês',
       languagePortuguese: 'Português (Brasil)',
+      customItemValue: 'Molho artesanal de pimentões assados com ervas frescas',
+      openVerification: 'Verificar todos os modelos',
+      closeVerification: 'Fechar verificação',
+      longestStaff: 'Maior nome da equipe',
     },
     optionNames: {
       'storage.refrigerated': 'Refrigerado',
@@ -503,6 +511,10 @@ const COPY: Record<Language, AppCopy> = {
       fitTruncated: 'Fitted with an ellipsis inside the zone',
       languageEnglish: 'English',
       languagePortuguese: 'Portuguese (Brazil)',
+      customItemValue: 'House-roasted pepper sauce with fresh garden herbs',
+      openVerification: 'Verify all templates',
+      closeVerification: 'Close verification',
+      longestStaff: 'Longest staff name',
     },
     optionNames: {
       'storage.refrigerated': 'Refrigerated',

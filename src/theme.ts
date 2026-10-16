@@ -113,6 +113,8 @@ export const sizes = {
   labelPreviewMaxWidth: 760,
   labelPreviewCompactMaxHeight: 330,
   labelPreviewMaxHeight: 390,
+  templateVerificationPreviewWidth: 240,
+  templateVerificationCardWidth: 300,
 } as const;
 
 export const layout = {

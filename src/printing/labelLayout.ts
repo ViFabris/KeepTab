@@ -250,9 +250,9 @@ function estimateTextWidth(text: string, fontDots: number): number {
   return [...text].reduce((width, character) => {
     if (character === ' ') return width + fontDots * 0.32;
     if ('ilI1.,:/'.includes(character)) return width + fontDots * 0.3;
-    if ('MW@%'.includes(character)) return width + fontDots * 0.85;
-    if (character === character.toUpperCase()) return width + fontDots * 0.62;
-    return width + fontDots * 0.55;
+    if ('MW@%'.includes(character)) return width + fontDots * 0.9;
+    if (character === character.toUpperCase()) return width + fontDots * 0.68;
+    return width + fontDots * 0.62;
   }, 0);
 }
 
