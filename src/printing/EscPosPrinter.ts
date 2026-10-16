@@ -55,6 +55,10 @@ export class EscPosPrinter implements LabelPrinter {
 
   async print(label: PrintableLabel, options: PrintLabelOptions = {}): Promise<SavedLabel> {
     const prepared = await this.prepare(label, options);
+    return this.printPrepared(label, prepared);
+  }
+
+  async printPrepared(label: PrintableLabel, prepared: PreparedPrintJob): Promise<SavedLabel> {
     const sent = await this.transport.send(prepared.bytes);
     if (!sent.ok) throw new Error(sent.error);
     const printedAt = this.now().toISOString();

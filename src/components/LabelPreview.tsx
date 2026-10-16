@@ -8,7 +8,9 @@ import { findNearestLabelTemplate } from '../printing/labelTemplates';
 import { useSettings } from '../settings/SettingsContext';
 import { colors, fonts, radii, sizes, spacing } from '../theme';
 import type { AppSettings, LabelOption, Language, ShelfLife } from '../types';
+import type { MonochromeBitmap } from '../printing/bitmap';
 import { Card } from './Card';
+import { BitmapLabelPreview } from './BitmapLabelPreview';
 
 interface LabelPreviewProps {
   label: {
@@ -29,6 +31,7 @@ interface LabelPreviewProps {
   languageOverride?: Language;
   settingsOverride?: AppSettings;
   maxWidthOverride?: number;
+  bitmap?: MonochromeBitmap;
 }
 
 export function LabelPreview({
@@ -39,10 +42,12 @@ export function LabelPreview({
   languageOverride,
   settingsOverride,
   maxWidthOverride,
+  bitmap,
 }: LabelPreviewProps) {
   const currentLanguage = useLanguage().language;
   const currentSettings = useSettings().settings;
   const window = useWindowDimensions();
+  if (bitmap) return <BitmapLabelPreview bitmap={bitmap} compact={compact} maxWidthOverride={maxWidthOverride} />;
   const language = languageOverride ?? currentLanguage;
   const settings = settingsOverride ?? currentSettings;
   const template = findNearestLabelTemplate(

@@ -99,3 +99,20 @@ export function bitmapToRgba(bitmap: MonochromeBitmap): Uint8Array {
   }
   return rgba;
 }
+
+/** Compact SVG path for displaying the exact packed bitmap without resampling it. */
+export function bitmapToSvgPath(bitmap: MonochromeBitmap): string {
+  let path = '';
+  for (let y = 0; y < bitmap.height; y += 1) {
+    let runStart = -1;
+    for (let x = 0; x <= bitmap.width; x += 1) {
+      const black = x < bitmap.width && getBitmapDot(bitmap, x, y);
+      if (black && runStart < 0) runStart = x;
+      if (!black && runStart >= 0) {
+        path += `M${runStart} ${y}H${x}V${y + 1}H${runStart}Z`;
+        runStart = -1;
+      }
+    }
+  }
+  return path;
+}

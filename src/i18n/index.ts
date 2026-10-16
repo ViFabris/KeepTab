@@ -98,6 +98,30 @@ export interface SettingsCopy {
   options: string;
   security: string;
   testPrint: string;
+  printingDebug: string;
+  advancedPrinterSettings: string;
+  printerHardwareNote: string;
+  printerProfile58: string;
+  printerProfile80: string;
+  printerProfileName: string;
+  printerDpi: string;
+  printerHeadWidth: string;
+  rasterChunkHeight: string;
+  prePrintBytes: string;
+  postPrintBytes: string;
+  endOfLabelAction: string;
+  noEndAction: string;
+  lineFeed: string;
+  formFeed: string;
+  labelFeed: string;
+  endFeedDots: string;
+  threshold: string;
+  defaultCopies: string;
+  exportBytes: string;
+  imageSizeDots: string;
+  totalBytes: string;
+  first64Bytes: string;
+  exportError: string;
   close: string;
   save: string;
   saved: string;
@@ -157,6 +181,9 @@ export interface AppCopy {
   missingShelfTitle: string;
   missingShelfBody: (item: string, form: string, storage: string) => string;
   printing: string;
+  preparingPrintImage: string;
+  retry: string;
+  printFailed: string;
   printLabel: string;
   mockPrintComplete: string;
   savedLabel: (id: number) => string;
@@ -268,6 +295,30 @@ const COPY: Record<Language, AppCopy> = {
       options: 'Opções',
       security: 'PIN do administrador',
       testPrint: 'Imprimir teste',
+      printingDebug: 'Depuração de impressão',
+      advancedPrinterSettings: 'Configurações avançadas da impressora',
+      printerHardwareNote: 'Varia conforme a impressora de etiquetas; teste no equipamento real.',
+      printerProfile58: '58 mm · 384 pontos',
+      printerProfile80: '80 mm · 576 pontos',
+      printerProfileName: 'Nome do perfil',
+      printerDpi: 'Resolução (dpi)',
+      printerHeadWidth: 'Largura da cabeça (pontos)',
+      rasterChunkHeight: 'Linhas por bloco raster',
+      prePrintBytes: 'Bytes antes da impressão (hex)',
+      postPrintBytes: 'Bytes depois da impressão (hex)',
+      endOfLabelAction: 'Ação no fim da etiqueta',
+      noEndAction: 'Nenhuma',
+      lineFeed: 'Avanço de linha',
+      formFeed: 'Avanço de formulário',
+      labelFeed: 'Avanço de etiqueta',
+      endFeedDots: 'Avanço final (pontos)',
+      threshold: 'Limiar preto/branco (%)',
+      defaultCopies: 'Cópias padrão',
+      exportBytes: 'Exportar bytes',
+      imageSizeDots: 'Imagem (pontos)',
+      totalBytes: 'Total de bytes',
+      first64Bytes: 'Primeiros 64 bytes (hex)',
+      exportError: 'Não foi possível exportar o arquivo de impressão.',
       close: 'Fechar',
       save: 'Salvar',
       saved: 'Alterações salvas.',
@@ -362,6 +413,9 @@ const COPY: Record<Language, AppCopy> = {
     missingShelfBody: (item, form, storage) =>
       `Não há um prazo para ${item} + ${form} + ${storage}. Nenhum valor foi estimado e a impressão está desativada.`,
     printing: 'Imprimindo…',
+    preparingPrintImage: 'Preparando imagem para impressão…',
+    retry: 'Tentar novamente',
+    printFailed: 'A impressora não confirmou o envio. A etiqueta não foi salva.',
     printLabel: 'Imprimir etiqueta',
     mockPrintComplete: 'Impressão simulada concluída',
     savedLabel: (id) => `Salva como etiqueta nº ${id}.`,
@@ -471,6 +525,30 @@ const COPY: Record<Language, AppCopy> = {
       options: 'Options',
       security: 'Admin PIN',
       testPrint: 'Test print',
+      printingDebug: 'Printing debug',
+      advancedPrinterSettings: 'Advanced printer settings',
+      printerHardwareNote: 'Label printers vary; test this value on the real printer.',
+      printerProfile58: '58 mm · 384 dots',
+      printerProfile80: '80 mm · 576 dots',
+      printerProfileName: 'Profile name',
+      printerDpi: 'Resolution (dpi)',
+      printerHeadWidth: 'Print head width (dots)',
+      rasterChunkHeight: 'Raster rows per chunk',
+      prePrintBytes: 'Pre-print bytes (hex)',
+      postPrintBytes: 'Post-print bytes (hex)',
+      endOfLabelAction: 'End-of-label action',
+      noEndAction: 'None',
+      lineFeed: 'Line feed',
+      formFeed: 'Form feed',
+      labelFeed: 'Label feed',
+      endFeedDots: 'End feed (dots)',
+      threshold: 'Black/white threshold (%)',
+      defaultCopies: 'Default copies',
+      exportBytes: 'Export bytes',
+      imageSizeDots: 'Image (dots)',
+      totalBytes: 'Total bytes',
+      first64Bytes: 'First 64 bytes (hex)',
+      exportError: 'Could not export the print file.',
       close: 'Close',
       save: 'Save',
       saved: 'Changes saved.',
@@ -565,6 +643,9 @@ const COPY: Record<Language, AppCopy> = {
     missingShelfBody: (item, form, storage) =>
       `There is no value for ${item} + ${form} + ${storage}. Nothing was guessed, and printing is disabled.`,
     printing: 'Printing…',
+    preparingPrintImage: 'Preparing print image…',
+    retry: 'Retry',
+    printFailed: 'The printer did not confirm sending. The label was not saved.',
     printLabel: 'Print label',
     mockPrintComplete: 'Mock print complete',
     savedLabel: (id) => `Saved as label #${id}.`,

@@ -16,6 +16,7 @@ import { getStaff } from '../database/staffRepository';
 import { getItemName, getLabelOptionName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
+import type { PreparedPrintJob } from '../printing/EscPosPrinter';
 import { useSettings } from '../settings/SettingsContext';
 import { colors, radii, sizes, spacing, typography } from '../theme';
 import type {
@@ -69,13 +70,15 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
   >(null);
   const [shelfLife, setShelfLife] = useState<ShelfLife | null>(null);
   const [printedLabel, setPrintedLabel] = useState<SavedLabel | null>(null);
+  const [preparedJob, setPreparedJob] = useState<PreparedPrintJob | null>(null);
+  const [preparing, setPreparing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   const printer = useMemo(
     () => new MockPrinter(db, settings, () => getAppNow(settings)),
-    [db, settings.clockOffsetMs],
+    [db, settings],
   );
   const progress = (
     <StepProgress
@@ -104,6 +107,27 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
       mounted = false;
     };
   }, [copy.genericError, db]);
+
+  useEffect(() => {
+    if (step !== 'preview' || !label || !formOption || !storageOption) return;
+    let mounted = true;
+    setPreparing(true);
+    setPreparedJob(null);
+    setError('');
+    void printer.prepare(label, { formOption, storageOption })
+      .then((prepared) => {
+        if (mounted) setPreparedJob(prepared);
+      })
+      .catch((caught: unknown) => {
+        if (mounted) setError(errorMessage(caught, copy.printFailed));
+      })
+      .finally(() => {
+        if (mounted) setPreparing(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [copy.printFailed, formOption, label, printer, step, storageOption]);
 
   // Voice input can later resolve an item and call this exact function.
   function selectItem(selectedItem: KitchenItem) {
@@ -162,7 +186,8 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
     setBusy(true);
     setError('');
     try {
-      const saved = await printer.print(label);
+      const prepared = preparedJob ?? await printer.prepare(label, { formOption: formOption ?? undefined, storageOption: storageOption ?? undefined });
+      const saved = await printer.printPrepared(label, prepared);
       setPrintedLabel(saved);
       setStep('printed');
       onPrinted();
@@ -181,6 +206,8 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
     setDraftWithoutUseBy(null);
     setShelfLife(null);
     setPrintedLabel(null);
+    setPreparedJob(null);
+    setPreparing(false);
     setError('');
     setStep('item');
   }
@@ -297,8 +324,15 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
             shelfLife={shelfLife}
             formOption={formOption}
             storageOption={storageOption}
+            bitmap={preparedJob?.bitmap}
             compact
           />
+          {preparing ? (
+            <View style={styles.preparing}>
+              <ActivityIndicator color={colors.primary} />
+              <Text style={styles.preparingText}>{copy.preparingPrintImage}</Text>
+            </View>
+          ) : null}
           {!shelfLife ? (
             <View style={styles.noShelfLife}>
               <Text style={styles.noShelfTitle}>{copy.missingShelfTitle}</Text>
@@ -321,9 +355,9 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
             leading={<ArrowLeft color={colors.ink} size={sizes.iconMd} strokeWidth={2} />}
           />
           <BigButton
-            label={busy ? copy.printing : copy.printLabel}
+            label={busy ? copy.printing : error ? copy.retry : copy.printLabel}
             onPress={() => void printLabel()}
-            disabled={!label || busy}
+            disabled={!label || busy || preparing}
             style={styles.flexButton}
             leading={<Printer color={colors.background} size={sizes.iconLg} strokeWidth={2} />}
           />
@@ -351,6 +385,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
             shelfLife={shelfLife}
             formOption={formOption}
             storageOption={storageOption}
+            bitmap={preparedJob?.bitmap}
             compact
           />
         </ScrollView>
@@ -401,6 +436,8 @@ const styles = StyleSheet.create({
   inlineButton: { marginTop: spacing.xl, minWidth: 260 },
   bottomBack: { width: 180 },
   previewArea: { flexGrow: 1, justifyContent: 'center', gap: spacing.md, paddingVertical: spacing.xs },
+  preparing: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  preparingText: { ...typography.body, color: colors.muted },
   noShelfLife: {
     padding: spacing.md,
     borderWidth: 1,

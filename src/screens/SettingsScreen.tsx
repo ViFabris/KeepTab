@@ -15,6 +15,8 @@ import { OptionManager } from '../settings/OptionManager';
 import { PinInput } from '../settings/PinInput';
 import { isValidPin, saveAdminPin, verifyAdminPin } from '../settings/pin';
 import { PreferencesEditor } from '../settings/PreferencesEditor';
+import { PrinterSettingsEditor } from '../settings/PrinterSettingsEditor';
+import { PrintingDebugPanel } from '../settings/PrintingDebugPanel';
 import { useSettings } from '../settings/SettingsContext';
 import { TestPrintPanel } from '../settings/TestPrintPanel';
 import { MockPrinter } from '../printing/MockPrinter';
@@ -22,7 +24,7 @@ import { colors, radii, sizes, spacing, typography } from '../theme';
 import { createClockDraft, reformatClockDraft } from '../utils/appClock';
 import { StaffScreen } from './StaffScreen';
 
-type SettingsSection = 'preferences' | 'size' | 'people' | 'options' | 'security' | 'test';
+type SettingsSection = 'preferences' | 'size' | 'people' | 'options' | 'security' | 'printer' | 'debug';
 
 export function SettingsScreen({ onClose }: { onClose: () => void }) {
   const db = useSQLiteContext();
@@ -130,7 +132,8 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
     { id: 'people' as const, label: copy.settings.people, icon: Users },
     { id: 'options' as const, label: copy.settings.options, icon: PackageOpen },
     { id: 'security' as const, label: copy.settings.security, icon: LockKeyhole },
-    { id: 'test' as const, label: copy.settings.testPrint, icon: Printer },
+    { id: 'printer' as const, label: copy.settings.advancedPrinterSettings, icon: Printer },
+    { id: 'debug' as const, label: copy.settings.printingDebug, icon: Printer },
   ];
 
   return (
@@ -218,7 +221,17 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
             <BigButton label={copy.settings.changePin} onPress={() => void changePin()} />
           </View>
         ) : null}
-        {section === 'test' ? <TestPrintPanel /> : null}
+        {section === 'printer' ? (
+          <PrinterSettingsEditor
+            settings={settings}
+            onSave={async (patch) => {
+              await updateSettings(patch);
+              setIsError(false);
+              setMessage(copy.settings.saved);
+            }}
+          />
+        ) : null}
+        {section === 'debug' ? <PrintingDebugPanel /> : null}
       </Card>
       <ProtectedSectionDialog
         busy={unlockBusy}
@@ -235,7 +248,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
 }
 
 function isProtectedSection(section: SettingsSection): boolean {
-  return section === 'preferences' || section === 'size' || section === 'security';
+  return section === 'preferences' || section === 'size' || section === 'security' || section === 'printer' || section === 'debug';
 }
 
 function ProtectedSectionDialog({
