@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { toByteArray } from 'base64-js';
 import QRCode from 'qrcode';
@@ -41,22 +41,27 @@ interface PendingRender {
 
 export function LabelRasterizerHost() {
   const viewShot = useRef<ViewShotRef>(null);
+  const pendingRef = useRef<PendingRender | null>(null);
   const [pending, setPending] = useState<PendingRender | null>(null);
 
-  useEffect(() => {
-    activeRenderer = (request) => new Promise<MonochromeBitmap>((resolve, reject) => {
-      if (pending) {
+  const render = useCallback((request: RasterLabelRequest) => new Promise<MonochromeBitmap>((resolve, reject) => {
+      if (pendingRef.current) {
         reject(new Error('PRINTER_RENDERER_BUSY'));
         return;
       }
       const template = findNearestLabelTemplate(request.label.labelWidthMm, request.label.labelHeightMm);
       const layout = resolveLabelTemplate(template, request.settings.printerProfile.dpi);
-      setPending({ request, width: layout.width, height: layout.height, resolve, reject });
-    });
+      const next = { request, width: layout.width, height: layout.height, resolve, reject };
+      pendingRef.current = next;
+      setPending(next);
+    }), []);
+
+  activeRenderer = render;
+  useEffect(() => {
     return () => {
-      activeRenderer = null;
+      if (activeRenderer === render) activeRenderer = null;
     };
-  }, [pending]);
+  }, [render]);
 
   useEffect(() => {
     if (!pending || !viewShot.current) return;
@@ -89,7 +94,10 @@ export function LabelRasterizerHost() {
           if (!cancelled) pending.reject(error instanceof Error ? error : new Error('PRINTER_RENDER_FAILED'));
         })
         .finally(() => {
-          if (!cancelled) setPending(null);
+          if (!cancelled) {
+            pendingRef.current = null;
+            setPending(null);
+          }
         });
     });
     return () => {
