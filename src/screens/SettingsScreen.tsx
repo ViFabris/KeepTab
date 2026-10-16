@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Languages, LockKeyhole, PackageOpen, Printer, Ruler, Users } from 'lucide-react-native';
 
@@ -27,7 +27,11 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
   const db = useSQLiteContext();
   const { copy } = useLanguage();
   const { settings, updateSettings } = useSettings();
-  const [section, setSection] = useState<SettingsSection>('preferences');
+  const [section, setSection] = useState<SettingsSection>('people');
+  const [pendingSection, setPendingSection] = useState<SettingsSection | null>(null);
+  const [unlockPin, setUnlockPin] = useState('');
+  const [unlockError, setUnlockError] = useState('');
+  const [unlockBusy, setUnlockBusy] = useState(false);
   const [sizeDraft, setSizeDraft] = useState<LabelSizeDraft>({
     width: String(settings.labelWidthMm),
     height: String(settings.labelHeightMm),
@@ -40,6 +44,38 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const printer = new MockPrinter(db);
+
+  function openSection(nextSection: SettingsSection) {
+    if (nextSection === section) return;
+    setMessage('');
+    if (isProtectedSection(nextSection)) {
+      setPendingSection(nextSection);
+      setUnlockPin('');
+      setUnlockError('');
+      return;
+    }
+    setSection(nextSection);
+  }
+
+  async function unlockSection() {
+    if (!pendingSection) return;
+    setUnlockBusy(true);
+    setUnlockError('');
+    try {
+      if (!(await verifyAdminPin(db, unlockPin))) {
+        setUnlockError(copy.settings.wrongPin);
+        setUnlockPin('');
+        return;
+      }
+      setSection(pendingSection);
+      setPendingSection(null);
+      setUnlockPin('');
+    } catch {
+      setUnlockError(copy.genericError);
+    } finally {
+      setUnlockBusy(false);
+    }
+  }
 
   async function saveSize() {
     const parsed = parseLabelSize(sizeDraft);
@@ -121,10 +157,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
           <OptionChip
             key={item.id}
             label={item.label}
-            onPress={() => {
-              setSection(item.id);
-              setMessage('');
-            }}
+            onPress={() => openSection(item.id)}
             selected={section === item.id}
             style={styles.sectionButton}
             leading={
@@ -157,6 +190,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
               }}
             />
             <DateTimeEditor
+              requiresPin={false}
               settings={settings}
               value={clockDraft}
               onChange={setClockDraft}
@@ -193,7 +227,78 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
         ) : null}
         {section === 'test' ? <TestPrintPanel /> : null}
       </Card>
+      <ProtectedSectionDialog
+        busy={unlockBusy}
+        error={unlockError}
+        onCancel={() => setPendingSection(null)}
+        onConfirm={() => void unlockSection()}
+        pin={unlockPin}
+        sectionLabel={sections.find((item) => item.id === pendingSection)?.label ?? ''}
+        setPin={setUnlockPin}
+        visible={pendingSection !== null}
+      />
     </View>
+  );
+}
+
+function isProtectedSection(section: SettingsSection): boolean {
+  return section === 'preferences' || section === 'size' || section === 'security';
+}
+
+function ProtectedSectionDialog({
+  visible,
+  sectionLabel,
+  pin,
+  error,
+  busy,
+  setPin,
+  onCancel,
+  onConfirm,
+}: {
+  visible: boolean;
+  sectionLabel: string;
+  pin: string;
+  error: string;
+  busy: boolean;
+  setPin: (pin: string) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const { copy } = useLanguage();
+  return (
+    <Modal animationType="fade" onRequestClose={onCancel} transparent visible={visible}>
+      <View style={styles.dialogOverlay}>
+        <Pressable accessibilityRole="button" onPress={onCancel} style={StyleSheet.absoluteFill} />
+        <Card style={styles.dialog}>
+          <View style={styles.dialogHeading}>
+            <View style={styles.lockIcon}>
+              <LockKeyhole color={colors.primary} size={sizes.iconLg} strokeWidth={2} />
+            </View>
+            <View style={styles.dialogCopy}>
+              <Text style={styles.dialogTitle}>{copy.settings.unlockTitle}</Text>
+              <Text style={styles.dialogHint}>{sectionLabel} · {copy.settings.unlockHint}</Text>
+            </View>
+          </View>
+          <PinInput label={copy.setup.pin} value={pin} onChange={setPin} />
+          {error ? <Text style={styles.dialogError}>{error}</Text> : null}
+          <View style={styles.dialogActions}>
+            <BigButton
+              disabled={busy}
+              label={copy.cancel}
+              onPress={onCancel}
+              style={styles.dialogButton}
+              variant="secondary"
+            />
+            <BigButton
+              disabled={busy}
+              label={copy.settings.unlock}
+              onPress={onConfirm}
+              style={styles.dialogButton}
+            />
+          </View>
+        </Card>
+      </View>
+    </Modal>
   );
 }
 
@@ -215,4 +320,27 @@ const styles = StyleSheet.create({
     color: colors.primaryDark,
   },
   errorMessage: { backgroundColor: colors.dangerSoft, color: colors.dangerDark },
+  dialogOverlay: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xxl,
+    backgroundColor: colors.overlay,
+  },
+  dialog: { width: '62%', maxWidth: 680, padding: spacing.xxl, gap: spacing.lg },
+  dialogHeading: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
+  lockIcon: {
+    width: sizes.control,
+    height: sizes.control,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.pill,
+    backgroundColor: colors.primarySoft,
+  },
+  dialogCopy: { flex: 1, minWidth: 0 },
+  dialogTitle: { ...typography.h2, color: colors.ink },
+  dialogHint: { ...typography.body, marginTop: spacing.xs, color: colors.muted },
+  dialogError: { ...typography.bodyStrong, color: colors.dangerDark },
+  dialogActions: { flexDirection: 'row', gap: spacing.md },
+  dialogButton: { flex: 1 },
 });

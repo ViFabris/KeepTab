@@ -26,12 +26,14 @@ export function DateTimeEditor({
   onChange,
   onApply,
   deferredUntilPin = false,
+  requiresPin = true,
 }: {
   settings: AppSettings;
   value: ClockDraft;
   onChange: (value: ClockDraft) => void;
   onApply?: (patch: ClockPatch) => Promise<unknown>;
   deferredUntilPin?: boolean;
+  requiresPin?: boolean;
 }) {
   const db = useSQLiteContext();
   const { copy } = useLanguage();
@@ -67,7 +69,7 @@ export function DateTimeEditor({
     setBusy(true);
     setMessage('');
     try {
-      if (!(await verifyAdminPin(db, pin))) {
+      if (requiresPin && !(await verifyAdminPin(db, pin))) {
         setIsError(true);
         setMessage(copy.settings.wrongPin);
         return;
@@ -132,7 +134,7 @@ export function DateTimeEditor({
         <Text style={styles.pending}>{copy.setup.clockPendingPin}</Text>
       ) : (
         <View style={styles.applyRow}>
-          <PinInput label={copy.setup.clockPin} value={pin} onChange={setPin} />
+          {requiresPin ? <PinInput label={copy.setup.clockPin} value={pin} onChange={setPin} /> : null}
           <BigButton
             disabled={busy}
             label={copy.setup.applyClock}

@@ -21,7 +21,6 @@ import { getAppSettings } from './src/database/settingsRepository';
 import { LanguageProvider, useLanguage } from './src/i18n/LanguageContext';
 import { LabelFlowScreen } from './src/screens/LabelFlowScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
-import { SettingsUnlockScreen } from './src/screens/SettingsUnlockScreen';
 import { SetupWizard } from './src/screens/SetupWizard';
 import { TodayScreen } from './src/screens/TodayScreen';
 import { SettingsProvider } from './src/settings/SettingsContext';
@@ -30,7 +29,7 @@ import type { AppSettings } from './src/types';
 
 void SplashScreen.preventAutoHideAsync();
 
-type Screen = 'label' | 'today' | 'settings-unlock' | 'settings';
+type Screen = 'label' | 'today' | 'settings';
 
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
@@ -122,8 +121,8 @@ function LocalizedAppShell() {
             <NavButton
               icon={Settings}
               label={copy.settings.title}
-              selected={screen === 'settings' || screen === 'settings-unlock'}
-              onPress={() => setScreen('settings-unlock')}
+              selected={screen === 'settings'}
+              onPress={() => setScreen('settings')}
             />
             <Text style={styles.offline}>{copy.offlineDatabase}</Text>
             <SafetyBanner compact />
@@ -134,9 +133,6 @@ function LocalizedAppShell() {
             <LabelFlowScreen key={configurationVersion} onPrinted={() => setLabelsVersion((version) => version + 1)} />
           ) : null}
           {screen === 'today' ? <TodayScreen refreshKey={labelsVersion + configurationVersion} /> : null}
-          {screen === 'settings-unlock' ? (
-            <SettingsUnlockScreen onUnlocked={() => setScreen('settings')} onCancel={() => setScreen('label')} />
-          ) : null}
           {screen === 'settings' ? <SettingsScreen onClose={closeSettings} /> : null}
         </View>
       </View>
