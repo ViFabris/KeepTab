@@ -76,11 +76,33 @@ export function buildFittedLabelFields({
 }
 
 export function createLabelQrValue(label: LabelContentInput): string {
-  return JSON.stringify({
-    item: label.itemId ?? label.itemName,
-    madeAt: label.madeAt,
-    useByAt: label.useByAt ?? null,
-  });
+  const item = label.itemId ?? label.itemName;
+  return [
+    'KT1',
+    compactQrItem(item),
+    compactQrDate(label.madeAt),
+    label.useByAt ? compactQrDate(label.useByAt) : '-',
+  ].join('|');
+}
+
+function compactQrItem(value: string): string {
+  const normalized = value.trim().replace(/[^a-zA-Z0-9_-]/g, '-');
+  if (normalized.length <= 32) return normalized || 'item';
+
+  // Keep unusually long/custom identifiers bounded so the Small template always
+  // stays within its fixed QR zone. FNV-1a is deterministic and needs no network.
+  let hash = 0x811c9dc5;
+  for (const character of value) {
+    hash ^= character.codePointAt(0) ?? 0;
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return `h${(hash >>> 0).toString(36)}`;
+}
+
+function compactQrDate(value: string): string {
+  const milliseconds = Date.parse(value);
+  if (!Number.isFinite(milliseconds)) return '-';
+  return Math.floor(milliseconds / 60_000).toString(36);
 }
 
 export function getInitials(name: string): string {
