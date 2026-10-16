@@ -34,12 +34,8 @@ export interface SetupCopy {
   clockPendingPin: string;
   sizeTitle: string;
   sizeHint: string;
-  width: string;
-  height: string;
   millimeters: string;
-  sizeValidation: string;
   livePreview: string;
-  printerWidthWarning: (maximum: number) => string;
   peopleTitle: string;
   peopleHint: string;
   personRequired: string;
@@ -61,6 +57,28 @@ export interface SetupCopy {
   sampleItem: string;
   samplePerson: string;
   finishError: string;
+}
+
+export interface LabelSizeCopy {
+  small: string;
+  medium: string;
+  large: string;
+  smallHint: string;
+  mediumHint: string;
+  largeHint: string;
+  unavailable: string;
+  unavailableReason: (shorterSide: number, maximum: number) => string;
+  selected: string;
+  verificationTitle: string;
+  verificationHint: string;
+  databaseItem: string;
+  customItem: string;
+  noDatabaseItems: string;
+  noStaff: string;
+  fitPassed: string;
+  fitTruncated: string;
+  languageEnglish: string;
+  languagePortuguese: string;
 }
 
 export interface SettingsCopy {
@@ -99,6 +117,7 @@ export interface SettingsCopy {
 export interface AppCopy {
   setup: SetupCopy;
   settings: SettingsCopy;
+  labelSizes: LabelSizeCopy;
   optionNames: Record<string, string>;
   appTagline: string;
   navNewLabel: string;
@@ -207,13 +226,9 @@ const COPY: Record<Language, AppCopy> = {
       clockApplied: 'Data, hora e fuso atualizados.',
       clockPendingPin: 'A alteração será aplicada somente depois que o PIN do administrador for criado.',
       sizeTitle: 'Tamanho da etiqueta',
-      sizeHint: 'Digite a largura e a altura da etiqueta em milímetros.',
-      width: 'Largura',
-      height: 'Altura',
+      sizeHint: 'Escolha um dos três tamanhos de etiqueta disponíveis.',
       millimeters: 'mm',
-      sizeValidation: 'Digite um número entre 20 e 100 mm em cada campo.',
       livePreview: 'Prévia proporcional',
-      printerWidthWarning: (maximum) => `Esta impressora aceita no máximo ${maximum} mm de largura.`,
       peopleTitle: 'Adicionar pessoas',
       peopleHint: 'Cadastre quem prepara os alimentos. É necessário ter pelo menos uma pessoa.',
       personRequired: 'Adicione pelo menos uma pessoa para continuar.',
@@ -267,6 +282,28 @@ const COPY: Record<Language, AppCopy> = {
       removeOptionTitle: (name) => `Remover ${name}?`,
       removeOptionHint: 'Etiquetas já salvas continuarão ligadas ao mesmo identificador.',
       settingsError: 'Não foi possível salvar esta alteração.',
+    },
+    labelSizes: {
+      small: 'Pequena',
+      medium: 'Média',
+      large: 'Grande',
+      smallHint: 'Molhos e potes pequenos',
+      mediumHint: 'Potes de uso geral',
+      largeHint: 'Recipientes grandes e cubas',
+      unavailable: 'Indisponível',
+      unavailableReason: (shorterSide, maximum) =>
+        `O lado de ${shorterSide} mm excede a largura imprimível de ${maximum} mm.`,
+      selected: 'Selecionada',
+      verificationTitle: 'Verificação dos modelos',
+      verificationHint: 'Piores casos em inglês e português, sem enviar nada à impressora.',
+      databaseItem: 'Maior nome do banco de dados',
+      customItem: 'Nome personalizado longo',
+      noDatabaseItems: 'Nenhum item no banco de dados',
+      noStaff: 'Nenhuma pessoa cadastrada',
+      fitPassed: 'Cabe nas zonas definidas',
+      fitTruncated: 'Ajustado com reticências na zona',
+      languageEnglish: 'Inglês',
+      languagePortuguese: 'Português (Brasil)',
     },
     optionNames: {
       'storage.refrigerated': 'Refrigerado',
@@ -388,13 +425,9 @@ const COPY: Record<Language, AppCopy> = {
       clockApplied: 'Date, time, and time zone updated.',
       clockPendingPin: 'The change will only be applied after the admin PIN is created.',
       sizeTitle: 'Label size',
-      sizeHint: 'Enter the label width and height in millimeters.',
-      width: 'Width',
-      height: 'Height',
+      sizeHint: 'Choose one of the three available label sizes.',
       millimeters: 'mm',
-      sizeValidation: 'Enter a number from 20 to 100 mm in each field.',
       livePreview: 'Scaled preview',
-      printerWidthWarning: (maximum) => `This printer supports a maximum width of ${maximum} mm.`,
       peopleTitle: 'Add people',
       peopleHint: 'Add the people who prepare food. At least one person is required.',
       personRequired: 'Add at least one person to continue.',
@@ -448,6 +481,28 @@ const COPY: Record<Language, AppCopy> = {
       removeOptionTitle: (name) => `Remove ${name}?`,
       removeOptionHint: 'Existing labels stay linked to the same stable identifier.',
       settingsError: 'Could not save this change.',
+    },
+    labelSizes: {
+      small: 'Small',
+      medium: 'Medium',
+      large: 'Large',
+      smallHint: 'Sauce cups and small bags',
+      mediumHint: 'Everyday containers',
+      largeHint: 'Large containers and hotel pans',
+      unavailable: 'Unavailable',
+      unavailableReason: (shorterSide, maximum) =>
+        `The ${shorterSide} mm side exceeds the ${maximum} mm printable width.`,
+      selected: 'Selected',
+      verificationTitle: 'Template verification',
+      verificationHint: 'Worst cases in English and Portuguese without sending anything to the printer.',
+      databaseItem: 'Longest database item',
+      customItem: 'Long custom item name',
+      noDatabaseItems: 'No database items',
+      noStaff: 'No staff members',
+      fitPassed: 'Fits the defined zones',
+      fitTruncated: 'Fitted with an ellipsis inside the zone',
+      languageEnglish: 'English',
+      languagePortuguese: 'Portuguese (Brazil)',
     },
     optionNames: {
       'storage.refrigerated': 'Refrigerated',

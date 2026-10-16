@@ -107,6 +107,12 @@ export const sizes = {
   iconXl: 40,
   banner: 320,
   contentMax: 1180,
+  labelPresetMiniature: 80,
+  labelPresetPreview: 220,
+  labelPreviewCompactMaxWidth: 680,
+  labelPreviewMaxWidth: 760,
+  labelPreviewCompactMaxHeight: 330,
+  labelPreviewMaxHeight: 390,
 } as const;
 
 export const layout = {

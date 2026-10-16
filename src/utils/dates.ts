@@ -32,13 +32,26 @@ export function formatConfiguredDateTime(iso: string, settings: AppSettings): st
 
 export function formatLabelUseBy(iso: string, settings: AppSettings): string {
   const date = new Date(iso);
-  const dateText = settings.spellOutMonth
-    ? formatSpelledMonth(date, settings)
-    : formatConfiguredDate(date, settings);
+  const dateText = formatLabelDate(iso, settings);
   return `${dateText} ${formatConfiguredTime(date, settings)}`;
 }
 
-function formatConfiguredDate(date: Date, settings: AppSettings): string {
+export function formatLabelDate(iso: string, settings: AppSettings): string {
+  const date = new Date(iso);
+  return settings.spellOutMonth
+    ? formatSpelledMonth(date, settings)
+    : formatConfiguredDate(date, settings);
+}
+
+export function formatCompactLabelDate(iso: string, settings: AppSettings): string {
+  const date = new Date(iso);
+  if (settings.spellOutMonth) {
+    return formatSpelledMonth(date, settings).replace(/(\d{4})$/, (year) => year.slice(-2));
+  }
+  return formatConfiguredDate(date, settings).replace(/(\d{4})/, (year) => year.slice(-2));
+}
+
+export function formatConfiguredDate(date: Date, settings: AppSettings): string {
   const parts = getZonedDateTimeParts(date, settings.timeZone);
   const day = String(parts.day).padStart(2, '0');
   const month = String(parts.month).padStart(2, '0');
@@ -48,7 +61,7 @@ function formatConfiguredDate(date: Date, settings: AppSettings): string {
   return `${day}/${month}/${year}`;
 }
 
-function formatConfiguredTime(date: Date, settings: AppSettings): string {
+export function formatConfiguredTime(date: Date, settings: AppSettings): string {
   return new Intl.DateTimeFormat(getLocale(settings.language), {
     hour: '2-digit',
     minute: '2-digit',

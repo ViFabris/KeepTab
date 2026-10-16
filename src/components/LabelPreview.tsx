@@ -1,135 +1,133 @@
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 
-import { getFormLabel, getLabelOptionName, getStorageLabel } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
+import { buildFittedLabelFields, createLabelQrValue } from '../printing/labelContent';
+import { pointsToDots, resolveLabelTemplate } from '../printing/labelLayout';
+import { findNearestLabelTemplate } from '../printing/labelTemplates';
 import { useSettings } from '../settings/SettingsContext';
-import { colors, radii, spacing, typography } from '../theme';
-import type { LabelOption, ShelfLife } from '../types';
-import { formatConfiguredDateTime, formatLabelUseBy, formatShelfLife } from '../utils/dates';
+import { colors, fonts, radii, sizes, spacing } from '../theme';
+import type { AppSettings, LabelOption, Language, ShelfLife } from '../types';
 import { Card } from './Card';
 
 interface LabelPreviewProps {
   label: {
+    itemId?: string;
     itemName: string;
     form: string;
     storageType: string;
     madeAt: string;
     useByAt?: string;
     staffName: string;
+    labelWidthMm?: number;
+    labelHeightMm?: number;
   };
   shelfLife: ShelfLife | null;
   compact?: boolean;
   formOption?: LabelOption;
   storageOption?: LabelOption;
+  languageOverride?: Language;
+  settingsOverride?: AppSettings;
+  maxWidthOverride?: number;
 }
 
 export function LabelPreview({
   label,
-  shelfLife,
   compact = false,
   formOption,
   storageOption,
+  languageOverride,
+  settingsOverride,
+  maxWidthOverride,
 }: LabelPreviewProps) {
-  const { language, copy } = useLanguage();
-  const { settings } = useSettings();
+  const currentLanguage = useLanguage().language;
+  const currentSettings = useSettings().settings;
   const window = useWindowDimensions();
-  const widthMm = 'labelWidthMm' in label ? Number(label.labelWidthMm) : settings.labelWidthMm;
-  const heightMm = 'labelHeightMm' in label ? Number(label.labelHeightMm) : settings.labelHeightMm;
-  const ratio = widthMm / heightMm;
-  const maxWidth = Math.min(window.width - 330, compact ? 680 : 760);
-  const maxHeight = Math.min(window.height - 255, compact ? 330 : 390);
-  const previewWidth = Math.min(maxWidth, maxHeight * ratio);
-  const previewHeight = Math.max(80, previewWidth / ratio);
-  const scale = Math.max(0.45, Math.min(1.15, previewWidth / 620, previewHeight / 300));
-  const vertical = ratio < 1.2;
-  const formName = formOption
-    ? getLabelOptionName(formOption, language)
-    : getFormLabel(label.form, language);
-  const storageName = storageOption
-    ? getLabelOptionName(storageOption, language)
-    : getStorageLabel(label.storageType, language);
-  const fitText = { adjustsFontSizeToFit: true, minimumFontScale: 0.35 } as const;
+  const language = languageOverride ?? currentLanguage;
+  const settings = settingsOverride ?? currentSettings;
+  const template = findNearestLabelTemplate(
+    label.labelWidthMm ?? settings.labelWidthMm,
+    label.labelHeightMm ?? settings.labelHeightMm,
+  );
+  const layout = resolveLabelTemplate(template);
+  const widthLimit = maxWidthOverride ?? Math.min(
+    window.width - sizes.sidebar - spacing.huge,
+    compact ? sizes.labelPreviewCompactMaxWidth : sizes.labelPreviewMaxWidth,
+  );
+  const heightLimit = compact
+    ? sizes.labelPreviewCompactMaxHeight
+    : sizes.labelPreviewMaxHeight;
+  const scale = Math.min(widthLimit / layout.width, heightLimit / layout.height);
+  const previewWidth = layout.width * scale;
+  const previewHeight = layout.height * scale;
+  const fittedFields = buildFittedLabelFields({
+    template,
+    label,
+    settings: { ...settings, language },
+    language,
+    formOption,
+    storageOption,
+  });
+  const fieldById = new Map(fittedFields.map((field) => [field.id, field]));
+
   return (
     <Card style={styles.previewCard}>
-      <View
-        style={[
-          styles.label,
-          compact && styles.compact,
-          { width: previewWidth, height: previewHeight, padding: Math.max(spacing.xs, spacing.lg * scale) },
-        ]}
-      >
-      <View style={[styles.titleRow, vertical && styles.verticalStack]}>
-        <Text
-          {...fitText}
-          numberOfLines={1}
-          style={[styles.itemName, { fontSize: typography.h2.fontSize * scale }]}
+      <View style={[styles.label, { width: previewWidth, height: previewHeight }]}>
+        {layout.textZones.map((zone) => {
+          const field = fieldById.get(zone.id);
+          if (!field?.lines.length) return null;
+          const fontSize = pointsToDots(field.fontSizePt, layout.dpi) * scale;
+          return (
+            <View
+              key={zone.id}
+              style={[
+                styles.textZone,
+                {
+                  left: zone.x * scale,
+                  top: zone.y * scale,
+                  width: zone.width * scale,
+                  height: zone.height * scale,
+                },
+              ]}
+            >
+              <Text
+                numberOfLines={zone.maxLines}
+                style={[
+                  styles.labelText,
+                  zone.id === 'itemName' && styles.strongText,
+                  zone.id === 'useByValue' && styles.useByText,
+                  {
+                    fontSize,
+                    lineHeight: fontSize * 1.16,
+                    textAlign: zone.align,
+                  },
+                ]}
+              >
+                {field.lines.join('\n')}
+              </Text>
+            </View>
+          );
+        })}
+        <View
+          style={[
+            styles.qrQuietZone,
+            {
+              left: layout.qr.x * scale,
+              top: layout.qr.y * scale,
+              width: layout.qr.width * scale,
+              height: layout.qr.height * scale,
+              padding: layout.qr.quietMargin * scale,
+            },
+          ]}
         >
-          {label.itemName}
-        </Text>
-        <Text {...fitText} numberOfLines={1} style={[styles.mockBadge, { fontSize: typography.caption.fontSize * scale }]}> 
-          {copy.sampleLabelBadge}
-        </Text>
-      </View>
-      <Text {...fitText} numberOfLines={1} style={[styles.detail, { fontSize: typography.body.fontSize * scale }]}> 
-        {formName} · {storageName}
-      </Text>
-      <View style={[styles.rule, { marginVertical: Math.max(5, 12 * scale) }]} />
-      <View style={[styles.dateRow, vertical && styles.dateColumnLayout]}>
-        <View style={[styles.dateColumn, !vertical && styles.madeColumn]}>
-          <Text {...fitText} numberOfLines={1} style={[styles.fieldLabel, { fontSize: typography.caption.fontSize * scale }]}> 
-            {copy.made}
-          </Text>
-          <Text {...fitText} numberOfLines={1} style={[styles.fieldValue, { fontSize: typography.body.fontSize * scale }]}> 
-            {formatConfiguredDateTime(label.madeAt, settings)}
-          </Text>
+          <QRCode
+            backgroundColor={colors.monochromeSurface}
+            color={colors.monochromeBlack}
+            quietZone={0}
+            size={layout.qr.content.width * scale}
+            value={createLabelQrValue(label)}
+          />
         </View>
-        <View style={[styles.dateColumn, !vertical && styles.useByColumn]}>
-          <Text {...fitText} numberOfLines={1} style={[styles.fieldLabel, { fontSize: typography.caption.fontSize * scale }]}> 
-            {copy.useBy}
-          </Text>
-          <Text {...fitText} numberOfLines={1} style={[styles.useBy, { fontSize: typography.h1.fontSize * scale }]}> 
-            {label.useByAt ? formatLabelUseBy(label.useByAt, settings) : copy.notConfigured}
-          </Text>
-        </View>
-      </View>
-      <View
-        style={[
-          styles.footer,
-          vertical && styles.verticalStack,
-          { marginTop: Math.max(5, 12 * scale) },
-        ]}
-      >
-        <Text
-          {...fitText}
-          numberOfLines={1}
-          style={[styles.staff, vertical && styles.verticalText, { fontSize: typography.body.fontSize * scale }]}
-        >
-          {copy.madeBy(label.staffName)}
-        </Text>
-        {shelfLife ? (
-          <Text
-            {...fitText}
-            numberOfLines={1}
-            style={[
-              styles.duration,
-              vertical && styles.verticalText,
-              vertical && styles.verticalDuration,
-              { fontSize: typography.caption.fontSize * scale },
-            ]}
-          >
-            {copy.shelfLife(formatShelfLife(shelfLife.hours, language))}
-          </Text>
-        ) : null}
-      </View>
-      {shelfLife?.isPlaceholder ? (
-        <Text
-          {...fitText}
-          numberOfLines={2}
-          style={[styles.placeholder, { fontSize: typography.caption.fontSize * scale, marginTop: Math.max(spacing.xxs, spacing.xs * scale) }]}
-        >
-          {copy.placeholderWarning}
-        </Text>
-      ) : null}
       </View>
     </Card>
   );
@@ -138,49 +136,23 @@ export function LabelPreview({
 const styles = StyleSheet.create({
   previewCard: { alignSelf: 'center', padding: spacing.lg },
   label: {
+    position: 'relative',
     alignSelf: 'center',
-    borderWidth: 3,
+    overflow: 'hidden',
+    borderWidth: 1,
     borderColor: colors.monochromeBlack,
     borderRadius: radii.xs,
     backgroundColor: colors.monochromeSurface,
+  },
+  textZone: { position: 'absolute', overflow: 'hidden', justifyContent: 'center' },
+  labelText: { color: colors.monochromeBlack, fontFamily: fonts.medium },
+  strongText: { fontFamily: fonts.bold },
+  useByText: { fontFamily: fonts.extraBold },
+  qrQuietZone: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
     overflow: 'hidden',
-  },
-  compact: {},
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  verticalStack: { flexDirection: 'column', alignItems: 'stretch', gap: spacing.xxs },
-  itemName: { flex: 1, color: colors.monochromeBlack, fontFamily: typography.h1.fontFamily },
-  mockBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.xs,
     backgroundColor: colors.monochromeSurface,
-    borderWidth: 1,
-    borderColor: colors.monochromeInk,
-    color: colors.monochromeBlack,
-    fontFamily: typography.bodyStrong.fontFamily,
-  },
-  detail: { marginTop: spacing.xxs, color: colors.monochromeInk, fontFamily: typography.bodyStrong.fontFamily },
-  rule: { height: 2, backgroundColor: colors.monochromeBlack },
-  dateRow: { flexDirection: 'row', gap: spacing.md },
-  dateColumnLayout: { flexDirection: 'column', gap: spacing.xs },
-  dateColumn: { flex: 1 },
-  madeColumn: { flex: 0.75 },
-  useByColumn: { flex: 1.55 },
-  fieldLabel: { color: colors.monochromeInk, fontFamily: typography.bodyStrong.fontFamily, letterSpacing: 1.2 },
-  fieldValue: { marginTop: spacing.xxs, color: colors.monochromeBlack, fontFamily: typography.bodyStrong.fontFamily },
-  useBy: { marginTop: spacing.xxs, color: colors.monochromeBlack, fontFamily: typography.h1.fontFamily },
-  footer: { marginTop: spacing.lg, flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md },
-  staff: { flex: 1, color: colors.monochromeBlack, fontFamily: typography.bodyStrong.fontFamily },
-  duration: { flex: 1, color: colors.monochromeInk, fontFamily: typography.caption.fontFamily, textAlign: 'right' },
-  verticalDuration: { textAlign: 'left' },
-  verticalText: { flex: 0 },
-  placeholder: {
-    marginTop: spacing.md,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.monochromeBorder,
-    color: colors.monochromeBlack,
-    fontFamily: typography.bodyStrong.fontFamily,
-    textAlign: 'center',
   },
 });

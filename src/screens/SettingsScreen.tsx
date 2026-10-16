@@ -8,8 +8,9 @@ import { Card } from '../components/Card';
 import { OptionChip } from '../components/OptionChip';
 import { PageHeader } from '../components/PageHeader';
 import { useLanguage } from '../i18n/LanguageContext';
+import { findNearestLabelTemplate, type LabelTemplate } from '../printing/labelTemplates';
 import { DateTimeEditor } from '../settings/DateTimeEditor';
-import { LabelSizeEditor, parseLabelSize, type LabelSizeDraft } from '../settings/LabelSizeEditor';
+import { LabelSizeEditor } from '../settings/LabelSizeEditor';
 import { OptionManager } from '../settings/OptionManager';
 import { PinInput } from '../settings/PinInput';
 import { isValidPin, saveAdminPin, verifyAdminPin } from '../settings/pin';
@@ -32,12 +33,10 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
   const [unlockPin, setUnlockPin] = useState('');
   const [unlockError, setUnlockError] = useState('');
   const [unlockBusy, setUnlockBusy] = useState(false);
-  const [sizeDraft, setSizeDraft] = useState<LabelSizeDraft>({
-    width: String(settings.labelWidthMm),
-    height: String(settings.labelHeightMm),
-  });
+  const [sizeDraft, setSizeDraft] = useState<LabelTemplate>(() =>
+    findNearestLabelTemplate(settings.labelWidthMm, settings.labelHeightMm),
+  );
   const [clockDraft, setClockDraft] = useState(() => createClockDraft(settings));
-  const [showSizeValidation, setShowSizeValidation] = useState(false);
   const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
   const [confirmNewPin, setConfirmNewPin] = useState('');
@@ -78,13 +77,8 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
   }
 
   async function saveSize() {
-    const parsed = parseLabelSize(sizeDraft);
-    if (!parsed) {
-      setShowSizeValidation(true);
-      return;
-    }
     await saveChange(() =>
-      updateSettings({ labelWidthMm: parsed.width, labelHeightMm: parsed.height }),
+      updateSettings({ labelWidthMm: sizeDraft.widthMm, labelHeightMm: sizeDraft.heightMm }),
     );
   }
 
@@ -203,8 +197,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
             <LabelSizeEditor
               value={sizeDraft}
               onChange={setSizeDraft}
-              printerMaximumWidth={printer.maxWidthMm}
-              showValidation={showSizeValidation}
+              printerMaximumWidth={printer.maxPrintableWidthMm}
             />
             <BigButton label={copy.settings.save} onPress={() => void saveSize()} />
           </View>

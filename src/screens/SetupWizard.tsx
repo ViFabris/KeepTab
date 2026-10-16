@@ -11,8 +11,9 @@ import { StepProgress } from '../components/StepProgress';
 import { getLabelOptions } from '../database/optionsRepository';
 import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
+import { findNearestLabelTemplate, type LabelTemplate } from '../printing/labelTemplates';
 import { DateTimeEditor } from '../settings/DateTimeEditor';
-import { LabelSizeEditor, parseLabelSize, type LabelSizeDraft } from '../settings/LabelSizeEditor';
+import { LabelSizeEditor } from '../settings/LabelSizeEditor';
 import { OptionManager } from '../settings/OptionManager';
 import { PinInput } from '../settings/PinInput';
 import { isValidPin, saveAdminPin } from '../settings/pin';
@@ -31,16 +32,14 @@ export function SetupWizard() {
   const { copy } = useLanguage();
   const { settings, updateSettings } = useSettings();
   const [step, setStep] = useState(1);
-  const [sizeDraft, setSizeDraft] = useState<LabelSizeDraft>({
-    width: String(settings.labelWidthMm),
-    height: String(settings.labelHeightMm),
-  });
+  const [sizeDraft, setSizeDraft] = useState<LabelTemplate>(() =>
+    findNearestLabelTemplate(settings.labelWidthMm, settings.labelHeightMm),
+  );
   const [clockDraft, setClockDraft] = useState(() => createClockDraft(settings));
   const [pendingClockPatch, setPendingClockPatch] = useState<Pick<
     AppSettings,
     'clockOffsetMs' | 'timeZone'
   > | null>(null);
-  const [showSizeValidation, setShowSizeValidation] = useState(false);
   const [staffCount, setStaffCount] = useState(0);
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -60,15 +59,10 @@ export function SetupWizard() {
   }
 
   async function saveSizeAndContinue() {
-    const parsed = parseLabelSize(sizeDraft);
-    if (!parsed) {
-      setShowSizeValidation(true);
-      return;
-    }
     setBusy(true);
     setError('');
     try {
-      await updateSettings({ labelWidthMm: parsed.width, labelHeightMm: parsed.height });
+      await updateSettings({ labelWidthMm: sizeDraft.widthMm, labelHeightMm: sizeDraft.heightMm });
       setStep(3);
     } catch {
       setError(copy.settings.settingsError);
@@ -180,8 +174,7 @@ export function SetupWizard() {
             <LabelSizeEditor
               value={sizeDraft}
               onChange={setSizeDraft}
-              printerMaximumWidth={printer.maxWidthMm}
-              showValidation={showSizeValidation}
+              printerMaximumWidth={printer.maxPrintableWidthMm}
             />
             <WizardActions
               onBack={() => setStep(1)}

@@ -11,11 +11,6 @@ export class MockPrinter implements LabelPrinter {
   readonly resolutionDpi = 203;
   lastPreparedLayout: ResolvedLabelLayout | null = null;
 
-  /** @deprecated Use maxPrintableWidthMm. */
-  get maxWidthMm(): number {
-    return this.maxPrintableWidthMm;
-  }
-
   constructor(
     private readonly db: SQLiteDatabase,
     private readonly now: () => Date = () => new Date(),
