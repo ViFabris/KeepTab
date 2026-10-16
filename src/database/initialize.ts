@@ -8,6 +8,7 @@ import { withWriteTransaction } from './transactions';
 
 const PLACEHOLDER_SOURCE_NOTE =
   'PLACEHOLDER SAMPLE DATA — NOT VERIFIED FOR FOOD SAFETY';
+const DATABASE_RESET_VERSION = 1;
 
 interface SeedOption<T extends string> {
   value: T;
@@ -39,6 +40,7 @@ interface SeedData {
 
 export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
   await db.execAsync(SCHEMA_SQL);
+  await resetLocalDatabaseOnce(db);
   await migrateDatabase(db);
 
   const seed = sampleData as SeedData;
@@ -130,6 +132,32 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
       `INSERT INTO app_metadata (key, value) VALUES ('seed_version', ?)
        ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
       String(seed.seedVersion),
+    );
+  });
+}
+
+async function resetLocalDatabaseOnce(db: SQLiteDatabase): Promise<void> {
+  const resetVersion = await db.getFirstAsync<{ value: string }>(
+    `SELECT value FROM app_metadata WHERE key = 'database_reset_version'`,
+  );
+  if (Number(resetVersion?.value ?? 0) >= DATABASE_RESET_VERSION) return;
+
+  await withWriteTransaction(db, async (transaction) => {
+    await transaction.execAsync(`
+      DELETE FROM labels;
+      DELETE FROM shelf_lives;
+      DELETE FROM item_form_options;
+      DELETE FROM item_storage_options;
+      DELETE FROM items;
+      DELETE FROM staff;
+      DELETE FROM label_options;
+      DELETE FROM app_settings;
+      DELETE FROM app_metadata;
+      DELETE FROM sqlite_sequence WHERE name IN ('labels', 'staff');
+    `);
+    await transaction.runAsync(
+      `INSERT INTO app_metadata (key, value) VALUES ('database_reset_version', ?)`,
+      String(DATABASE_RESET_VERSION),
     );
   });
 }

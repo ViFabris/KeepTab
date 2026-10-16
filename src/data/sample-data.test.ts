@@ -7,6 +7,10 @@ describe('placeholder sample data', () => {
     expect(sampleData.items).toHaveLength(15);
   });
 
+  it('does not seed placeholder staff names', () => {
+    expect(sampleData.staff).toEqual([]);
+  });
+
   it('marks every shelf-life value as placeholder data', () => {
     const shelfLives = sampleData.items.flatMap((item) => item.shelfLives);
     expect(shelfLives.length).toBeGreaterThan(0);

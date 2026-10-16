@@ -1,11 +1,7 @@
 {
   "_notice": "PLACEHOLDER SAMPLE DATA — NOT VERIFIED FOR FOOD SAFETY. Replace every shelf-life value with data checked for your operation before production use.",
-  "seedVersion": 1,
-  "staff": [
-    "Avery",
-    "Jordan",
-    "Sam"
-  ],
+  "seedVersion": 2,
+  "staff": [],
   "items": [
     {
       "id": "cucumber",
