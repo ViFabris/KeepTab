@@ -55,9 +55,9 @@ export const LABEL_TEMPLATES: readonly LabelTemplate[] = [
       zone('madeLabel', 2, 20, 27, 3.5, 8, 8, 1),
       zone('madeValue', 2, 23.5, 21, 4.5, 8, 9, 1),
       zone('staff', 23.5, 23.5, 5.5, 4.5, 8, 9, 1, 'center'),
-      zone('formStorage', 30, 24.5, 18, 3.5, 8, 8, 1, 'center', false),
+      zone('formStorage', 30, 19, 18, 9, 8, 8, 2, 'center', false),
     ],
-    qr: { xMm: 30, yMm: 6, sizeMm: 18, quietMarginMm: 1 },
+    qr: { xMm: 32, yMm: 2, sizeMm: 16, quietMarginMm: 1 },
   },
   {
     id: 'medium',

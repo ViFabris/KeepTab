@@ -10,13 +10,13 @@ Legend: `I` item, `U` USE BY / VALIDADE, `M` made date, `S` staff, `D` form/stor
 
 ```text
 ┌──────────────────────────────────────────────────┐
-│  ┌──────────── I 27×4.5 ───────────┐             │
-│  ├────────── U label 27×3.5 ───────┤ ┌────────┐  │
-│  │                                 │ │        │  │
-│  │        U value 27×10            │ │ Q 18² │  │
-│  │                                 │ │        │  │
-│  ├────────── M label 27×3.5 ───────┤ └────────┘  │
-│  ├──── M value 21×4.5 ────┬S 5.5──┤ D 18×3.5   │
+│  ┌──────────── I 27×4.5 ───────────┐   ┌──────┐  │
+│  ├────────── U label 27×3.5 ───────┤   │      │  │
+│  │                                 │   │ Q 16²│  │
+│  │        U value 27×10            │   │      │  │
+│  │                                 │   └──────┘  │
+│  ├────────── M label 27×3.5 ───────┤ ┌D 18×9 ┐  │
+│  ├──── M value 21×4.5 ────┬S 5.5──┤ └────────┘  │
 └──────────────────────────────────────────────────┘
 ```
 
@@ -28,10 +28,10 @@ Legend: `I` item, `U` USE BY / VALIDADE, `M` made date, `S` staff, `D` form/stor
 | Made label | 2, 20 | 27 × 3.5 | 8 pt | 1 | left |
 | Made date | 2, 23.5 | 21 × 4.5 | 8–9 pt | 1 | left |
 | Staff initials | 23.5, 23.5 | 5.5 × 4.5 | 8–9 pt | 1 | center |
-| Form/storage | 30, 24.5 | 18 × 3.5 | 8 pt | 1 | center |
-| QR outer zone | 30, 6 | 18 × 18 | 1 mm quiet margin; 16 mm code | — | center |
+| Form/storage | 30, 19 | 18 × 9 | 8 pt | 2 | center |
+| QR outer zone | 32, 2 | 16 × 16 | 1 mm quiet margin; 14 mm code | — | center |
 
-The form/storage line appears only when it fits at 8 pt. If it does not fit and storage is Frozen, it becomes a snowflake symbol; otherwise it is omitted.
+The form/storage details use up to two lines at 8 pt. If unusually long custom details still do not fit and storage is Frozen, the zone becomes a snowflake symbol; otherwise it is omitted.
 
 ## Medium — 80 × 50 mm
 
@@ -85,4 +85,4 @@ The form/storage line appears only when it fits at 8 pt. If it does not fit and 
 
 ## Fit priorities
 
-USE BY values always have a minimum font size larger than the maximum font size of every other field in the same template. The item, USE BY value, made date, staff identifier/name, and QR zone are always present. Small may replace only its form/storage detail as described above. QR content is never smaller than 16 mm in these designs, exceeding the 14 mm minimum.
+USE BY values always have a minimum font size larger than the maximum font size of every other field in the same template. The item, USE BY value, made date, staff identifier/name, and QR zone are always present. Small may replace only unusually long custom form/storage detail as described above. QR content is never smaller than 14 mm.

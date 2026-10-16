@@ -715,6 +715,17 @@ const PORTUGUESE_FORMS: Record<string, string> = {
   Shredded: 'Ralado',
 };
 
+const COMPACT_STORAGE_NAMES: Record<Language, Record<string, string>> = {
+  en: {
+    Refrigerated: 'Chilled',
+    Frozen: 'Frozen',
+  },
+  'pt-BR': {
+    Refrigerated: 'Refrig.',
+    Frozen: 'Congelado',
+  },
+};
+
 export function getCopy(language: Language): AppCopy {
   return COPY[language];
 }
@@ -732,6 +743,10 @@ export function getStorageLabel(storage: string, language: Language): string {
   if (storage === 'Refrigerated') return 'Refrigerado';
   if (storage === 'Frozen') return 'Congelado';
   return storage;
+}
+
+export function getCompactStorageLabel(storage: string, language: Language): string {
+  return COMPACT_STORAGE_NAMES[language][storage] ?? getStorageLabel(storage, language);
 }
 
 export function getLabelOptionName(option: LabelOption, language: Language): string {

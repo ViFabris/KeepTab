@@ -63,6 +63,32 @@ describe('label content fitting', () => {
     expect(fields.find((field) => field.id === 'formStorage')?.text).toBe('❄');
   });
 
+  it.each(['en', 'pt-BR'] as const)(
+    'keeps the standard form and storage details visible on Small in %s',
+    (language) => {
+      const template = LABEL_TEMPLATES[0]!;
+      const fields = buildFittedLabelFields({
+        template,
+        language,
+        settings: settingsFor(language, template.widthMm, template.heightMm),
+        label: {
+          itemName: 'Test food',
+          form: 'Whole',
+          storageType: 'Refrigerated',
+          madeAt: MADE_AT,
+          useByAt: USE_BY_AT,
+          staffName: 'Taylor',
+        },
+      });
+      const details = fields.find((field) => field.id === 'formStorage');
+
+      expect(details?.text).not.toBe('');
+      expect(details?.text).not.toBe('❄');
+      expect(details?.truncated).toBe(false);
+      expect(details?.lines.length).toBeLessThanOrEqual(2);
+    },
+  );
+
   it('creates at most three initials', () => {
     expect(getInitials('Ana Beatriz Costa de Souza')).toBe('ABC');
   });

@@ -1,4 +1,5 @@
 import {
+  getCompactStorageLabel,
   getCopy,
   getFormLabel,
   getItemName,
@@ -51,10 +52,13 @@ export function buildFittedLabelFields({
   const storageName = storageOption
     ? getLabelOptionName(storageOption, language)
     : getStorageLabel(label.storageType, language);
+  const compactStorageName = storageOption?.customLabel
+    ? storageName
+    : getCompactStorageLabel(storageOption?.legacyValue ?? label.storageType, language);
   const resolved = resolveLabelTemplate(template, settings.printerProfile.dpi);
   const values: Record<LabelTextZoneId, string> = {
     itemName: getItemName(label.itemId ?? '', label.itemName, language),
-    formStorage: `${formName} · ${storageName}`,
+    formStorage: `${formName} · ${template.id === 'small' ? compactStorageName : storageName}`,
     useByLabel: copy.useBy,
     useByValue: label.useByAt ? formatLabelDate(label.useByAt, settings) : copy.notConfigured,
     madeLabel: copy.made,
