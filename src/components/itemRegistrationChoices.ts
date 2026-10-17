@@ -1,33 +1,39 @@
 import type { LabelOption } from '../types';
 
-const EXCLUSIVE_FORM_GROUPS = [
-  new Set(['form.whole', 'form.cut', 'form.shredded']),
-  new Set(['form.cooked', 'form.raw']),
-  new Set(['form.inShell', 'form.peeled']),
-  new Set(['form.opened', 'form.unopened']),
-];
+export type FormCategory = 'preparation' | 'cooking' | 'skin' | 'package';
+
+const FORM_CATEGORY_BY_KEY: Record<string, FormCategory> = {
+  'form.whole': 'preparation',
+  'form.cut': 'preparation',
+  'form.shredded': 'preparation',
+  'form.other': 'preparation',
+  'form.cooked': 'cooking',
+  'form.raw': 'cooking',
+  'form.inShell': 'skin',
+  'form.peeled': 'skin',
+  'form.opened': 'package',
+  'form.unopened': 'package',
+};
+
+export function getFormCategory(option: LabelOption): FormCategory {
+  return option.translationKey ? FORM_CATEGORY_BY_KEY[option.translationKey] ?? 'preparation' : 'preparation';
+}
 
 export function nextFormSelection(
   currentIds: string[],
   chosen: LabelOption,
   allFormOptions: LabelOption[],
-  singleSelection: boolean,
 ): string[] {
   if (currentIds.includes(chosen.id)) {
     return currentIds.filter((id) => id !== chosen.id);
   }
-  if (singleSelection) return [chosen.id];
-
-  const chosenKey = chosen.translationKey;
-  const chosenIsOther = chosenKey === 'form.other';
-  const conflictingKeys = EXCLUSIVE_FORM_GROUPS.find((group) => chosenKey && group.has(chosenKey));
+  const chosenCategory = getFormCategory(chosen);
   const optionById = new Map(allFormOptions.map((option) => [option.id, option]));
 
   return [
     ...currentIds.filter((id) => {
-      const currentKey = optionById.get(id)?.translationKey;
-      if (chosenIsOther || currentKey === 'form.other') return false;
-      return !currentKey || !conflictingKeys?.has(currentKey);
+      const current = optionById.get(id);
+      return !current || getFormCategory(current) !== chosenCategory;
     }),
     chosen.id,
   ];

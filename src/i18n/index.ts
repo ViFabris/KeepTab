@@ -305,6 +305,10 @@ export interface FoodSafetyCopy {
   chooseStorageTypes: string;
   chooseCurrentForm: string;
   chooseCurrentStorage: string;
+  formCategoryPreparation: string;
+  formCategoryCooking: string;
+  formCategorySkin: string;
+  formCategoryPackage: string;
   preparedClassification: string;
   preparedClassificationHint: string;
   preparedInKitchen: string;
@@ -667,12 +671,16 @@ const COPY: Record<Language, AppCopy> = {
       itemRegistrationForLabelHint: 'Escolha uma vez o estado atual e o armazenamento. Essas opções serão salvas com o alimento e não serão perguntadas novamente.',
       itemName: 'Nome do alimento',
       itemNamePlaceholder: 'Ex.: arroz cozido',
-      chooseForms: 'Estados ou preparos disponíveis',
+      chooseForms: 'Características do alimento',
       chooseStorageTypes: 'Armazenamentos disponíveis',
-      chooseCurrentForm: 'Estado ou preparo atual',
+      chooseCurrentForm: 'Características atuais',
       chooseCurrentStorage: 'Armazenamento atual',
-      preparedClassification: 'Classificação de cada estado',
-      preparedClassificationHint: 'Marque como pré-preparado/preparado quando houver manipulação na cozinha, como cortar, descascar, ralar ou cozinhar.',
+      formCategoryPreparation: 'Preparo e corte',
+      formCategoryCooking: 'Cocção',
+      formCategorySkin: 'Casca',
+      formCategoryPackage: 'Embalagem',
+      preparedClassification: 'Origem e manipulação',
+      preparedClassificationHint: 'Escolha se essas características foram feitas na cozinha ou se o produto mantém o prazo controlado pelo fabricante.',
       preparedInKitchen: 'Pré-preparado ou preparado na cozinha',
       manufacturerControlled: 'Produto original / prazo do fabricante',
       registerAndUse: 'Cadastrar e usar',
@@ -1043,12 +1051,16 @@ const COPY: Record<Language, AppCopy> = {
       itemRegistrationForLabelHint: 'Choose the current form and storage once. These choices will be saved with the item and will not be asked again.',
       itemName: 'Item name',
       itemNamePlaceholder: 'Example: cooked rice',
-      chooseForms: 'Available forms or preparations',
+      chooseForms: 'Food characteristics',
       chooseStorageTypes: 'Available storage methods',
-      chooseCurrentForm: 'Current form or preparation',
+      chooseCurrentForm: 'Current characteristics',
       chooseCurrentStorage: 'Current storage method',
-      preparedClassification: 'Classification for each form',
-      preparedClassificationHint: 'Mark pre-prepared/prepared when the kitchen handles the food, such as cutting, peeling, shredding, or cooking.',
+      formCategoryPreparation: 'Preparation and cut',
+      formCategoryCooking: 'Cooking',
+      formCategorySkin: 'Skin or peel',
+      formCategoryPackage: 'Package',
+      preparedClassification: 'Source and handling',
+      preparedClassificationHint: 'Choose whether these characteristics were produced in the kitchen or the product remains controlled by the manufacturer.',
       preparedInKitchen: 'Pre-prepared or prepared in the kitchen',
       manufacturerControlled: 'Original product / manufacturer-controlled',
       registerAndUse: 'Register and use',

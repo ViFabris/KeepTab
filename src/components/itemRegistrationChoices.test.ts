@@ -24,20 +24,27 @@ describe('item registration choices', () => {
     ['shell', 'peeled'],
     ['opened', 'unopened'],
   ])('replaces the contradictory %s choice with %s', (first, second) => {
-    expect(nextFormSelection([first], find(second), forms, false)).toEqual([second]);
+    expect(nextFormSelection([first], find(second), forms)).toEqual([second]);
   });
 
-  it('keeps compatible preparation details together in catalog mode', () => {
-    expect(nextFormSelection(['cut'], find('cooked'), forms, false)).toEqual(['cut', 'cooked']);
+  it('combines one choice from each independent category', () => {
+    let selected = nextFormSelection([], find('whole'), forms);
+    selected = nextFormSelection(selected, find('shell'), forms);
+    selected = nextFormSelection(selected, find('unopened'), forms);
+    expect(selected).toEqual(['whole', 'shell', 'unopened']);
   });
 
-  it('treats Other as exclusive with named preparation choices', () => {
-    expect(nextFormSelection(['cut', 'cooked'], find('other'), forms, false)).toEqual(['other']);
-    expect(nextFormSelection(['other'], find('cut'), forms, false)).toEqual(['cut']);
+  it('allows cut and peeled while preventing both skin choices', () => {
+    expect(nextFormSelection(['cut'], find('peeled'), forms)).toEqual(['cut', 'peeled']);
+    expect(nextFormSelection(['cut', 'peeled'], find('shell'), forms)).toEqual(['cut', 'shell']);
   });
 
-  it('keeps exactly one form and one storage choice in label mode', () => {
-    expect(nextFormSelection(['cut'], find('cooked'), forms, true)).toEqual(['cooked']);
+  it('keeps cooking and preparation independent', () => {
+    expect(nextFormSelection(['cut'], find('cooked'), forms)).toEqual(['cut', 'cooked']);
+    expect(nextFormSelection(['cut', 'cooked'], find('raw'), forms)).toEqual(['cut', 'raw']);
+  });
+
+  it('keeps exactly one storage choice in label mode', () => {
     expect(nextStorageSelection(['refrigerated'], 'frozen', true)).toEqual(['frozen']);
   });
 });

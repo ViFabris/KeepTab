@@ -37,7 +37,7 @@ import { getAppNow } from '../utils/appClock';
 import { zonedDateTimeToInstant } from '../utils/appClock';
 import packageData from '../../package.json';
 
-type FlowStep = 'item' | 'storage' | 'form' | 'staff' | 'preview' | 'printed';
+type FlowStep = 'item' | 'storage' | 'staff' | 'preview' | 'printed';
 
 interface LabelFlowScreenProps {
   onPrinted: () => void;
@@ -129,12 +129,10 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
   function selectItem(selectedItem: KitchenItem) {
     setItem(selectedItem);
     setStorageOption(defaultOption(selectedItem.storageOptions));
-    setFormOption(defaultOption(selectedItem.formOptions));
+    setFormOption(combineFormOptions(selectedItem.formOptions, language));
     setError('');
     if (selectedItem.storageOptions.length > 1) {
       setStep('storage');
-    } else if (selectedItem.formOptions.length > 1) {
-      setStep('form');
     } else {
       setStep('staff');
     }
@@ -157,7 +155,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         storageOption.id,
       );
       const madeAt = getAppNow(settings);
-      const opened = formOption.legacyValue === 'Opened';
+      const opened = formIncludes(formOption, 'Opened');
       const confirmedPackage = evidenceOverride
         ?? packageEvidence
         ?? (!(formOption.preparedFood ?? false) ? await getLatestPackageEvidenceForItem(db, item.id) : null);
@@ -343,27 +341,9 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
             }
             setError('');
             setStorageOption(option);
-            setStep(item.formOptions.length > 1 ? 'form' : 'staff');
-          }}
-          onBack={resetFlow}
-        />
-      </View>
-    );
-  }
-
-  if (step === 'form') {
-    return (
-      <View style={styles.screen}>
-        <OptionStep
-          title={copy.formQuestion}
-          subtitle={`${localizedItemName} · ${getLabelOptionName(storageOption, language)}`}
-          options={item.formOptions}
-          selected={formOption}
-          onSelect={(option) => {
-            setFormOption(option);
             setStep('staff');
           }}
-          onBack={() => item.storageOptions.length > 1 ? setStep('storage') : resetFlow()}
+          onBack={resetFlow}
         />
       </View>
     );
@@ -400,8 +380,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         <BigButton
           label={copy.back}
           onPress={() => {
-            if (item.formOptions.length > 1) setStep('form');
-            else if (item.storageOptions.length > 1) setStep('storage');
+            if (item.storageOptions.length > 1) setStep('storage');
             else resetFlow();
           }}
           variant="secondary"
@@ -466,7 +445,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
           {validityMessage && validity && !validity.allowed && validity.reason !== 'missingShelfLife' ? (
             <View style={styles.noShelfLife}><Text style={styles.noShelfTitle}>{copy.missingShelfTitle}</Text><Text style={styles.noShelfBody}>{validityMessage}</Text></View>
           ) : null}
-          {formOption.legacyValue === 'Opened' ? (
+          {formIncludes(formOption, 'Opened') ? (
             <Card style={styles.openedInputs}>
               <Input keyboardType="number-pad" label={copy.foodSafety.manufacturerDays} onChangeText={(value) => setOpenedDays(value.replace(/\D/g, ''))} value={openedDays} />
               <Input label={copy.foodSafety.packageExpiry} onChangeText={setPackageExpiry} value={packageExpiry} />
@@ -540,7 +519,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
               );
             }
           }}
-          requireManufacturerDays={formOption.legacyValue === 'Opened'}
+          requireManufacturerDays={formIncludes(formOption, 'Opened')}
           visible={packageIntakeVisible}
         />
       </View>
@@ -599,6 +578,26 @@ function inferTemperatureClass(storage: string): 'refrigerated' | 'frozen' | 'am
   if (storage.toLocaleLowerCase() === 'frozen' || storage.toLocaleLowerCase() === 'congelado') return 'frozen';
   if (storage.toLocaleLowerCase() === 'refrigerated' || storage.toLocaleLowerCase() === 'refrigerado') return 'refrigerated';
   return 'ambient';
+}
+
+function combineFormOptions(options: ItemLabelOption[], language: 'en' | 'pt-BR'): ItemLabelOption {
+  if (options.length === 1 && options[0]) return options[0];
+  if (!options.length) throw new Error('This item has no configured form options.');
+  return {
+    id: options.map((option) => option.id).join('|'),
+    kind: 'form',
+    translationKey: null,
+    customLabel: options.map((option) => getLabelOptionName(option, language)).join(' · '),
+    legacyValue: options.map((option) => option.legacyValue).join(' + '),
+    sortOrder: Math.min(...options.map((option) => option.sortOrder)),
+    appliesToAll: false,
+    isDefault: true,
+    preparedFood: options.some((option) => option.preparedFood),
+  };
+}
+
+function formIncludes(option: ItemLabelOption, legacyValue: string): boolean {
+  return option.legacyValue.split(' + ').includes(legacyValue);
 }
 
 function parsePackageExpiry(value: string, timeZone: string): Date | null {

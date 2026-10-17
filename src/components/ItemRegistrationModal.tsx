@@ -10,7 +10,7 @@ import {
   registerKitchenItem,
 } from '../database/itemsRepository';
 import { getLabelOptions } from '../database/optionsRepository';
-import { getLabelOptionName } from '../i18n';
+import { getLabelOptionName, type FoodSafetyCopy } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { PackageIntakeModal } from '../packages/PackageIntakeModal';
 import { colors, sizes, spacing, typography } from '../theme';
@@ -19,11 +19,17 @@ import { BigButton } from './BigButton';
 import { Card } from './Card';
 import { Input } from './Input';
 import { OptionChip } from './OptionChip';
-import { nextFormSelection, nextStorageSelection } from './itemRegistrationChoices';
+import {
+  getFormCategory,
+  nextFormSelection,
+  nextStorageSelection,
+  type FormCategory,
+} from './itemRegistrationChoices';
 
 const PREPARED_DEFAULTS = new Set([
   'form.cut', 'form.other', 'form.cooked', 'form.peeled', 'form.shredded',
 ]);
+const FORM_CATEGORY_ORDER: FormCategory[] = ['preparation', 'cooking', 'skin', 'package'];
 
 export function ItemRegistrationModal({
   visible,
@@ -42,7 +48,7 @@ export function ItemRegistrationModal({
   const [options, setOptions] = useState<LabelOption[]>([]);
   const [selectedFormIds, setSelectedFormIds] = useState<string[]>([]);
   const [selectedStorageIds, setSelectedStorageIds] = useState<string[]>([]);
-  const [preparedByForm, setPreparedByForm] = useState<Record<string, boolean>>({});
+  const [preparedInKitchen, setPreparedInKitchen] = useState(false);
   const [plantBasedType, setPlantBasedType] = useState<PlantBasedType>('none');
   const [heatTreated, setHeatTreated] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -51,10 +57,10 @@ export function ItemRegistrationModal({
   const formOptions = useMemo(() => options.filter((option) => option.kind === 'form'), [options]);
   const storageOptions = useMemo(() => options.filter((option) => option.kind === 'storage'), [options]);
   const isLabelMode = mode === 'label';
-  const requiresManufacturerEvidence = selectedFormIds.some((id) => !(preparedByForm[id] ?? false));
+  const requiresManufacturerEvidence = selectedFormIds.length > 0 && !preparedInKitchen;
   const requiresManufacturerDays = selectedFormIds.some((id) => {
     const option = formOptions.find((candidate) => candidate.id === id);
-    return option?.legacyValue === 'Opened' && !(preparedByForm[id] ?? false);
+    return option?.legacyValue === 'Opened' && !preparedInKitchen;
   });
 
   useEffect(() => {
@@ -62,7 +68,7 @@ export function ItemRegistrationModal({
     setName('');
     setSelectedFormIds([]);
     setSelectedStorageIds([]);
-    setPreparedByForm({});
+    setPreparedInKitchen(false);
     setPlantBasedType('none');
     setHeatTreated(false);
     setPendingManufacturerItem(null);
@@ -73,11 +79,10 @@ export function ItemRegistrationModal({
   }, [copy.genericError, db, visible]);
 
   function toggleForm(option: LabelOption) {
-    setSelectedFormIds((current) => nextFormSelection(current, option, formOptions, isLabelMode));
-    setPreparedByForm((current) => ({
-      ...current,
-      [option.id]: current[option.id] ?? Boolean(option.translationKey && PREPARED_DEFAULTS.has(option.translationKey)),
-    }));
+    if (!selectedFormIds.length) {
+      setPreparedInKitchen(Boolean(option.translationKey && PREPARED_DEFAULTS.has(option.translationKey)));
+    }
+    setSelectedFormIds((current) => nextFormSelection(current, option, formOptions));
   }
 
   function toggleStorage(optionId: string) {
@@ -96,7 +101,7 @@ export function ItemRegistrationModal({
         name,
         formOptions: selectedFormIds.map((optionId) => ({
           optionId,
-          preparedFood: preparedByForm[optionId] ?? false,
+          preparedFood: preparedInKitchen,
         })),
         storageOptionIds: selectedStorageIds,
         plantBasedType,
@@ -181,47 +186,46 @@ export function ItemRegistrationModal({
             <Text style={styles.sectionTitle}>
               {isLabelMode ? copy.foodSafety.chooseCurrentForm : copy.foodSafety.chooseForms}
             </Text>
-            <View style={styles.grid}>
-              {formOptions.map((option) => (
-                <OptionChip
-                  key={option.id}
-                  label={getLabelOptionName(option, language)}
-                  onPress={() => toggleForm(option)}
-                  selected={selectedFormIds.includes(option.id)}
-                  style={styles.option}
-                />
-              ))}
-            </View>
+            {FORM_CATEGORY_ORDER.map((category) => {
+              const categoryOptions = formOptions.filter((option) => getFormCategory(option) === category);
+              if (!categoryOptions.length) return null;
+              return (
+                <View key={category} style={styles.category}>
+                  <Text style={styles.categoryTitle}>{formCategoryLabel(category, copy.foodSafety)}</Text>
+                  <View style={styles.grid}>
+                    {categoryOptions.map((option) => (
+                      <OptionChip
+                        key={option.id}
+                        label={getLabelOptionName(option, language)}
+                        onPress={() => toggleForm(option)}
+                        selected={selectedFormIds.includes(option.id)}
+                        style={styles.option}
+                      />
+                    ))}
+                  </View>
+                </View>
+              );
+            })}
           </Card>
 
           {selectedFormIds.length ? (
             <Card style={styles.card}>
               <Text style={styles.sectionTitle}>{copy.foodSafety.preparedClassification}</Text>
               <Text style={styles.hint}>{copy.foodSafety.preparedClassificationHint}</Text>
-              {selectedFormIds.map((id) => {
-                const option = formOptions.find((candidate) => candidate.id === id);
-                if (!option) return null;
-                const prepared = preparedByForm[id] ?? false;
-                return (
-                  <View key={id} style={styles.classificationRow}>
-                    <Text style={styles.formName}>{getLabelOptionName(option, language)}</Text>
-                    <View style={styles.classificationChoices}>
-                      <OptionChip
-                        label={copy.foodSafety.preparedInKitchen}
-                        onPress={() => setPreparedByForm((current) => ({ ...current, [id]: true }))}
-                        selected={prepared}
-                        style={styles.classificationChoice}
-                      />
-                      <OptionChip
-                        label={copy.foodSafety.manufacturerControlled}
-                        onPress={() => setPreparedByForm((current) => ({ ...current, [id]: false }))}
-                        selected={!prepared}
-                        style={styles.classificationChoice}
-                      />
-                    </View>
-                  </View>
-                );
-              })}
+              <View style={styles.classificationChoices}>
+                <OptionChip
+                  label={copy.foodSafety.preparedInKitchen}
+                  onPress={() => setPreparedInKitchen(true)}
+                  selected={preparedInKitchen}
+                  style={styles.classificationChoice}
+                />
+                <OptionChip
+                  label={copy.foodSafety.manufacturerControlled}
+                  onPress={() => setPreparedInKitchen(false)}
+                  selected={!preparedInKitchen}
+                  style={styles.classificationChoice}
+                />
+              </View>
             </Card>
           ) : null}
 
@@ -289,6 +293,13 @@ export function ItemRegistrationModal({
   );
 }
 
+function formCategoryLabel(category: FormCategory, copy: FoodSafetyCopy): string {
+  if (category === 'preparation') return copy.formCategoryPreparation;
+  if (category === 'cooking') return copy.formCategoryCooking;
+  if (category === 'skin') return copy.formCategorySkin;
+  return copy.formCategoryPackage;
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1, gap: spacing.lg, padding: spacing.xl, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.lg },
@@ -299,10 +310,10 @@ const styles = StyleSheet.create({
   content: { gap: spacing.md, paddingBottom: spacing.xxl },
   card: { gap: spacing.md, padding: spacing.md },
   sectionTitle: { ...typography.h3, color: colors.ink },
+  category: { gap: spacing.xs },
+  categoryTitle: { ...typography.caption, color: colors.muted },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   option: { minWidth: 190, flexGrow: 1, minHeight: sizes.tapMin },
-  classificationRow: { gap: spacing.xs, paddingTop: spacing.xs },
-  formName: { ...typography.bodyStrong, color: colors.ink },
   classificationChoices: { flexDirection: 'row', gap: spacing.sm },
   classificationChoice: { flex: 1, minHeight: sizes.tapMin },
   lawNotice: { ...typography.bodyStrong, color: colors.primaryDark },
