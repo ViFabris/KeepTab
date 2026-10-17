@@ -29,6 +29,7 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await migratePrinterSettings(db);
   await migrateFoodSafetySettings(db);
   await migrateItemSafetyFields(db);
+  await migrateKitchenManagedCatalog(db);
   await migrateStorageValueConstraints(db);
   await seedDefaultOptions(db);
   await migrateAuditTrail(db);
@@ -37,6 +38,32 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await migrateLabelSizeSetting(db);
   await linkExistingLabelsToOptions(db);
   await db.execAsync('PRAGMA user_version = 6');
+}
+
+const LEGACY_SEED_ITEM_IDS = [
+  'cucumber', 'tomato', 'lettuce', 'onion', 'bell-pepper', 'carrot', 'celery',
+  'broccoli', 'chicken-breast', 'ground-beef', 'cooked-rice', 'hard-boiled-egg',
+  'deli-turkey', 'cheese', 'soup',
+] as const;
+
+async function migrateKitchenManagedCatalog(db: SQLiteDatabase): Promise<void> {
+  await addColumnIfMissing(db, 'items', 'is_active', 'INTEGER NOT NULL DEFAULT 1');
+  await db.runAsync("UPDATE app_settings SET verification_mode = 'strict' WHERE id = 1");
+  const version = await db.getFirstAsync<{ value: string }>(
+    `SELECT value FROM app_metadata WHERE key = 'kitchen_managed_catalog_version'`,
+  );
+  if (version?.value === '1') return;
+  const placeholders = LEGACY_SEED_ITEM_IDS.map(() => '?').join(', ');
+  await withWriteTransaction(db, async (transaction) => {
+    await transaction.runAsync(
+      `UPDATE items SET is_active = 0 WHERE id IN (${placeholders})`,
+      ...LEGACY_SEED_ITEM_IDS,
+    );
+    await transaction.runAsync(
+      `INSERT INTO app_metadata (key, value) VALUES ('kitchen_managed_catalog_version', '1')
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    );
+  });
 }
 
 async function addColumnIfMissing(

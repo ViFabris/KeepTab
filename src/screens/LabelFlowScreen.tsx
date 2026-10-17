@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
-import { ArrowLeft, CheckCircle2, Printer, UserRound } from 'lucide-react-native';
+import { ArrowLeft, CheckCircle2, PackagePlus, Printer, UserRound } from 'lucide-react-native';
 
 import { BigButton } from '../components/BigButton';
 import { Card } from '../components/Card';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Input } from '../components/Input';
 import { ItemSelector } from '../components/ItemSelector';
+import { ItemRegistrationModal } from '../components/ItemRegistrationModal';
 import { LabelPreview } from '../components/LabelPreview';
 import { OptionStep } from '../components/OptionStep';
 import { PageHeader } from '../components/PageHeader';
@@ -83,6 +84,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
   const [packageExpiry, setPackageExpiry] = useState('');
   const [packageEvidence, setPackageEvidence] = useState<PackageEvidence | null>(null);
   const [packageIntakeVisible, setPackageIntakeVisible] = useState(false);
+  const [registrationVisible, setRegistrationVisible] = useState(false);
   const [confirmTestPrint, setConfirmTestPrint] = useState(false);
   const [printedLabel, setPrintedLabel] = useState<SavedLabel | null>(null);
   const [preparedJob, setPreparedJob] = useState<PreparedPrintJob | null>(null);
@@ -304,11 +306,48 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
     return (
       <View style={styles.screen}>
         <View style={styles.headerWithBanner}>
-          <PageHeader title={copy.itemQuestion} subtitle={copy.itemHint} action={progress} />
+          <PageHeader
+            title={copy.itemQuestion}
+            subtitle={copy.itemHint}
+            action={
+              <View style={styles.itemHeaderActions}>
+                {progress}
+                <BigButton
+                  label={copy.foodSafety.registerItem}
+                  onPress={() => setRegistrationVisible(true)}
+                  variant="secondary"
+                  style={styles.registerButton}
+                  leading={<PackagePlus color={colors.ink} size={sizes.iconMd} strokeWidth={2} />}
+                />
+              </View>
+            }
+          />
           <SafetyBanner compact style={styles.headerBanner} />
         </View>
         {error ? <ErrorMessage message={error} /> : null}
-        <ItemSelector items={items} onSelectItem={selectItem} />
+        {items.length ? (
+          <ItemSelector items={items} onSelectItem={selectItem} />
+        ) : (
+          <Card style={styles.emptyCatalog}>
+            <PackagePlus color={colors.secondary} size={sizes.iconXl} strokeWidth={2} />
+            <Text style={styles.emptyTitle}>{copy.foodSafety.emptyCatalog}</Text>
+            <BigButton
+              label={copy.foodSafety.registerFirstItem}
+              onPress={() => setRegistrationVisible(true)}
+              style={styles.firstItemButton}
+            />
+          </Card>
+        )}
+        <ItemRegistrationModal
+          onCancel={() => setRegistrationVisible(false)}
+          onRegistered={(registeredItem) => {
+            setItems((current) => [...current.filter((candidate) => candidate.id !== registeredItem.id), registeredItem]
+              .sort((left, right) => left.name.localeCompare(right.name)));
+            setRegistrationVisible(false);
+            selectItem(registeredItem);
+          }}
+          visible={registrationVisible}
+        />
       </View>
     );
   }
@@ -610,7 +649,11 @@ function parsePackageExpiry(value: string, timeZone: string): Date | null {
 const styles = StyleSheet.create({
   screen: { flex: 1, padding: spacing.xxl, gap: spacing.lg, backgroundColor: colors.background },
   headerWithBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xl },
+  itemHeaderActions: { alignItems: 'flex-end', gap: spacing.sm },
+  registerButton: { minWidth: 240 },
   headerBanner: { width: sizes.banner, flexShrink: 1 },
+  emptyCatalog: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg, padding: spacing.xxl },
+  firstItemButton: { minWidth: 300 },
   staffGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, paddingVertical: spacing.lg },
   staffButton: { width: '31%', minHeight: sizes.tapMin + spacing.xxl },
   emptyStaff: {

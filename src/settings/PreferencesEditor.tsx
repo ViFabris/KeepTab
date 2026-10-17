@@ -6,7 +6,7 @@ import { defaultsForLanguage } from '../database/settingsRepository';
 import { getLanguageName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { colors, sizes, spacing, typography } from '../theme';
-import type { AppSettings, DateOrder, Jurisdiction, Language, TimeFormat, VerificationMode } from '../types';
+import type { AppSettings, DateOrder, Jurisdiction, Language, TimeFormat } from '../types';
 
 export function PreferencesEditor({
   settings,
@@ -104,20 +104,6 @@ export function PreferencesEditor({
           value={String(settings.reducedMaximumDays)}
         />
       ) : null}
-      <ChoiceGroup
-        label={copy.foodSafety.verificationMode}
-        values={[
-          { value: 'strict' as const, label: copy.foodSafety.strictMode },
-          { value: 'test' as const, label: copy.foodSafety.testMode },
-        ]}
-        selected={settings.verificationMode}
-        onSelect={(verificationMode: VerificationMode) => onChange({ verificationMode })}
-      />
-      <Text style={styles.hint}>
-        {settings.verificationMode === 'strict'
-          ? copy.foodSafety.strictModeHint
-          : copy.foodSafety.testModeHint}
-      </Text>
     </View>
   );
 }

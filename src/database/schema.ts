@@ -49,7 +49,8 @@ export const SCHEMA_SQL = `
     verified_by TEXT NOT NULL DEFAULT '',
     verified_on TEXT NOT NULL DEFAULT '',
     manufacturer_days_after_open INTEGER CHECK (manufacturer_days_after_open > 0),
-    source TEXT NOT NULL DEFAULT ''
+    source TEXT NOT NULL DEFAULT '',
+    is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1))
   );
 
   CREATE TABLE IF NOT EXISTS item_storage_options (

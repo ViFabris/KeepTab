@@ -262,14 +262,6 @@ export interface FoodSafetyCopy {
   no: string;
   manufacturerDays: string;
   packageExpiry: string;
-  shelfLifeGuidance: string;
-  shelfLifeGuidanceNotice: string;
-  refrigeratedGuidance: string;
-  frozenGuidance: string;
-  exactValueRequired: string;
-  userSuppliedSource: string;
-  thirdPartySource: string;
-  relatedRules: string;
   packageIntakeTitle: string;
   packageIntakeHint: string;
   scanPackage: string;
@@ -290,6 +282,25 @@ export interface FoodSafetyCopy {
   packageExpiryRequired: string;
   packageDateInvalid: string;
   packageDetailsDetected: string;
+  registerItem: string;
+  registerFirstItem: string;
+  emptyCatalog: string;
+  itemRegistrationTitle: string;
+  itemRegistrationHint: string;
+  itemName: string;
+  itemNamePlaceholder: string;
+  chooseForms: string;
+  chooseStorageTypes: string;
+  preparedClassification: string;
+  preparedClassificationHint: string;
+  preparedInKitchen: string;
+  manufacturerControlled: string;
+  registerAndUse: string;
+  registrationIncomplete: string;
+  itemAlreadyExists: string;
+  removeRegisteredItemTitle: (name: string) => string;
+  removeRegisteredItemHint: string;
+  lawManagedNotice: string;
   source: string;
   importCsv: string;
   csvInputHint: string;
@@ -496,8 +507,8 @@ const COPY: Record<Language, AppCopy> = {
     navStaff: 'Equipe',
     offlineDatabase: '● Banco de dados offline',
     changeLanguage: 'Idioma',
-    safetyTitle: 'DADOS DE EXEMPLO',
-    safetyBody: 'Os prazos de validade são provisórios e não foram verificados para segurança dos alimentos.',
+    safetyTitle: 'CATÁLOGO DA COZINHA',
+    safetyBody: 'Os alimentos são cadastrados pela cozinha. A validade exige uma regra aplicável ou dados confirmados da embalagem.',
     sampleLabelBadge: 'ETIQUETA SIMULADA',
     made: 'PREPARADO EM',
     openedOn: 'ABERTO EM',
@@ -505,7 +516,7 @@ const COPY: Record<Language, AppCopy> = {
     notConfigured: 'NÃO CONFIGURADO',
     madeBy: (name) => `Preparado por ${name}`,
     shelfLife: (duration) => `Validade: ${duration}`,
-    placeholderWarning: 'DADOS PROVISÓRIOS DE EXEMPLO — NÃO VERIFICADOS PARA SEGURANÇA DOS ALIMENTOS',
+    placeholderWarning: 'SEM REGRA APLICÁVEL OU DADOS CONFIRMADOS DA EMBALAGEM',
     searchPlaceholder: 'Buscar itens, ex.: pepino',
     noItemMatches: (query) => `Nenhum item corresponde a “${query}”.`,
     back: 'Voltar',
@@ -603,14 +614,6 @@ const COPY: Record<Language, AppCopy> = {
       no: 'Não',
       manufacturerDays: 'Dias após abertura informados pelo fabricante',
       packageExpiry: 'Validade da embalagem (AAAA-MM-DD, opcional)',
-      shelfLifeGuidance: 'Guia de prazos',
-      shelfLifeGuidanceNotice: 'Valores de referência fornecidos pelo usuário. Não são aplicados automaticamente. Um prazo exato e sua fonte precisam ser aprovados antes de verificar um item.',
-      refrigeratedGuidance: 'Refrigeração',
-      frozenGuidance: 'Congelamento',
-      exactValueRequired: 'Este intervalo exige que o responsável escolha e aprove um valor exato.',
-      userSuppliedSource: 'Informado pelo usuário',
-      thirdPartySource: 'Referência de terceiros',
-      relatedRules: 'Regras relacionadas',
       packageIntakeTitle: 'Ler embalagem do produto',
       packageIntakeHint: 'Leia o código, fotografe lote e validade e confirme exatamente o que está impresso. Um código comum identifica o produto, mas normalmente não contém lote ou validade.',
       scanPackage: 'Ler código e fotografar embalagem',
@@ -631,6 +634,25 @@ const COPY: Record<Language, AppCopy> = {
       packageExpiryRequired: 'Digite a validade impressa na embalagem.',
       packageDateInvalid: 'Use uma data válida no formato AAAA-MM-DD.',
       packageDetailsDetected: 'Dados GS1 encontrados. Confira todos os campos com a embalagem antes de confirmar.',
+      registerItem: 'Cadastrar alimento',
+      registerFirstItem: 'Cadastrar primeiro alimento',
+      emptyCatalog: 'Nenhum alimento cadastrado. Cadastre cada alimento uma vez para reutilizá-lo nas próximas etiquetas.',
+      itemRegistrationTitle: 'Cadastrar alimento da cozinha',
+      itemRegistrationHint: 'Escolha os estados e armazenamentos usados nesta cozinha. O prazo será limitado automaticamente pelas regras aplicáveis.',
+      itemName: 'Nome do alimento',
+      itemNamePlaceholder: 'Ex.: arroz cozido',
+      chooseForms: 'Estados ou preparos disponíveis',
+      chooseStorageTypes: 'Armazenamentos disponíveis',
+      preparedClassification: 'Classificação de cada estado',
+      preparedClassificationHint: 'Marque como pré-preparado/preparado quando houver manipulação na cozinha, como cortar, descascar, ralar ou cozinhar.',
+      preparedInKitchen: 'Pré-preparado ou preparado na cozinha',
+      manufacturerControlled: 'Produto original / prazo do fabricante',
+      registerAndUse: 'Cadastrar e usar',
+      registrationIncomplete: 'Digite o nome e escolha pelo menos um estado e um armazenamento.',
+      itemAlreadyExists: 'Já existe um alimento cadastrado com esse nome.',
+      removeRegisteredItemTitle: (name) => `Remover ${name} do catálogo?`,
+      removeRegisteredItemHint: 'As etiquetas e os registros anteriores serão preservados. O alimento poderá ser cadastrado novamente depois.',
+      lawManagedNotice: 'O app usa o limite legal aplicável. Produtos originais ou abertos exigem os dados confirmados da embalagem.',
       source: 'Fonte',
       importCsv: 'Importar CSV',
       csvInputHint: 'Cole aqui o conteúdo do arquivo items_template.csv.',
@@ -847,8 +869,8 @@ const COPY: Record<Language, AppCopy> = {
     navStaff: 'Staff',
     offlineDatabase: '● Offline database',
     changeLanguage: 'Language',
-    safetyTitle: 'SAMPLE DATA',
-    safetyBody: 'Shelf lives are placeholders and are not verified for food safety.',
+    safetyTitle: 'KITCHEN CATALOG',
+    safetyBody: 'Items are registered by the kitchen. A use-by date requires an applicable rule or confirmed package details.',
     sampleLabelBadge: 'MOCK LABEL',
     made: 'MADE',
     openedOn: 'OPENED',
@@ -856,7 +878,7 @@ const COPY: Record<Language, AppCopy> = {
     notConfigured: 'NOT CONFIGURED',
     madeBy: (name) => `Made by ${name}`,
     shelfLife: (duration) => `Shelf life: ${duration}`,
-    placeholderWarning: 'PLACEHOLDER SAMPLE DATA — NOT FOOD-SAFETY VERIFIED',
+    placeholderWarning: 'NO APPLICABLE RULE OR CONFIRMED PACKAGE DETAILS',
     searchPlaceholder: 'Search items, e.g. cucumber',
     noItemMatches: (query) => `No items match “${query}”.`,
     back: 'Back',
@@ -954,14 +976,6 @@ const COPY: Record<Language, AppCopy> = {
       no: 'No',
       manufacturerDays: 'Manufacturer days after opening',
       packageExpiry: 'Package expiry (YYYY-MM-DD, optional)',
-      shelfLifeGuidance: 'Shelf-life guidance',
-      shelfLifeGuidanceNotice: 'Reference values supplied by the user. They are not applied automatically. An exact limit and supporting source must be approved before an item is verified.',
-      refrigeratedGuidance: 'Refrigerated',
-      frozenGuidance: 'Frozen',
-      exactValueRequired: 'This range requires the responsible person to choose and approve one exact value.',
-      userSuppliedSource: 'User supplied',
-      thirdPartySource: 'Third-party reference',
-      relatedRules: 'Related rules',
       packageIntakeTitle: 'Read product package',
       packageIntakeHint: 'Scan the code, photograph the lot and expiry, and confirm exactly what is printed. An ordinary barcode identifies the product but usually does not contain a lot or expiry.',
       scanPackage: 'Scan code and photograph package',
@@ -982,6 +996,25 @@ const COPY: Record<Language, AppCopy> = {
       packageExpiryRequired: 'Enter the expiry printed on the package.',
       packageDateInvalid: 'Use a valid date in YYYY-MM-DD format.',
       packageDetailsDetected: 'GS1 details found. Check every field against the package before confirming.',
+      registerItem: 'Register item',
+      registerFirstItem: 'Register first item',
+      emptyCatalog: 'No items are registered. Register each item once and reuse it for future labels.',
+      itemRegistrationTitle: 'Register a kitchen item',
+      itemRegistrationHint: 'Choose the forms and storage methods used in this kitchen. Applicable legal rules will automatically limit the date.',
+      itemName: 'Item name',
+      itemNamePlaceholder: 'Example: cooked rice',
+      chooseForms: 'Available forms or preparations',
+      chooseStorageTypes: 'Available storage methods',
+      preparedClassification: 'Classification for each form',
+      preparedClassificationHint: 'Mark pre-prepared/prepared when the kitchen handles the food, such as cutting, peeling, shredding, or cooking.',
+      preparedInKitchen: 'Pre-prepared or prepared in the kitchen',
+      manufacturerControlled: 'Original product / manufacturer-controlled',
+      registerAndUse: 'Register and use',
+      registrationIncomplete: 'Enter a name and choose at least one form and one storage method.',
+      itemAlreadyExists: 'An item with this name is already registered.',
+      removeRegisteredItemTitle: (name) => `Remove ${name} from the catalog?`,
+      removeRegisteredItemHint: 'Existing labels and audit records will be preserved. The item can be registered again later.',
+      lawManagedNotice: 'The app uses the applicable legal maximum. Original or opened products require confirmed package information.',
       source: 'Source',
       importCsv: 'Import CSV',
       csvInputHint: 'Paste the contents of items_template.csv here.',

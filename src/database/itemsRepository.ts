@@ -16,6 +16,7 @@ interface ItemRow {
   verified_on: string;
   manufacturer_days_after_open: number | null;
   source: string;
+  is_active: number;
 }
 
 interface StorageRow {
@@ -34,8 +35,8 @@ interface FormRow {
 export async function getItems(db: SQLiteDatabase): Promise<KitchenItem[]> {
   const [items, storageRows, formRows, allOptions] = await Promise.all([
     db.getAllAsync<ItemRow>(`SELECT id, name, plant_based_type, heat_treated,
-      verification_status, verified_by, verified_on, manufacturer_days_after_open, source
-      FROM items ORDER BY name COLLATE NOCASE`),
+      verification_status, verified_by, verified_on, manufacturer_days_after_open, source, is_active
+      FROM items WHERE is_active = 1 ORDER BY name COLLATE NOCASE`),
     db.getAllAsync<StorageRow>(
       `SELECT item_id, storage_type, is_default
        FROM item_storage_options ORDER BY item_id, sort_order`,
@@ -67,6 +68,95 @@ export async function getItems(db: SQLiteDatabase): Promise<KitchenItem[]> {
       source: item.source,
     };
   });
+}
+
+export interface RegisterKitchenItemInput {
+  name: string;
+  formOptions: { optionId: string; preparedFood: boolean }[];
+  storageOptionIds: string[];
+  plantBasedType: PlantBasedType;
+  heatTreated: boolean;
+}
+
+export async function registerKitchenItem(
+  db: SQLiteDatabase,
+  input: RegisterKitchenItemInput,
+): Promise<string> {
+  const name = input.name.trim().replace(/\s+/g, ' ');
+  if (!name || !input.formOptions.length || !input.storageOptionIds.length) {
+    throw new Error('ITEM_REGISTRATION_INCOMPLETE');
+  }
+  const optionIds = [...input.storageOptionIds, ...input.formOptions.map((option) => option.optionId)];
+  const placeholders = optionIds.map(() => '?').join(', ');
+  const optionRows = await db.getAllAsync<{ id: string; kind: 'storage' | 'form'; legacy_value: string }>(
+    `SELECT id, kind, legacy_value FROM label_options WHERE enabled = 1 AND id IN (${placeholders})`,
+    ...optionIds,
+  );
+  const optionById = new Map(optionRows.map((option) => [option.id, option]));
+  if (optionRows.length !== new Set(optionIds).size) throw new Error('ITEM_OPTION_NOT_FOUND');
+  const existing = await db.getFirstAsync<{ id: string; is_active: number }>(
+    'SELECT id, is_active FROM items WHERE name = ? COLLATE NOCASE',
+    name,
+  );
+  if (existing?.is_active === 1) throw new Error('ITEM_ALREADY_EXISTS');
+  const itemId = existing?.id ?? `kitchen-${Crypto.randomUUID()}`;
+
+  await withWriteTransaction(db, async (transaction) => {
+    await transaction.runAsync(
+      `INSERT INTO items
+        (id, name, plant_based_type, heat_treated, verification_status,
+         verified_by, verified_on, manufacturer_days_after_open, source, is_active)
+       VALUES (?, ?, ?, ?, 'unverified', '', '', NULL, '', 1)
+       ON CONFLICT(id) DO UPDATE SET
+         name = excluded.name,
+         plant_based_type = excluded.plant_based_type,
+         heat_treated = excluded.heat_treated,
+         verification_status = 'unverified',
+         verified_by = '',
+         verified_on = '',
+         manufacturer_days_after_open = NULL,
+         source = '',
+         is_active = 1`,
+      itemId,
+      name,
+      input.plantBasedType,
+      input.heatTreated ? 1 : 0,
+    );
+    await transaction.runAsync('DELETE FROM shelf_lives WHERE item_id = ?', itemId);
+    await transaction.runAsync('DELETE FROM item_form_options WHERE item_id = ?', itemId);
+    await transaction.runAsync('DELETE FROM item_storage_options WHERE item_id = ?', itemId);
+
+    for (const [index, storageOptionId] of input.storageOptionIds.entries()) {
+      const option = optionById.get(storageOptionId);
+      if (!option || option.kind !== 'storage') throw new Error('INVALID_STORAGE_OPTION');
+      await transaction.runAsync(
+        `INSERT INTO item_storage_options (item_id, storage_type, sort_order, is_default)
+         VALUES (?, ?, ?, ?)`,
+        itemId,
+        option.legacy_value,
+        index,
+        index === 0 ? 1 : 0,
+      );
+    }
+    for (const [index, selectedForm] of input.formOptions.entries()) {
+      const option = optionById.get(selectedForm.optionId);
+      if (!option || option.kind !== 'form') throw new Error('INVALID_FORM_OPTION');
+      await transaction.runAsync(
+        `INSERT INTO item_form_options (item_id, form, sort_order, is_default, prepared_food)
+         VALUES (?, ?, ?, ?, ?)`,
+        itemId,
+        option.legacy_value,
+        index,
+        index === 0 ? 1 : 0,
+        selectedForm.preparedFood ? 1 : 0,
+      );
+    }
+  });
+  return itemId;
+}
+
+export async function archiveKitchenItem(db: SQLiteDatabase, itemId: string): Promise<void> {
+  await db.runAsync('UPDATE items SET is_active = 0 WHERE id = ?', itemId);
 }
 
 export async function getShelfLife(
