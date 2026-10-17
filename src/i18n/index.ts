@@ -266,20 +266,34 @@ export interface FoodSafetyCopy {
   cameraPermission: string;
   grantCameraPermission: string;
   noBarcodeYet: string;
+  barcodeCaptured: string;
   barcodeOnlyNotice: string;
   barcode: string;
   gtin: string;
   scanAgain: string;
-  captureEvidence: string;
-  retakePhoto: string;
-  photoEvidence: string;
+  productIdentityEvidence: string;
+  productIdentityEvidenceHint: string;
+  productPhotoEvidence: string;
+  captureProductPhoto: string;
+  retakeProductPhoto: string;
+  expiryEvidence: string;
+  expiryEvidenceHint: string;
+  expiryPhotoEvidence: string;
+  packageEvidenceId: string;
+  evidenceConfirmedAt: string;
+  captureExpiryPhoto: string;
+  retakeExpiryPhoto: string;
   lotCode: string;
   confirmPackage: string;
   packageSaved: string;
-  packagePhotoRequired: string;
   packageExpiryRequired: string;
   packageDateInvalid: string;
+  productIdentityRequired: string;
+  expiryPhotoRequired: string;
+  manufacturerDaysRequired: string;
   packageDetailsDetected: string;
+  manufacturerEvidenceRequired: string;
+  continueToEvidence: string;
   registerItem: string;
   emptyCatalog: string;
   itemRegistrationTitle: string;
@@ -611,27 +625,41 @@ const COPY: Record<Language, AppCopy> = {
       yes: 'Sim',
       no: 'Não',
       manufacturerDays: 'Dias após abertura informados pelo fabricante',
-      packageExpiry: 'Validade da embalagem (AAAA-MM-DD, opcional)',
-      packageIntakeTitle: 'Ler embalagem do produto',
-      packageIntakeHint: 'Leia o código, fotografe lote e validade e confirme exatamente o que está impresso. Um código comum identifica o produto, mas normalmente não contém lote ou validade.',
+      packageExpiry: 'Validade da embalagem (AAAA-MM-DD)',
+      packageIntakeTitle: 'Registrar comprovação do fabricante',
+      packageIntakeHint: 'Registre o produto por código de barras ou foto e fotografe separadamente a validade impressa. Os dados ficam salvos neste dispositivo para auditoria.',
       scanPackage: 'Ler código e fotografar embalagem',
-      cameraPermission: 'A câmera é necessária para ler o código e registrar a foto do lote e da validade.',
+      cameraPermission: 'A câmera é necessária para ler o código e registrar as fotos do produto e da validade.',
       grantCameraPermission: 'Permitir câmera',
-      noBarcodeYet: 'Aponte a câmera para o código de barras ou QR/GS1 da embalagem.',
+      noBarcodeYet: 'Aponte a câmera para o código ou fotografe o produto se não houver código legível.',
+      barcodeCaptured: 'Código do produto registrado.',
       barcodeOnlyNotice: 'Produto identificado. A validade e o lote não estão neste código; copie-os da embalagem e confirme abaixo.',
       barcode: 'Código lido',
       gtin: 'GTIN',
       scanAgain: 'Ler novamente',
-      captureEvidence: 'Fotografar lote e validade',
-      retakePhoto: 'Refazer foto',
-      photoEvidence: 'Foto da embalagem',
+      productIdentityEvidence: '1. Identificação do produto',
+      productIdentityEvidenceHint: 'Obrigatório: leia o código de barras ou tire uma foto que identifique claramente o produto.',
+      productPhotoEvidence: 'Foto de identificação do produto',
+      captureProductPhoto: 'Fotografar produto',
+      retakeProductPhoto: 'Refazer foto do produto',
+      expiryEvidence: '2. Validade do fabricante',
+      expiryEvidenceHint: 'Obrigatório: fotografe a data de validade ou consumo preferencial e digite a mesma data abaixo.',
+      expiryPhotoEvidence: 'Foto da validade do fabricante',
+      packageEvidenceId: 'ID da comprovação da embalagem',
+      evidenceConfirmedAt: 'Comprovação confirmada em',
+      captureExpiryPhoto: 'Fotografar validade',
+      retakeExpiryPhoto: 'Refazer foto da validade',
       lotCode: 'Lote',
       confirmPackage: 'Confirmar dados da embalagem',
       packageSaved: 'Dados da embalagem confirmados e salvos somente neste dispositivo.',
-      packagePhotoRequired: 'Fotografe a parte da embalagem que mostra lote e validade.',
       packageExpiryRequired: 'Digite a validade impressa na embalagem.',
       packageDateInvalid: 'Use uma data válida no formato AAAA-MM-DD.',
+      productIdentityRequired: 'Leia o código de barras ou fotografe o produto para identificá-lo.',
+      expiryPhotoRequired: 'Fotografe a validade ou a data de consumo preferencial impressa pelo fabricante.',
+      manufacturerDaysRequired: 'Digite o prazo após abertura informado pelo fabricante para produtos abertos.',
       packageDetailsDetected: 'Dados GS1 encontrados. Confira todos os campos com a embalagem antes de confirmar.',
+      manufacturerEvidenceRequired: 'A comprovação do fabricante é obrigatória. O alimento não foi adicionado ao catálogo.',
+      continueToEvidence: 'Continuar para comprovação',
       registerItem: 'Cadastrar alimento',
       emptyCatalog: 'Nenhum alimento cadastrado. Cadastre cada alimento uma vez para reutilizá-lo nas próximas etiquetas.',
       itemRegistrationTitle: 'Cadastrar alimento da cozinha',
@@ -973,27 +1001,41 @@ const COPY: Record<Language, AppCopy> = {
       yes: 'Yes',
       no: 'No',
       manufacturerDays: 'Manufacturer days after opening',
-      packageExpiry: 'Package expiry (YYYY-MM-DD, optional)',
-      packageIntakeTitle: 'Read product package',
-      packageIntakeHint: 'Scan the code, photograph the lot and expiry, and confirm exactly what is printed. An ordinary barcode identifies the product but usually does not contain a lot or expiry.',
+      packageExpiry: 'Package expiry (YYYY-MM-DD)',
+      packageIntakeTitle: 'Record manufacturer evidence',
+      packageIntakeHint: 'Identify the product with a barcode or photo, then separately photograph the printed expiry. The evidence is stored on this device for audits.',
       scanPackage: 'Scan code and photograph package',
-      cameraPermission: 'Camera access is needed to scan the code and record a photo of the lot and expiry.',
+      cameraPermission: 'Camera access is needed to scan the code and record product and expiry photos.',
       grantCameraPermission: 'Allow camera',
-      noBarcodeYet: 'Point the camera at the package barcode or QR/GS1 code.',
+      noBarcodeYet: 'Point the camera at the code, or photograph the product if there is no readable code.',
+      barcodeCaptured: 'Product code recorded.',
       barcodeOnlyNotice: 'Product identified. Expiry and lot are not encoded here; copy them from the package and confirm below.',
       barcode: 'Scanned code',
       gtin: 'GTIN',
       scanAgain: 'Scan again',
-      captureEvidence: 'Photograph lot and expiry',
-      retakePhoto: 'Retake photo',
-      photoEvidence: 'Package photo',
+      productIdentityEvidence: '1. Product identification',
+      productIdentityEvidenceHint: 'Required: scan the barcode or take a photo that clearly identifies the product.',
+      productPhotoEvidence: 'Product-identification photo',
+      captureProductPhoto: 'Photograph product',
+      retakeProductPhoto: 'Retake product photo',
+      expiryEvidence: '2. Manufacturer expiry',
+      expiryEvidenceHint: 'Required: photograph the best-by/use-by date and enter the same date below.',
+      expiryPhotoEvidence: 'Manufacturer-expiry photo',
+      packageEvidenceId: 'Package evidence ID',
+      evidenceConfirmedAt: 'Evidence confirmed at',
+      captureExpiryPhoto: 'Photograph expiry',
+      retakeExpiryPhoto: 'Retake expiry photo',
       lotCode: 'Lot / batch',
       confirmPackage: 'Confirm package details',
       packageSaved: 'Package details confirmed and saved on this device only.',
-      packagePhotoRequired: 'Photograph the package area showing the lot and expiry.',
       packageExpiryRequired: 'Enter the expiry printed on the package.',
       packageDateInvalid: 'Use a valid date in YYYY-MM-DD format.',
+      productIdentityRequired: 'Scan the barcode or photograph the product to identify it.',
+      expiryPhotoRequired: 'Photograph the manufacturer best-by or use-by date.',
+      manufacturerDaysRequired: 'Enter the manufacturer after-opening period for an opened product.',
       packageDetailsDetected: 'GS1 details found. Check every field against the package before confirming.',
+      manufacturerEvidenceRequired: 'Manufacturer evidence is required. The item was not added to the catalog.',
+      continueToEvidence: 'Continue to evidence',
       registerItem: 'Register item',
       emptyCatalog: 'No items are registered. Register each item once and reuse it for future labels.',
       itemRegistrationTitle: 'Register a kitchen item',

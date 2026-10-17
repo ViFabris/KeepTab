@@ -3,12 +3,18 @@ import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { PackagePlus, X } from 'lucide-react-native';
 
-import { getItems, registerKitchenItem } from '../database/itemsRepository';
+import {
+  archiveKitchenItem,
+  completeKitchenItemRegistration,
+  getItems,
+  registerKitchenItem,
+} from '../database/itemsRepository';
 import { getLabelOptions } from '../database/optionsRepository';
 import { getLabelOptionName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
+import { PackageIntakeModal } from '../packages/PackageIntakeModal';
 import { colors, sizes, spacing, typography } from '../theme';
-import type { KitchenItem, LabelOption, PlantBasedType } from '../types';
+import type { KitchenItem, LabelOption, PackageEvidence, PlantBasedType } from '../types';
 import { BigButton } from './BigButton';
 import { Card } from './Card';
 import { Input } from './Input';
@@ -41,9 +47,15 @@ export function ItemRegistrationModal({
   const [heatTreated, setHeatTreated] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [pendingManufacturerItem, setPendingManufacturerItem] = useState<KitchenItem | null>(null);
   const formOptions = useMemo(() => options.filter((option) => option.kind === 'form'), [options]);
   const storageOptions = useMemo(() => options.filter((option) => option.kind === 'storage'), [options]);
   const isLabelMode = mode === 'label';
+  const requiresManufacturerEvidence = selectedFormIds.some((id) => !(preparedByForm[id] ?? false));
+  const requiresManufacturerDays = selectedFormIds.some((id) => {
+    const option = formOptions.find((candidate) => candidate.id === id);
+    return option?.legacyValue === 'Opened' && !(preparedByForm[id] ?? false);
+  });
 
   useEffect(() => {
     if (!visible) return;
@@ -53,6 +65,7 @@ export function ItemRegistrationModal({
     setPreparedByForm({});
     setPlantBasedType('none');
     setHeatTreated(false);
+    setPendingManufacturerItem(null);
     setError('');
     void getLabelOptions(db)
       .then(setOptions)
@@ -88,16 +101,49 @@ export function ItemRegistrationModal({
         storageOptionIds: selectedStorageIds,
         plantBasedType,
         heatTreated: plantBasedType === 'none' ? false : heatTreated,
+        registrationComplete: !requiresManufacturerEvidence,
       });
-      const item = (await getItems(db)).find((candidate) => candidate.id === itemId);
+      const item = (await getItems(db, { includeIncomplete: true })).find((candidate) => candidate.id === itemId);
       if (!item) throw new Error('ITEM_NOT_FOUND_AFTER_REGISTRATION');
-      onRegistered(item);
+      if (requiresManufacturerEvidence) setPendingManufacturerItem(item);
+      else onRegistered(item);
     } catch (caught) {
       setError(caught instanceof Error && caught.message === 'ITEM_ALREADY_EXISTS'
         ? copy.foodSafety.itemAlreadyExists
         : copy.genericError);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function finishManufacturerEvidence(evidence: PackageEvidence) {
+    if (!pendingManufacturerItem) return;
+    setBusy(true);
+    setError('');
+    try {
+      await completeKitchenItemRegistration(db, pendingManufacturerItem.id, evidence);
+      const completed = {
+        ...pendingManufacturerItem,
+        manufacturerDaysAfterOpen: evidence.manufacturerDaysAfterOpen,
+        source: `package-evidence:${evidence.id}`,
+      };
+      setPendingManufacturerItem(null);
+      onRegistered(completed);
+    } catch {
+      setError(copy.genericError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function cancelManufacturerEvidence() {
+    if (!pendingManufacturerItem) return;
+    try {
+      await archiveKitchenItem(db, pendingManufacturerItem.id);
+      setPendingManufacturerItem(null);
+      setError(copy.foodSafety.manufacturerEvidenceRequired);
+    } catch {
+      setError(copy.genericError);
     }
   }
 
@@ -224,11 +270,20 @@ export function ItemRegistrationModal({
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <BigButton
             disabled={busy}
-            label={copy.foodSafety.registerAndUse}
+            label={requiresManufacturerEvidence
+              ? copy.foodSafety.continueToEvidence
+              : copy.foodSafety.registerAndUse}
             onPress={() => void save()}
             leading={<PackagePlus color={colors.background} size={sizes.iconMd} strokeWidth={2} />}
           />
         </ScrollView>
+        <PackageIntakeModal
+          itemId={pendingManufacturerItem?.id ?? ''}
+          onCancel={() => void cancelManufacturerEvidence()}
+          onConfirmed={(evidence) => void finishManufacturerEvidence(evidence)}
+          requireManufacturerDays={requiresManufacturerDays}
+          visible={pendingManufacturerItem !== null}
+        />
       </View>
     </Modal>
   );

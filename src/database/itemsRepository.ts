@@ -17,6 +17,7 @@ interface ItemRow {
   manufacturer_days_after_open: number | null;
   source: string;
   is_active: number;
+  registration_complete: number;
 }
 
 interface StorageRow {
@@ -32,11 +33,16 @@ interface FormRow {
   prepared_food: number;
 }
 
-export async function getItems(db: SQLiteDatabase): Promise<KitchenItem[]> {
+export async function getItems(
+  db: SQLiteDatabase,
+  options: { includeIncomplete?: boolean } = {},
+): Promise<KitchenItem[]> {
+  const completionFilter = options.includeIncomplete ? '' : 'AND registration_complete = 1';
   const [items, storageRows, formRows, allOptions] = await Promise.all([
     db.getAllAsync<ItemRow>(`SELECT id, name, plant_based_type, heat_treated,
-      verification_status, verified_by, verified_on, manufacturer_days_after_open, source, is_active
-      FROM items WHERE is_active = 1 ORDER BY name COLLATE NOCASE`),
+      verification_status, verified_by, verified_on, manufacturer_days_after_open, source,
+      is_active, registration_complete
+      FROM items WHERE is_active = 1 ${completionFilter} ORDER BY name COLLATE NOCASE`),
     db.getAllAsync<StorageRow>(
       `SELECT item_id, storage_type, is_default
        FROM item_storage_options ORDER BY item_id, sort_order`,
@@ -76,6 +82,7 @@ export interface RegisterKitchenItemInput {
   storageOptionIds: string[];
   plantBasedType: PlantBasedType;
   heatTreated: boolean;
+  registrationComplete?: boolean;
 }
 
 export async function registerKitchenItem(
@@ -94,19 +101,19 @@ export async function registerKitchenItem(
   );
   const optionById = new Map(optionRows.map((option) => [option.id, option]));
   if (optionRows.length !== new Set(optionIds).size) throw new Error('ITEM_OPTION_NOT_FOUND');
-  const existing = await db.getFirstAsync<{ id: string; is_active: number }>(
-    'SELECT id, is_active FROM items WHERE name = ? COLLATE NOCASE',
+  const existing = await db.getFirstAsync<{ id: string; is_active: number; registration_complete: number }>(
+    'SELECT id, is_active, registration_complete FROM items WHERE name = ? COLLATE NOCASE',
     name,
   );
-  if (existing?.is_active === 1) throw new Error('ITEM_ALREADY_EXISTS');
+  if (existing?.is_active === 1 && existing.registration_complete === 1) throw new Error('ITEM_ALREADY_EXISTS');
   const itemId = existing?.id ?? `kitchen-${Crypto.randomUUID()}`;
 
   await withWriteTransaction(db, async (transaction) => {
     await transaction.runAsync(
       `INSERT INTO items
         (id, name, plant_based_type, heat_treated, verification_status,
-         verified_by, verified_on, manufacturer_days_after_open, source, is_active)
-       VALUES (?, ?, ?, ?, 'unverified', '', '', NULL, '', 1)
+         verified_by, verified_on, manufacturer_days_after_open, source, is_active, registration_complete)
+       VALUES (?, ?, ?, ?, 'unverified', '', '', NULL, '', 1, ?)
        ON CONFLICT(id) DO UPDATE SET
          name = excluded.name,
          plant_based_type = excluded.plant_based_type,
@@ -116,11 +123,13 @@ export async function registerKitchenItem(
          verified_on = '',
          manufacturer_days_after_open = NULL,
          source = '',
-         is_active = 1`,
+         is_active = 1,
+         registration_complete = excluded.registration_complete`,
       itemId,
       name,
       input.plantBasedType,
       input.heatTreated ? 1 : 0,
+      input.registrationComplete === false ? 0 : 1,
     );
     await transaction.runAsync('DELETE FROM shelf_lives WHERE item_id = ?', itemId);
     await transaction.runAsync('DELETE FROM item_form_options WHERE item_id = ?', itemId);
@@ -157,6 +166,20 @@ export async function registerKitchenItem(
 
 export async function archiveKitchenItem(db: SQLiteDatabase, itemId: string): Promise<void> {
   await db.runAsync('UPDATE items SET is_active = 0 WHERE id = ?', itemId);
+}
+
+export async function completeKitchenItemRegistration(
+  db: SQLiteDatabase,
+  itemId: string,
+  evidence: { id: number; manufacturerDaysAfterOpen: number | null },
+): Promise<void> {
+  await db.runAsync(
+    `UPDATE items SET registration_complete = 1,
+      manufacturer_days_after_open = ?, source = ? WHERE id = ?`,
+    evidence.manufacturerDaysAfterOpen,
+    `package-evidence:${evidence.id}`,
+    itemId,
+  );
 }
 
 export async function getShelfLife(

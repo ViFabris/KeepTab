@@ -2,10 +2,12 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type {
   LabelStatus,
+  PackageEvidence,
   PrintableLabel,
   SavedLabel,
   TodayLabelGroups,
 } from '../types';
+import { getPackageEvidenceById } from './packageScansRepository';
 import { DEFAULT_TIME_ZONE, getZonedDayNumber } from '../utils/appClock';
 import { withWriteTransaction } from './transactions';
 
@@ -137,6 +139,7 @@ export async function updateLabelStatus(
 
 export interface AuditRecord {
   label: SavedLabel;
+  packageEvidence: PackageEvidence | null;
   events: { eventType: string; occurredAt: string; personName: string }[];
 }
 
@@ -158,6 +161,9 @@ export async function getAuditRecords(
     );
     records.push({
       label: mapLabelRow(row),
+      packageEvidence: row.package_scan_id
+        ? await getPackageEvidenceById(db, row.package_scan_id)
+        : null,
       events: events.map((event) => ({
         eventType: event.event_type,
         occurredAt: event.occurred_at,

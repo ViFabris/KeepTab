@@ -36,8 +36,13 @@ export function AuditExportPanel() {
         ? JSON.stringify(records, null, 2)
         : toCsv(records, [
             copy.foodSafety.recordId,
+            copy.foodSafety.packageEvidenceId,
             copy.foodSafety.barcode,
             copy.foodSafety.lotCode,
+            copy.foodSafety.packageExpiry,
+            copy.foodSafety.productPhotoEvidence,
+            copy.foodSafety.expiryPhotoEvidence,
+            copy.foodSafety.evidenceConfirmedAt,
             copy.itemQuestion,
             copy.formQuestion,
             copy.storageQuestion,
@@ -98,10 +103,15 @@ function parseDate(value: string, end: boolean, timeZone: string): Date | null {
 }
 
 function toCsv(records: Awaited<ReturnType<typeof getAuditRecords>>, headers: string[]): string {
-  const rows = records.map(({ label, events }) => [
+  const rows = records.map(({ label, packageEvidence, events }) => [
     label.id,
+    packageEvidence?.id ?? '',
     label.productBarcode ?? '',
     label.lotCode ?? '',
+    packageEvidence?.packageExpiryDate ?? '',
+    packageEvidence?.productPhotoUri ?? '',
+    packageEvidence?.expiryPhotoUri ?? '',
+    packageEvidence?.confirmedAt ?? '',
     label.itemName,
     label.form,
     label.storageType,

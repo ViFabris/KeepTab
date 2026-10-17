@@ -34,10 +34,11 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await seedDefaultOptions(db);
   await migrateAuditTrail(db);
   await migratePackageEvidence(db);
+  await migrateManufacturerEvidence(db);
   await initializeSettings(db);
   await migrateLabelSizeSetting(db);
   await linkExistingLabelsToOptions(db);
-  await db.execAsync('PRAGMA user_version = 6');
+  await db.execAsync('PRAGMA user_version = 7');
 }
 
 const LEGACY_SEED_ITEM_IDS = [
@@ -205,6 +206,11 @@ async function migratePackageEvidence(db: SQLiteDatabase): Promise<void> {
     CREATE INDEX IF NOT EXISTS package_scans_gtin_idx
       ON package_scans(gtin, confirmed_at DESC);
   `);
+}
+
+async function migrateManufacturerEvidence(db: SQLiteDatabase): Promise<void> {
+  await addColumnIfMissing(db, 'items', 'registration_complete', 'INTEGER NOT NULL DEFAULT 1');
+  await addColumnIfMissing(db, 'package_scans', 'product_photo_uri', "TEXT NOT NULL DEFAULT ''");
 }
 
 async function migratePrinterSettings(db: SQLiteDatabase): Promise<void> {

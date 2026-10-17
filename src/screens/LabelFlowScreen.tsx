@@ -12,6 +12,7 @@ import { LabelPreview } from '../components/LabelPreview';
 import { OptionStep } from '../components/OptionStep';
 import { PageHeader } from '../components/PageHeader';
 import { getItems, getShelfLife } from '../database/itemsRepository';
+import { getLatestPackageEvidenceForItem } from '../database/packageScansRepository';
 import { getStaff } from '../database/staffRepository';
 import { getItemName, getLabelOptionName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -155,11 +156,25 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         formOption.id,
         storageOption.id,
       );
-      const confirmedPackage = evidenceOverride ?? packageEvidence;
       const madeAt = getAppNow(settings);
       const opened = formOption.legacyValue === 'Opened';
-      if (opened && !openedDays && item.manufacturerDaysAfterOpen) {
-        setOpenedDays(String(item.manufacturerDaysAfterOpen));
+      const confirmedPackage = evidenceOverride
+        ?? packageEvidence
+        ?? (!(formOption.preparedFood ?? false) ? await getLatestPackageEvidenceForItem(db, item.id) : null);
+      const effectiveManufacturerDays = manufacturerDaysOverride
+        ?? item.manufacturerDaysAfterOpen
+        ?? confirmedPackage?.manufacturerDaysAfterOpen
+        ?? null;
+      const effectivePackageExpiry = packageExpiryOverride
+        || packageExpiry
+        || confirmedPackage?.packageExpiryDate
+        || '';
+      if (confirmedPackage) {
+        setPackageEvidence(confirmedPackage);
+        setPackageExpiry(confirmedPackage.packageExpiryDate);
+      }
+      if (opened && !openedDays && effectiveManufacturerDays) {
+        setOpenedDays(String(effectiveManufacturerDays));
       }
       const result = calculateValidity({
         madeAt,
@@ -175,8 +190,8 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         reducedMaximumDays: settings.reducedMaximumDays,
         plantBasedType: item.plantBasedType,
         heatTreated: item.heatTreated,
-        manufacturerDaysAfterOpen: manufacturerDaysOverride ?? item.manufacturerDaysAfterOpen,
-        packageExpiryAt: parsePackageExpiry(packageExpiryOverride ?? packageExpiry, settings.timeZone),
+        manufacturerDaysAfterOpen: effectiveManufacturerDays,
+        packageExpiryAt: parsePackageExpiry(effectivePackageExpiry, settings.timeZone),
       });
       const legalRule = result.allowed && Boolean(result.cappedBy);
       const gate = evaluatePrintingGate(result, item.verificationStatus, settings.verificationMode, {
@@ -525,6 +540,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
               );
             }
           }}
+          requireManufacturerDays={formOption.legacyValue === 'Opened'}
           visible={packageIntakeVisible}
         />
       </View>

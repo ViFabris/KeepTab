@@ -50,7 +50,8 @@ export const SCHEMA_SQL = `
     verified_on TEXT NOT NULL DEFAULT '',
     manufacturer_days_after_open INTEGER CHECK (manufacturer_days_after_open > 0),
     source TEXT NOT NULL DEFAULT '',
-    is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1))
+    is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+    registration_complete INTEGER NOT NULL DEFAULT 1 CHECK (registration_complete IN (0, 1))
   );
 
   CREATE TABLE IF NOT EXISTS item_storage_options (
@@ -150,6 +151,7 @@ export const SCHEMA_SQL = `
     lot_code TEXT NOT NULL DEFAULT '',
     package_expiry_date TEXT NOT NULL DEFAULT '',
     manufacturer_days_after_open INTEGER CHECK (manufacturer_days_after_open > 0),
+    product_photo_uri TEXT NOT NULL DEFAULT '',
     photo_uri TEXT NOT NULL DEFAULT '',
     confirmed_at TEXT NOT NULL,
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE RESTRICT

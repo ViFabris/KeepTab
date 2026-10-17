@@ -126,7 +126,8 @@ export interface PackageEvidence {
   lotCode: string;
   packageExpiryDate: string;
   manufacturerDaysAfterOpen: number | null;
-  photoUri: string;
+  productPhotoUri: string;
+  expiryPhotoUri: string;
   confirmedAt: string;
 }
 
