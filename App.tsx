@@ -6,7 +6,7 @@ import {
   Inter_800ExtraBold,
   useFonts,
 } from '@expo-google-fonts/inter';
-import { CalendarDays, Printer, Settings } from 'lucide-react-native';
+import { CalendarDays, PackagePlus, Printer, Settings } from 'lucide-react-native';
 import { Suspense, useEffect, useState } from 'react';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import * as NavigationBar from 'expo-navigation-bar';
@@ -15,7 +15,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, Platform, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 import { Logo } from './src/components/Logo';
-import { SafetyBanner } from './src/components/SafetyBanner';
+import { ItemRegistrationModal } from './src/components/ItemRegistrationModal';
 import { initializeDatabase } from './src/database/initialize';
 import { getAppSettings } from './src/database/settingsRepository';
 import { LanguageProvider, useLanguage } from './src/i18n/LanguageContext';
@@ -32,7 +32,7 @@ import type { AppSettings } from './src/types';
 
 void SplashScreen.preventAutoHideAsync();
 
-type Screen = 'label' | 'today' | 'settings';
+type Screen = 'label' | 'today' | 'register' | 'settings';
 
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
@@ -132,6 +132,12 @@ function LocalizedAppShell() {
               selected={screen === 'today'}
               onPress={() => setScreen('today')}
             />
+            <NavButton
+              icon={PackagePlus}
+              label={copy.foodSafety.registerItem}
+              selected={screen === 'register'}
+              onPress={() => setScreen('register')}
+            />
           </View>
           <View style={styles.sidebarFooter}>
             <NavButton
@@ -141,7 +147,6 @@ function LocalizedAppShell() {
               onPress={() => setScreen('settings')}
             />
             <Text style={styles.offline}>{copy.offlineDatabase}</Text>
-            <SafetyBanner compact />
           </View>
         </View>
         <View style={styles.content}>
@@ -150,6 +155,15 @@ function LocalizedAppShell() {
           ) : null}
           {screen === 'today' ? <TodayScreen refreshKey={labelsVersion + configurationVersion} /> : null}
           {screen === 'settings' ? <SettingsScreen onClose={closeSettings} /> : null}
+          <ItemRegistrationModal
+            mode="label"
+            onCancel={() => setScreen('label')}
+            onRegistered={() => {
+              setConfigurationVersion((version) => version + 1);
+              setScreen('label');
+            }}
+            visible={screen === 'register'}
+          />
         </View>
       </View>
     </SafeAreaView>

@@ -8,12 +8,9 @@ import { Card } from '../components/Card';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Input } from '../components/Input';
 import { ItemSelector } from '../components/ItemSelector';
-import { ItemRegistrationModal } from '../components/ItemRegistrationModal';
 import { LabelPreview } from '../components/LabelPreview';
 import { OptionStep } from '../components/OptionStep';
 import { PageHeader } from '../components/PageHeader';
-import { SafetyBanner } from '../components/SafetyBanner';
-import { StepProgress } from '../components/StepProgress';
 import { getItems, getShelfLife } from '../database/itemsRepository';
 import { getStaff } from '../database/staffRepository';
 import { getItemName, getLabelOptionName } from '../i18n';
@@ -40,16 +37,6 @@ import { zonedDateTimeToInstant } from '../utils/appClock';
 import packageData from '../../package.json';
 
 type FlowStep = 'item' | 'storage' | 'form' | 'staff' | 'preview' | 'printed';
-
-const FLOW_STEP_NUMBER: Record<FlowStep, number> = {
-  item: 1,
-  storage: 2,
-  form: 3,
-  staff: 4,
-  preview: 5,
-  printed: 5,
-};
-const FLOW_STEP_TOTAL = 5;
 
 interface LabelFlowScreenProps {
   onPrinted: () => void;
@@ -84,7 +71,6 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
   const [packageExpiry, setPackageExpiry] = useState('');
   const [packageEvidence, setPackageEvidence] = useState<PackageEvidence | null>(null);
   const [packageIntakeVisible, setPackageIntakeVisible] = useState(false);
-  const [registrationVisible, setRegistrationVisible] = useState(false);
   const [confirmTestPrint, setConfirmTestPrint] = useState(false);
   const [printedLabel, setPrintedLabel] = useState<SavedLabel | null>(null);
   const [preparedJob, setPreparedJob] = useState<PreparedPrintJob | null>(null);
@@ -97,14 +83,6 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
     () => new MockPrinter(db, settings, () => getAppNow(settings)),
     [db, settings],
   );
-  const progress = (
-    <StepProgress
-      current={FLOW_STEP_NUMBER[step]}
-      total={FLOW_STEP_TOTAL}
-      label={copy.setup.step(FLOW_STEP_NUMBER[step], FLOW_STEP_TOTAL)}
-    />
-  );
-
   useEffect(() => {
     let mounted = true;
     Promise.all([getItems(db), getStaff(db)])
@@ -311,25 +289,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
   if (step === 'item') {
     return (
       <View style={styles.screen}>
-        <View style={styles.headerWithBanner}>
-          <PageHeader
-            title={copy.itemQuestion}
-            subtitle={copy.itemHint}
-            action={
-              <View style={styles.itemHeaderActions}>
-                {progress}
-                <BigButton
-                  label={copy.foodSafety.registerItem}
-                  onPress={() => setRegistrationVisible(true)}
-                  variant="secondary"
-                  style={styles.registerButton}
-                  leading={<PackagePlus color={colors.ink} size={sizes.iconMd} strokeWidth={2} />}
-                />
-              </View>
-            }
-          />
-          <SafetyBanner compact style={styles.headerBanner} />
-        </View>
+        <PageHeader title={copy.itemQuestion} subtitle={copy.itemHint} />
         {error ? <ErrorMessage message={error} /> : null}
         {items.length ? (
           <ItemSelector items={items} onSelectItem={selectItem} />
@@ -337,24 +297,8 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
           <Card style={styles.emptyCatalog}>
             <PackagePlus color={colors.secondary} size={sizes.iconXl} strokeWidth={2} />
             <Text style={styles.emptyTitle}>{copy.foodSafety.emptyCatalog}</Text>
-            <BigButton
-              label={copy.foodSafety.registerFirstItem}
-              onPress={() => setRegistrationVisible(true)}
-              style={styles.firstItemButton}
-            />
           </Card>
         )}
-        <ItemRegistrationModal
-          mode="label"
-          onCancel={() => setRegistrationVisible(false)}
-          onRegistered={(registeredItem) => {
-            setItems((current) => [...current.filter((candidate) => candidate.id !== registeredItem.id), registeredItem]
-              .sort((left, right) => left.name.localeCompare(right.name)));
-            setRegistrationVisible(false);
-            selectItem(registeredItem);
-          }}
-          visible={registrationVisible}
-        />
       </View>
     );
   }
@@ -387,7 +331,6 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
             setStep(item.formOptions.length > 1 ? 'form' : 'staff');
           }}
           onBack={resetFlow}
-          progress={progress}
         />
       </View>
     );
@@ -406,7 +349,6 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
             setStep('staff');
           }}
           onBack={() => item.storageOptions.length > 1 ? setStep('storage') : resetFlow()}
-          progress={progress}
         />
       </View>
     );
@@ -418,7 +360,6 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         <PageHeader
           title={copy.staffQuestion}
           subtitle={`${localizedItemName} · ${getLabelOptionName(formOption, language)} · ${getLabelOptionName(storageOption, language)}`}
-          action={progress}
         />
         {error ? <ErrorMessage message={error} /> : null}
         {staff.length ? (
@@ -473,7 +414,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
       : '';
     return (
       <View style={styles.screen}>
-        <PageHeader title={copy.previewTitle} subtitle={copy.previewHint} action={progress} />
+        <PageHeader title={copy.previewTitle} subtitle={copy.previewHint} />
         {error ? <ErrorMessage message={error} /> : null}
         <ScrollView contentContainerStyle={styles.previewArea}>
           {previewGate?.requiresTestWarning ? (
@@ -659,12 +600,7 @@ function parsePackageExpiry(value: string, timeZone: string): Date | null {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, padding: spacing.xxl, gap: spacing.lg, backgroundColor: colors.background },
-  headerWithBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xl },
-  itemHeaderActions: { alignItems: 'flex-end', gap: spacing.sm },
-  registerButton: { minWidth: 240 },
-  headerBanner: { width: sizes.banner, flexShrink: 1 },
   emptyCatalog: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg, padding: spacing.xxl },
-  firstItemButton: { minWidth: 300 },
   staffGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, paddingVertical: spacing.lg },
   staffButton: { width: '31%', minHeight: sizes.tapMin + spacing.xxl },
   emptyStaff: {

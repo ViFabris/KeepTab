@@ -153,8 +153,6 @@ export interface AppCopy {
   navStaff: string;
   offlineDatabase: string;
   changeLanguage: string;
-  safetyTitle: string;
-  safetyBody: string;
   sampleLabelBadge: string;
   made: string;
   openedOn: string;
@@ -283,7 +281,6 @@ export interface FoodSafetyCopy {
   packageDateInvalid: string;
   packageDetailsDetected: string;
   registerItem: string;
-  registerFirstItem: string;
   emptyCatalog: string;
   itemRegistrationTitle: string;
   itemRegistrationHint: string;
@@ -510,8 +507,6 @@ const COPY: Record<Language, AppCopy> = {
     navStaff: 'Equipe',
     offlineDatabase: '● Banco de dados offline',
     changeLanguage: 'Idioma',
-    safetyTitle: 'CATÁLOGO DA COZINHA',
-    safetyBody: 'Os alimentos são cadastrados pela cozinha. A validade exige uma regra aplicável ou dados confirmados da embalagem.',
     sampleLabelBadge: 'ETIQUETA SIMULADA',
     made: 'PREPARADO EM',
     openedOn: 'ABERTO EM',
@@ -638,11 +633,10 @@ const COPY: Record<Language, AppCopy> = {
       packageDateInvalid: 'Use uma data válida no formato AAAA-MM-DD.',
       packageDetailsDetected: 'Dados GS1 encontrados. Confira todos os campos com a embalagem antes de confirmar.',
       registerItem: 'Cadastrar alimento',
-      registerFirstItem: 'Cadastrar primeiro alimento',
       emptyCatalog: 'Nenhum alimento cadastrado. Cadastre cada alimento uma vez para reutilizá-lo nas próximas etiquetas.',
       itemRegistrationTitle: 'Cadastrar alimento da cozinha',
       itemRegistrationHint: 'Escolha os estados e armazenamentos usados nesta cozinha. O prazo será limitado automaticamente pelas regras aplicáveis.',
-      itemRegistrationForLabelHint: 'Escolha uma vez o estado atual e o armazenamento. Essas opções serão usadas diretamente nesta etiqueta.',
+      itemRegistrationForLabelHint: 'Escolha uma vez o estado atual e o armazenamento. Essas opções serão salvas com o alimento e não serão perguntadas novamente.',
       itemName: 'Nome do alimento',
       itemNamePlaceholder: 'Ex.: arroz cozido',
       chooseForms: 'Estados ou preparos disponíveis',
@@ -875,8 +869,6 @@ const COPY: Record<Language, AppCopy> = {
     navStaff: 'Staff',
     offlineDatabase: '● Offline database',
     changeLanguage: 'Language',
-    safetyTitle: 'KITCHEN CATALOG',
-    safetyBody: 'Items are registered by the kitchen. A use-by date requires an applicable rule or confirmed package details.',
     sampleLabelBadge: 'MOCK LABEL',
     made: 'MADE',
     openedOn: 'OPENED',
@@ -1003,11 +995,10 @@ const COPY: Record<Language, AppCopy> = {
       packageDateInvalid: 'Use a valid date in YYYY-MM-DD format.',
       packageDetailsDetected: 'GS1 details found. Check every field against the package before confirming.',
       registerItem: 'Register item',
-      registerFirstItem: 'Register first item',
       emptyCatalog: 'No items are registered. Register each item once and reuse it for future labels.',
       itemRegistrationTitle: 'Register a kitchen item',
       itemRegistrationHint: 'Choose the forms and storage methods used in this kitchen. Applicable legal rules will automatically limit the date.',
-      itemRegistrationForLabelHint: 'Choose the current form and storage once. These choices will be used directly for this label.',
+      itemRegistrationForLabelHint: 'Choose the current form and storage once. These choices will be saved with the item and will not be asked again.',
       itemName: 'Item name',
       itemNamePlaceholder: 'Example: cooked rice',
       chooseForms: 'Available forms or preparations',
