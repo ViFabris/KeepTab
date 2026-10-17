@@ -9,10 +9,13 @@ import { Input } from '../components/Input';
 import { getAuditRecords } from '../database/labelsRepository';
 import { useLanguage } from '../i18n/LanguageContext';
 import { colors, spacing, typography } from '../theme';
+import { zonedDateTimeToInstant } from '../utils/appClock';
+import { useSettings } from './SettingsContext';
 
 export function AuditExportPanel() {
   const db = useSQLiteContext();
   const { copy } = useLanguage();
+  const { settings } = useSettings();
   const [start, setStart] = useState(() => new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10));
   const [end, setEnd] = useState(() => new Date().toISOString().slice(0, 10));
   const [message, setMessage] = useState('');
@@ -20,8 +23,8 @@ export function AuditExportPanel() {
 
   async function exportAudit(format: 'csv' | 'json') {
     setMessage('');
-    const startDate = parseDate(start, false);
-    const endDate = parseDate(end, true);
+    const startDate = parseDate(start, false, settings.timeZone);
+    const endDate = parseDate(end, true, settings.timeZone);
     if (!startDate || !endDate || startDate > endDate || !FileSystem.cacheDirectory) {
       setError(true);
       setMessage(copy.foodSafety.invalidDateRange);
@@ -78,10 +81,17 @@ export function AuditExportPanel() {
   );
 }
 
-function parseDate(value: string, end: boolean): Date | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  const date = new Date(`${value}T${end ? '23:59:59.999' : '00:00:00.000'}Z`);
-  return Number.isNaN(date.getTime()) ? null : date;
+function parseDate(value: string, end: boolean, timeZone: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  return zonedDateTimeToInstant({
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3]),
+    hour: end ? 23 : 0,
+    minute: end ? 59 : 0,
+    second: end ? 59 : 0,
+  }, timeZone);
 }
 
 function toCsv(records: Awaited<ReturnType<typeof getAuditRecords>>, headers: string[]): string {

@@ -26,8 +26,12 @@ export function RulesPanel() {
   const groups = useMemo(() => {
     const grouped = new Map<string, FoodSafetyRule[]>();
     for (const rule of getRulesForJurisdiction(settings.jurisdiction)) {
-      const source = rule.sources[0]?.law ?? copy.foodSafety.ruleSource;
-      grouped.set(source, [...(grouped.get(source) ?? []), rule]);
+      const sources = rule.sources.filter((source) =>
+        settings.jurisdiction === 'RS' || !source.law.includes('Portaria SES'),
+      );
+      for (const source of sources) {
+        grouped.set(source.law, [...(grouped.get(source.law) ?? []), rule]);
+      }
     }
     return [...grouped.entries()];
   }, [copy.foodSafety.ruleSource, settings.jurisdiction]);
@@ -45,6 +49,7 @@ export function RulesPanel() {
     <View style={styles.container}>
       <Text style={styles.version}>{copy.foodSafety.rulesVersion}: {RULES_VERSION}</Text>
       <Text style={styles.notice}>{copy.foodSafety.municipalNotice}</Text>
+      <Text style={styles.notice}>{copy.foodSafety.englishInformalNotice}</Text>
       {settings.jurisdiction === 'OTHER' ? <Text style={styles.notice}>{copy.foodSafety.otherStateNotice}</Text> : null}
       <View style={styles.inputs}>
         <Input label={copy.foodSafety.reviewerName} onChangeText={setReviewer} value={reviewer} containerStyle={styles.flex} />
@@ -67,8 +72,8 @@ export function RulesPanel() {
                     <StatusBadge label={rule.enforced ? copy.foodSafety.enforced : copy.foodSafety.informational} tone={rule.enforced ? 'fine' : 'warning'} />
                   </View>
                   <Text style={styles.body}>{rule.summary[language]}</Text>
-                  <Text style={styles.meta}>{copy.foodSafety.ruleSource}: {rule.sources.map((item) => `${item.law} · ${item.itemNumber}`).join(' | ')}</Text>
-                  <Text style={styles.meta}>{copy.foodSafety.enforcedIn}: {rule.enforcedIn}</Text>
+                  <Text style={styles.meta}>{copy.foodSafety.ruleSource}: {rule.sources.filter((item) => settings.jurisdiction === 'RS' || !item.law.includes('Portaria SES')).map((item) => `${item.law} · ${item.itemNumber}`).join(' | ')}</Text>
+                  <Text style={styles.meta}>{copy.foodSafety.enforcedIn}: {localizeEnforcedIn(rule.enforcedIn, copy.foodSafety)}</Text>
                   <Text style={styles.meta}>{rule.appliesTo[language]}</Text>
                   {saved ? <Text style={styles.review}>{copy.foodSafety.reviewedBy}: {saved.reviewedBy} · {saved.reviewedOn}</Text> : null}
                   <BigButton label={copy.foodSafety.recordReview} onPress={() => void review(rule)} disabled={!reviewer.trim() || !reviewDate.trim()} variant="secondary" />
@@ -100,3 +105,12 @@ const styles = StyleSheet.create({
   meta: { ...typography.caption, color: colors.muted },
   review: { ...typography.bodyStrong, color: colors.primaryDark },
 });
+
+function localizeEnforcedIn(value: string, copy: ReturnType<typeof useLanguage>['copy']['foodSafety']): string {
+  if (value === 'Informational') return copy.informational;
+  if (value === 'Phase 1') return copy.phase1;
+  if (value === 'Phase 1 (storage rule)') return `${copy.phase1} · ${copy.storageRule}`;
+  if (value === 'Phase 2') return copy.phase2;
+  if (value.startsWith('Phase 3')) return copy.phase3;
+  return value;
+}

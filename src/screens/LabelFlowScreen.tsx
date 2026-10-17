@@ -19,6 +19,7 @@ import { getItemName, getLabelOptionName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
 import { RULES_VERSION } from '../rules/rules';
+import { evaluatePrintingGate } from '../rules/printingGate';
 import { calculateValidity, type ValidityResult } from '../rules/validity';
 import type { PreparedPrintJob } from '../printing/EscPosPrinter';
 import { useSettings } from '../settings/SettingsContext';
@@ -205,7 +206,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
       setShelfLife(configuredShelfLife);
       setValidity(result);
       setLabel(
-        result.allowed && !(settings.verificationMode === 'strict' && item.verificationStatus !== 'verified')
+        evaluatePrintingGate(result, item.verificationStatus, settings.verificationMode).allowed && result.allowed
           ? {
               ...draft,
               useByAt: result.expiresAt.toISOString(),

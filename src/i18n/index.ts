@@ -298,6 +298,11 @@ export interface FoodSafetyCopy {
   appVersion: string;
   events: string;
   recordId: string;
+  phase1: string;
+  phase2: string;
+  phase3: string;
+  storageRule: string;
+  englishInformalNotice: string;
 }
 
 const COPY: Record<Language, AppCopy> = {
@@ -616,6 +621,11 @@ const COPY: Record<Language, AppCopy> = {
       appVersion: 'Versão do app',
       events: 'Eventos',
       recordId: 'ID da etiqueta',
+      phase1: 'Fase 1',
+      phase2: 'Fase 2',
+      phase3: 'Fase 3',
+      storageRule: 'regra de armazenamento',
+      englishInformalNotice: 'O texto em inglês é uma tradução informal; consulte o texto legal em português.',
     },
   },
   en: {
@@ -933,6 +943,11 @@ const COPY: Record<Language, AppCopy> = {
       appVersion: 'App version',
       events: 'Events',
       recordId: 'Label ID',
+      phase1: 'Phase 1',
+      phase2: 'Phase 2',
+      phase3: 'Phase 3',
+      storageRule: 'storage rule',
+      englishInformalNotice: 'English text is an informal translation; refer to the Portuguese legal text.',
     },
   },
 };
