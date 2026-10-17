@@ -161,6 +161,9 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
       );
       const madeAt = getAppNow(settings);
       const opened = formOption.legacyValue === 'Opened';
+      if (opened && !openedDays && item.manufacturerDaysAfterOpen) {
+        setOpenedDays(String(item.manufacturerDaysAfterOpen));
+      }
       const result = calculateValidity({
         madeAt,
         timeZone: settings.timeZone,
@@ -402,7 +405,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
               <Text style={styles.preparingText}>{copy.preparingPrintImage}</Text>
             </View>
           ) : null}
-          {!shelfLife ? (
+          {validity && !validity.allowed && validity.reason === 'missingShelfLife' ? (
             <View style={styles.noShelfLife}>
               <Text style={styles.noShelfTitle}>{copy.missingShelfTitle}</Text>
               <Text style={styles.noShelfBody}>
@@ -417,10 +420,10 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
           {strictVerificationBlock ? (
             <View style={styles.noShelfLife}><Text style={styles.noShelfTitle}>{copy.foodSafety.unverified}</Text><Text style={styles.noShelfBody}>{copy.foodSafety.notVerifiedBlock}</Text></View>
           ) : null}
-          {validityMessage && shelfLife ? (
+          {validityMessage && validity && !validity.allowed && validity.reason !== 'missingShelfLife' ? (
             <View style={styles.noShelfLife}><Text style={styles.noShelfTitle}>{copy.missingShelfTitle}</Text><Text style={styles.noShelfBody}>{validityMessage}</Text></View>
           ) : null}
-          {formOption.legacyValue === 'Opened' && validity && !validity.allowed && validity.reason === 'missingManufacturerDays' ? (
+          {formOption.legacyValue === 'Opened' ? (
             <Card style={styles.openedInputs}>
               <Input keyboardType="number-pad" label={copy.foodSafety.manufacturerDays} onChangeText={(value) => setOpenedDays(value.replace(/\D/g, ''))} value={openedDays} />
               <Input label={copy.foodSafety.packageExpiry} onChangeText={setPackageExpiry} value={packageExpiry} />

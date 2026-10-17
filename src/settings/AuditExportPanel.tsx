@@ -32,7 +32,7 @@ export function AuditExportPanel() {
       const content = format === 'json'
         ? JSON.stringify(records, null, 2)
         : toCsv(records, [
-            copy.savedLabel(0).replace('0', '').trim(),
+            copy.foodSafety.recordId,
             copy.itemQuestion,
             copy.formQuestion,
             copy.storageQuestion,
@@ -43,7 +43,10 @@ export function AuditExportPanel() {
             copy.foodSafety.rulesVersion,
             copy.foodSafety.verificationStatus,
             copy.foodSafety.verificationMode,
-            copy.foodSafety.enforced,
+            copy.foodSafety.cappedByRule,
+            copy.foodSafety.printerProfile,
+            copy.foodSafety.appVersion,
+            copy.foodSafety.events,
           ]);
       const uri = `${FileSystem.cacheDirectory}keeptab-audit-${start}-${end}.${format}`;
       await FileSystem.writeAsStringAsync(uri, content);
@@ -94,6 +97,9 @@ function toCsv(records: Awaited<ReturnType<typeof getAuditRecords>>, headers: st
     label.rulesVersion ?? '',
     label.itemVerificationStatus ?? '',
     label.verificationMode ?? '',
+    label.cappedByRuleId ?? '',
+    JSON.stringify(label.printerProfileSnapshot ?? {}),
+    label.appVersion ?? '',
     events.map((event) => `${event.eventType}:${event.occurredAt}:${event.personName}`).join('|'),
   ]);
   return [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\n');

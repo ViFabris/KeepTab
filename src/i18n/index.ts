@@ -293,6 +293,11 @@ export interface FoodSafetyCopy {
   exportJson: string;
   exportComplete: string;
   invalidDateRange: string;
+  cappedByRule: string;
+  printerProfile: string;
+  appVersion: string;
+  events: string;
+  recordId: string;
 }
 
 const COPY: Record<Language, AppCopy> = {
@@ -606,6 +611,11 @@ const COPY: Record<Language, AppCopy> = {
       exportJson: 'Exportar JSON',
       exportComplete: 'Arquivo de auditoria compartilhado.',
       invalidDateRange: 'Informe um intervalo de datas válido.',
+      cappedByRule: 'Regra limitadora',
+      printerProfile: 'Perfil da impressora',
+      appVersion: 'Versão do app',
+      events: 'Eventos',
+      recordId: 'ID da etiqueta',
     },
   },
   en: {
@@ -918,6 +928,11 @@ const COPY: Record<Language, AppCopy> = {
       exportJson: 'Export JSON',
       exportComplete: 'Audit file shared.',
       invalidDateRange: 'Enter a valid date range.',
+      cappedByRule: 'Limiting rule',
+      printerProfile: 'Printer profile',
+      appVersion: 'App version',
+      events: 'Events',
+      recordId: 'Label ID',
     },
   },
 };

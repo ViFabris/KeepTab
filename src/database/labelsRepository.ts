@@ -85,6 +85,7 @@ export async function getTodayLabelGroups(
   const rows = await db.getAllAsync<LabelRow>(
     `SELECT * FROM labels
      WHERE status = 'active'
+       AND NOT EXISTS (SELECT 1 FROM label_events WHERE label_events.label_id = labels.id)
      ORDER BY use_by_at ASC`,
   );
 
@@ -115,7 +116,6 @@ export async function updateLabelStatus(
   occurredAt = new Date().toISOString(),
 ): Promise<void> {
   await withWriteTransaction(db, async (transaction) => {
-    await transaction.runAsync('UPDATE labels SET status = ? WHERE id = ?', status, id);
     await transaction.runAsync(
       `INSERT INTO label_events (label_id, event_type, occurred_at, person_name)
        VALUES (?, ?, ?, ?)`,
