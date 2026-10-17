@@ -95,12 +95,20 @@ export interface PrintableLabel {
   storageType: string;
   storageOptionId: string | null;
   madeAt: string;
+  dateKind?: 'prepared' | 'opened';
   useByAt: string;
   staffId: number;
   staffName: string;
   labelWidthMm: number;
   labelHeightMm: number;
   testOnly?: boolean;
+  jurisdictions?: string[];
+  rulesVersion?: string;
+  cappedByRuleId?: string | null;
+  itemVerificationStatus?: VerificationStatus;
+  verificationMode?: VerificationMode;
+  printerProfileSnapshot?: PrinterProfile;
+  appVersion?: string;
 }
 
 export type SavedLabel = Omit<PrintableLabel, 'staffId'> & {

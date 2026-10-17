@@ -157,6 +157,7 @@ export interface AppCopy {
   safetyBody: string;
   sampleLabelBadge: string;
   made: string;
+  openedOn: string;
   useBy: string;
   notConfigured: string;
   madeBy: (name: string) => string;
@@ -220,6 +221,78 @@ export interface AppCopy {
   staffAddError: string;
   staffRemoveError: string;
   startingDatabase: string;
+  foodSafety: FoodSafetyCopy;
+}
+
+export interface FoodSafetyCopy {
+  state: string;
+  rioGrandeDoSul: string;
+  otherState: string;
+  jurisdictionHint: string;
+  otherStateNotice: string;
+  municipalNotice: string;
+  fridgeAssumption: string;
+  fridgeAssumptionHint: string;
+  reducedMaximumDays: string;
+  verificationMode: string;
+  strictMode: string;
+  testMode: string;
+  strictModeHint: string;
+  testModeHint: string;
+  items: string;
+  rules: string;
+  auditExport: string;
+  legalNotice: string;
+  legalNoticeBody: string;
+  acknowledgeNotice: string;
+  verificationStatus: string;
+  verified: string;
+  unverified: string;
+  reviewerName: string;
+  reviewDate: string;
+  markVerified: string;
+  revertUnverified: string;
+  plantBasedType: string;
+  plantNone: string;
+  plantDrink: string;
+  plantFood: string;
+  heatTreated: string;
+  yes: string;
+  no: string;
+  manufacturerDays: string;
+  packageExpiry: string;
+  source: string;
+  importCsv: string;
+  csvInputHint: string;
+  importReport: (accepted: number, rejected: number) => string;
+  rejectedRow: (row: number, reason: string) => string;
+  importReasons: Record<string, string>;
+  temperatureClass: string;
+  refrigerated: string;
+  frozen: string;
+  ambient: string;
+  temperatureRequired: string;
+  notVerifiedBlock: string;
+  testModeBanner: string;
+  testPrintWarning: string;
+  confirmPrint: string;
+  ambientPlantBlock: string;
+  missingManufacturerDays: string;
+  ruleLimited: (days: number | null, law: string, item: string) => string;
+  ruleSource: string;
+  enforced: string;
+  informational: string;
+  enforcedIn: string;
+  rulesVersion: string;
+  reviewedBy: string;
+  recordReview: string;
+  federalOnly: string;
+  exportStart: string;
+  exportEnd: string;
+  exportCsv: string;
+  exportJson: string;
+  exportComplete: string;
+  invalidDateRange: string;
 }
 
 const COPY: Record<Language, AppCopy> = {
@@ -388,6 +461,7 @@ const COPY: Record<Language, AppCopy> = {
     safetyBody: 'Os prazos de validade são provisórios e não foram verificados para segurança dos alimentos.',
     sampleLabelBadge: 'ETIQUETA SIMULADA',
     made: 'PREPARADO EM',
+    openedOn: 'ABERTO EM',
     useBy: 'USAR ATÉ',
     notConfigured: 'NÃO CONFIGURADO',
     madeBy: (name) => `Preparado por ${name}`,
@@ -452,6 +526,87 @@ const COPY: Record<Language, AppCopy> = {
     staffAddError: 'Não foi possível adicionar esse nome.',
     staffRemoveError: 'Não foi possível remover esse nome.',
     startingDatabase: 'Iniciando banco de dados offline…',
+    foodSafety: {
+      state: 'Estado',
+      rioGrandeDoSul: 'Rio Grande do Sul',
+      otherState: 'Outro estado',
+      jurisdictionHint: 'As regras federais sempre se aplicam; as regras do RS são adicionadas quando selecionado.',
+      otherStateNotice: 'Somente as regras federais estão carregadas. Consulte as regras estaduais e municipais com a vigilância sanitária local.',
+      municipalNotice: 'Regras municipais não estão incluídas.',
+      fridgeAssumption: 'A geladeira permanece a 4°C ou menos',
+      fridgeAssumptionHint: 'Se desativado, use o prazo máximo reduzido definido abaixo.',
+      reducedMaximumDays: 'Prazo máximo reduzido (dias)',
+      verificationMode: 'Modo de verificação',
+      strictMode: 'Estrito',
+      testMode: 'Teste',
+      strictModeHint: 'Imprime somente itens verificados com validade configurada.',
+      testModeHint: 'Permite itens não verificados com aviso e registro de modo de teste.',
+      items: 'Itens e verificação',
+      rules: 'Regras',
+      auditExport: 'Exportar auditoria',
+      legalNotice: 'Aviso legal',
+      legalNoticeBody: 'O KeepTab ajuda a seguir as regras, mas não substitui as responsabilidades legais do estabelecimento e do responsável. Os prazos de validade devem ser aprovados por profissional qualificado. As regras podem mudar. Regras municipais não estão incluídas.',
+      acknowledgeNotice: 'Li e entendi',
+      verificationStatus: 'Status da verificação',
+      verified: 'Verificado',
+      unverified: 'Não verificado',
+      reviewerName: 'Nome do revisor',
+      reviewDate: 'Data da revisão (AAAA-MM-DD)',
+      markVerified: 'Marcar como verificado',
+      revertUnverified: 'Voltar para não verificado',
+      plantBasedType: 'Tipo de preparo com vegetais',
+      plantNone: 'Nenhum',
+      plantDrink: 'Bebida',
+      plantFood: 'Alimento',
+      heatTreated: 'Submetido a tratamento térmico pelo calor',
+      yes: 'Sim',
+      no: 'Não',
+      manufacturerDays: 'Dias após abertura informados pelo fabricante',
+      packageExpiry: 'Validade da embalagem (AAAA-MM-DD, opcional)',
+      source: 'Fonte',
+      importCsv: 'Importar CSV',
+      csvInputHint: 'Cole aqui o conteúdo do arquivo items_template.csv.',
+      importReport: (accepted, rejected) => `${accepted} linha(s) importada(s); ${rejected} rejeitada(s).`,
+      rejectedRow: (row, reason) => `Linha ${row}: ${reason}`,
+      importReasons: {
+        invalidCsv: 'CSV inválido.',
+        missingRequiredValue: 'Falta um valor obrigatório ou cabeçalho.',
+        invalidShelfLife: 'shelf_life_days deve ser inteiro maior que zero ou vazio.',
+        invalidPreparedFood: 'prepared_food deve ser sim ou não.',
+        invalidStatus: 'status deve ser unverified ou verified.',
+        invalidTemperatureClass: 'Classe de temperatura inválida.',
+        missingTemperatureClass: 'Informe a classe de temperatura do armazenamento.',
+        invalidManufacturerDays: 'Dias após abertura devem ser inteiro maior que zero ou vazio.',
+        invalidPlantBasedType: 'plant_based_type deve ser none, drink ou food.',
+        invalidHeatTreated: 'heat_treated deve ser sim ou não.',
+      },
+      temperatureClass: 'Classe de temperatura',
+      refrigerated: 'Refrigerado',
+      frozen: 'Congelado',
+      ambient: 'Ambiente',
+      temperatureRequired: 'Escolha a classe de temperatura antes de adicionar.',
+      notVerifiedBlock: 'Este item não foi verificado. O modo Estrito bloqueia a impressão.',
+      testModeBanner: 'MODO DE TESTE — item não verificado',
+      testPrintWarning: 'Este item não foi verificado. A etiqueta será registrada como modo de teste. Deseja imprimir?',
+      confirmPrint: 'Confirmar impressão',
+      ambientPlantBlock: 'Armazenamento em temperatura ambiente bloqueado por VEG-COLD — RDC 218/2005, item 4.3.11.',
+      missingManufacturerDays: 'Informe os dias após abertura indicados pelo fabricante antes de imprimir.',
+      ruleLimited: (days, law, item) => days === null ? `Limitado por ${law}, item ${item}.` : `Limitado a ${days} dia(s) por ${law}, item ${item}.`,
+      ruleSource: 'Fonte e item',
+      enforced: 'Aplicada',
+      informational: 'Informativa',
+      enforcedIn: 'Aplicação',
+      rulesVersion: 'Versão das regras',
+      reviewedBy: 'Revisado por',
+      recordReview: 'Registrar revisão',
+      federalOnly: 'Somente regras federais',
+      exportStart: 'Data inicial (AAAA-MM-DD)',
+      exportEnd: 'Data final (AAAA-MM-DD)',
+      exportCsv: 'Exportar CSV',
+      exportJson: 'Exportar JSON',
+      exportComplete: 'Arquivo de auditoria compartilhado.',
+      invalidDateRange: 'Informe um intervalo de datas válido.',
+    },
   },
   en: {
     setup: {
@@ -618,6 +773,7 @@ const COPY: Record<Language, AppCopy> = {
     safetyBody: 'Shelf lives are placeholders and are not verified for food safety.',
     sampleLabelBadge: 'MOCK LABEL',
     made: 'MADE',
+    openedOn: 'OPENED',
     useBy: 'USE BY',
     notConfigured: 'NOT CONFIGURED',
     madeBy: (name) => `Made by ${name}`,
@@ -682,6 +838,87 @@ const COPY: Record<Language, AppCopy> = {
     staffAddError: 'Could not add that name.',
     staffRemoveError: 'Could not remove that name.',
     startingDatabase: 'Starting offline database…',
+    foodSafety: {
+      state: 'State',
+      rioGrandeDoSul: 'Rio Grande do Sul',
+      otherState: 'Other state',
+      jurisdictionHint: 'Federal rules always apply; RS rules are added when selected.',
+      otherStateNotice: 'Only federal rules are loaded. Check state and city rules with the local health authority.',
+      municipalNotice: 'Municipal rules are not included.',
+      fridgeAssumption: 'The refrigerator stays at 4°C or below',
+      fridgeAssumptionHint: 'When off, the reduced maximum below is used.',
+      reducedMaximumDays: 'Reduced maximum (days)',
+      verificationMode: 'Verification mode',
+      strictMode: 'Strict',
+      testMode: 'Test',
+      strictModeHint: 'Only verified items with a configured shelf life can print.',
+      testModeHint: 'Allows unverified items with a warning and a test-mode audit record.',
+      items: 'Items and verification',
+      rules: 'Rules',
+      auditExport: 'Audit export',
+      legalNotice: 'Legal notice',
+      legalNoticeBody: 'KeepTab helps follow the rules but does not replace the legal responsibilities of the establishment and its responsible person. Shelf lives must be approved by a qualified professional. Rules may change. Municipal rules are not included.',
+      acknowledgeNotice: 'I understand',
+      verificationStatus: 'Verification status',
+      verified: 'Verified',
+      unverified: 'Unverified',
+      reviewerName: 'Reviewer name',
+      reviewDate: 'Review date (YYYY-MM-DD)',
+      markVerified: 'Mark verified',
+      revertUnverified: 'Revert to unverified',
+      plantBasedType: 'Plant-based preparation type',
+      plantNone: 'None',
+      plantDrink: 'Drink',
+      plantFood: 'Food',
+      heatTreated: 'Heat-treated by heat',
+      yes: 'Yes',
+      no: 'No',
+      manufacturerDays: 'Manufacturer days after opening',
+      packageExpiry: 'Package expiry (YYYY-MM-DD, optional)',
+      source: 'Source',
+      importCsv: 'Import CSV',
+      csvInputHint: 'Paste the contents of items_template.csv here.',
+      importReport: (accepted, rejected) => `${accepted} row(s) imported; ${rejected} rejected.`,
+      rejectedRow: (row, reason) => `Row ${row}: ${reason}`,
+      importReasons: {
+        invalidCsv: 'Invalid CSV.',
+        missingRequiredValue: 'A required value or header is missing.',
+        invalidShelfLife: 'shelf_life_days must be a whole number above zero or blank.',
+        invalidPreparedFood: 'prepared_food must be sim or não.',
+        invalidStatus: 'status must be unverified or verified.',
+        invalidTemperatureClass: 'Invalid temperature class.',
+        missingTemperatureClass: 'Choose the storage temperature class.',
+        invalidManufacturerDays: 'Days after opening must be a whole number above zero or blank.',
+        invalidPlantBasedType: 'plant_based_type must be none, drink, or food.',
+        invalidHeatTreated: 'heat_treated must be sim or não.',
+      },
+      temperatureClass: 'Temperature class',
+      refrigerated: 'Refrigerated',
+      frozen: 'Frozen',
+      ambient: 'Ambient',
+      temperatureRequired: 'Choose a temperature class before adding.',
+      notVerifiedBlock: 'This item has not been verified. Strict mode blocks printing.',
+      testModeBanner: 'TEST MODE — unverified item',
+      testPrintWarning: 'This item is unverified. The label will be logged in test mode. Print it?',
+      confirmPrint: 'Confirm print',
+      ambientPlantBlock: 'Ambient storage is blocked by VEG-COLD — RDC 218/2005, item 4.3.11.',
+      missingManufacturerDays: 'Enter the manufacturer’s days after opening before printing.',
+      ruleLimited: (days, law, item) => days === null ? `Limited by ${law}, item ${item}.` : `Limited to ${days} day(s) by ${law}, item ${item}.`,
+      ruleSource: 'Source and item',
+      enforced: 'Enforced',
+      informational: 'Informational',
+      enforcedIn: 'Enforced in',
+      rulesVersion: 'Rules version',
+      reviewedBy: 'Reviewed by',
+      recordReview: 'Record review',
+      federalOnly: 'Federal rules only',
+      exportStart: 'Start date (YYYY-MM-DD)',
+      exportEnd: 'End date (YYYY-MM-DD)',
+      exportCsv: 'Export CSV',
+      exportJson: 'Export JSON',
+      exportComplete: 'Audit file shared.',
+      invalidDateRange: 'Enter a valid date range.',
+    },
   },
 };
 

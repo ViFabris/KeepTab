@@ -5,6 +5,8 @@ import { ArrowLeft, CheckCircle2, Printer, UserRound } from 'lucide-react-native
 
 import { BigButton } from '../components/BigButton';
 import { Card } from '../components/Card';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { Input } from '../components/Input';
 import { ItemSelector } from '../components/ItemSelector';
 import { LabelPreview } from '../components/LabelPreview';
 import { OptionStep } from '../components/OptionStep';
@@ -16,6 +18,8 @@ import { getStaff } from '../database/staffRepository';
 import { getItemName, getLabelOptionName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
+import { RULES_VERSION } from '../rules/rules';
+import { calculateValidity, type ValidityResult } from '../rules/validity';
 import type { PreparedPrintJob } from '../printing/EscPosPrinter';
 import { useSettings } from '../settings/SettingsContext';
 import { colors, radii, sizes, spacing, typography } from '../theme';
@@ -28,7 +32,8 @@ import type {
   StaffMember,
 } from '../types';
 import { getAppNow } from '../utils/appClock';
-import { addHours } from '../utils/dates';
+import { zonedDateTimeToInstant } from '../utils/appClock';
+import packageData from '../../package.json';
 
 type FlowStep = 'item' | 'storage' | 'form' | 'staff' | 'preview' | 'printed';
 
@@ -69,6 +74,11 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
     Omit<PrintableLabel, 'useByAt'> | null
   >(null);
   const [shelfLife, setShelfLife] = useState<ShelfLife | null>(null);
+  const [validity, setValidity] = useState<ValidityResult | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
+  const [openedDays, setOpenedDays] = useState('');
+  const [packageExpiry, setPackageExpiry] = useState('');
+  const [confirmTestPrint, setConfirmTestPrint] = useState(false);
   const [printedLabel, setPrintedLabel] = useState<SavedLabel | null>(null);
   const [preparedJob, setPreparedJob] = useState<PreparedPrintJob | null>(null);
   const [preparing, setPreparing] = useState(false);
@@ -138,7 +148,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
     setStep('storage');
   }
 
-  async function selectStaff(member: StaffMember) {
+  async function selectStaff(member: StaffMember, manufacturerDaysOverride?: number | null) {
     if (!item || !formOption || !storageOption) return;
     setBusy(true);
     setError('');
@@ -150,6 +160,22 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         storageOption.id,
       );
       const madeAt = getAppNow(settings);
+      const opened = formOption.legacyValue === 'Opened';
+      const result = calculateValidity({
+        madeAt,
+        timeZone: settings.timeZone,
+        shelfLifeDays: configuredShelfLife ? configuredShelfLife.hours / 24 : null,
+        preparedFood: formOption.preparedFood ?? false,
+        opened,
+        storageTemperatureClass: storageOption.temperatureClass ?? inferTemperatureClass(storageOption.legacyValue),
+        jurisdiction: settings.jurisdiction,
+        fridgeAtOrBelow4C: settings.fridgeAtOrBelow4C,
+        reducedMaximumDays: settings.reducedMaximumDays,
+        plantBasedType: item.plantBasedType,
+        heatTreated: item.heatTreated,
+        manufacturerDaysAfterOpen: manufacturerDaysOverride ?? item.manufacturerDaysAfterOpen,
+        packageExpiryAt: parsePackageExpiry(packageExpiry, settings.timeZone),
+      });
       const draft = {
         itemId: item.id,
         itemName: getItemName(item.id, item.name, language),
@@ -158,18 +184,28 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         storageType: storageOption.legacyValue,
         storageOptionId: storageOption.id,
         madeAt: madeAt.toISOString(),
+        dateKind: opened ? 'opened' as const : 'prepared' as const,
         staffId: member.id,
         staffName: member.name,
         labelWidthMm: settings.labelWidthMm,
         labelHeightMm: settings.labelHeightMm,
+        jurisdictions: settings.jurisdiction === 'RS' ? ['Federal', 'RS'] : ['Federal'],
+        rulesVersion: RULES_VERSION,
+        cappedByRuleId: result.allowed ? result.cappedBy?.ruleId ?? null : null,
+        itemVerificationStatus: item.verificationStatus,
+        verificationMode: settings.verificationMode,
+        printerProfileSnapshot: settings.printerProfile,
+        appVersion: packageData.version,
       };
+      setSelectedStaff(member);
       setDraftWithoutUseBy(draft);
       setShelfLife(configuredShelfLife);
+      setValidity(result);
       setLabel(
-        configuredShelfLife
+        result.allowed && !(settings.verificationMode === 'strict' && item.verificationStatus !== 'verified')
           ? {
               ...draft,
-              useByAt: addHours(madeAt, configuredShelfLife.hours).toISOString(),
+              useByAt: result.expiresAt.toISOString(),
             }
           : null,
       );
@@ -182,6 +218,15 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
   }
 
   async function printLabel() {
+    if (!label) return;
+    if (item?.verificationStatus !== 'verified' && settings.verificationMode === 'test' && !confirmTestPrint) {
+      setConfirmTestPrint(true);
+      return;
+    }
+    await printConfirmed();
+  }
+
+  async function printConfirmed() {
     if (!label) return;
     setBusy(true);
     setError('');
@@ -209,6 +254,11 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
     setPreparedJob(null);
     setPreparing(false);
     setError('');
+    setValidity(null);
+    setSelectedStaff(null);
+    setOpenedDays('');
+    setPackageExpiry('');
+    setConfirmTestPrint(false);
     setStep('item');
   }
 
@@ -244,6 +294,15 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
           options={item.storageOptions}
           selected={storageOption}
           onSelect={(option) => {
+            if (
+              item.plantBasedType !== 'none' &&
+              !item.heatTreated &&
+              (option.temperatureClass ?? inferTemperatureClass(option.legacyValue)) === 'ambient'
+            ) {
+              setError(copy.foodSafety.ambientPlantBlock);
+              return;
+            }
+            setError('');
             setStorageOption(option);
             setStep('form');
           }}
@@ -314,11 +373,22 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
   }
 
   if (step === 'preview' && draftWithoutUseBy) {
+    const strictVerificationBlock = settings.verificationMode === 'strict' && item.verificationStatus !== 'verified';
+    const validityMessage = validity && !validity.allowed
+      ? validity.reason === 'ambientPlantPreparation'
+        ? copy.foodSafety.ambientPlantBlock
+        : validity.reason === 'missingManufacturerDays'
+          ? copy.foodSafety.missingManufacturerDays
+          : copy.missingShelfBody(localizedItemName, getLabelOptionName(formOption, language), getLabelOptionName(storageOption, language))
+      : '';
     return (
       <View style={styles.screen}>
         <PageHeader title={copy.previewTitle} subtitle={copy.previewHint} action={progress} />
         {error ? <ErrorMessage message={error} /> : null}
         <ScrollView contentContainerStyle={styles.previewArea}>
+          {item.verificationStatus !== 'verified' && settings.verificationMode === 'test' ? (
+            <Text style={styles.testBanner}>{copy.foodSafety.testModeBanner}</Text>
+          ) : null}
           <LabelPreview
             label={label ?? draftWithoutUseBy}
             shelfLife={shelfLife}
@@ -344,6 +414,22 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
               </Text>
             </View>
           ) : null}
+          {strictVerificationBlock ? (
+            <View style={styles.noShelfLife}><Text style={styles.noShelfTitle}>{copy.foodSafety.unverified}</Text><Text style={styles.noShelfBody}>{copy.foodSafety.notVerifiedBlock}</Text></View>
+          ) : null}
+          {validityMessage && shelfLife ? (
+            <View style={styles.noShelfLife}><Text style={styles.noShelfTitle}>{copy.missingShelfTitle}</Text><Text style={styles.noShelfBody}>{validityMessage}</Text></View>
+          ) : null}
+          {formOption.legacyValue === 'Opened' && validity && !validity.allowed && validity.reason === 'missingManufacturerDays' ? (
+            <Card style={styles.openedInputs}>
+              <Input keyboardType="number-pad" label={copy.foodSafety.manufacturerDays} onChangeText={(value) => setOpenedDays(value.replace(/\D/g, ''))} value={openedDays} />
+              <Input label={copy.foodSafety.packageExpiry} onChangeText={setPackageExpiry} value={packageExpiry} />
+              <BigButton label={copy.settings.save} disabled={!openedDays} onPress={() => selectedStaff ? void selectStaff(selectedStaff, Number(openedDays)) : undefined} />
+            </Card>
+          ) : null}
+          {validity?.allowed && validity.cappedBy ? (
+            <Text style={styles.ruleExplanation}>{copy.foodSafety.ruleLimited(validity.cappedBy.limitDays, validity.cappedBy.law, validity.cappedBy.itemNumber)}</Text>
+          ) : null}
         </ScrollView>
         <View style={styles.actionRow}>
           <BigButton
@@ -361,6 +447,15 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
             leading={<Printer color={colors.background} size={sizes.iconLg} strokeWidth={2} />}
           />
         </View>
+        <ConfirmDialog
+          body={copy.foodSafety.testPrintWarning}
+          cancelLabel={copy.cancel}
+          confirmLabel={copy.foodSafety.confirmPrint}
+          onCancel={() => setConfirmTestPrint(false)}
+          onConfirm={() => { setConfirmTestPrint(false); void printConfirmed(); }}
+          title={copy.foodSafety.testModeBanner}
+          visible={confirmTestPrint}
+        />
       </View>
     );
   }
@@ -413,6 +508,25 @@ function errorMessage(caught: unknown, fallback: string): string {
   return fallback;
 }
 
+function inferTemperatureClass(storage: string): 'refrigerated' | 'frozen' | 'ambient' {
+  if (storage.toLocaleLowerCase() === 'frozen' || storage.toLocaleLowerCase() === 'congelado') return 'frozen';
+  if (storage.toLocaleLowerCase() === 'refrigerated' || storage.toLocaleLowerCase() === 'refrigerado') return 'refrigerated';
+  return 'ambient';
+}
+
+function parsePackageExpiry(value: string, timeZone: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  return zonedDateTimeToInstant({
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3]),
+    hour: 23,
+    minute: 59,
+    second: 0,
+  }, timeZone);
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1, padding: spacing.xxl, gap: spacing.lg, backgroundColor: colors.background },
   headerWithBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xl },
@@ -445,6 +559,9 @@ const styles = StyleSheet.create({
   },
   noShelfTitle: { ...typography.h3, color: colors.dangerDark },
   noShelfBody: { ...typography.body, marginTop: spacing.xxs, color: colors.dangerDark },
+  testBanner: { ...typography.bodyStrong, alignSelf: 'center', padding: spacing.sm, borderRadius: radii.sm, backgroundColor: colors.accent, color: colors.ink },
+  openedInputs: { gap: spacing.sm, padding: spacing.md },
+  ruleExplanation: { ...typography.bodyStrong, alignSelf: 'center', color: colors.primaryDark },
   actionRow: { flexDirection: 'row', gap: spacing.md },
   backButton: { width: 180 },
   flexButton: { flex: 1, minHeight: sizes.control + spacing.sm },

@@ -1,11 +1,12 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { OptionChip } from '../components/OptionChip';
+import { Input } from '../components/Input';
 import { defaultsForLanguage } from '../database/settingsRepository';
 import { getLanguageName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { colors, sizes, spacing, typography } from '../theme';
-import type { AppSettings, DateOrder, Language, TimeFormat } from '../types';
+import type { AppSettings, DateOrder, Jurisdiction, Language, TimeFormat, VerificationMode } from '../types';
 
 export function PreferencesEditor({
   settings,
@@ -65,6 +66,58 @@ export function PreferencesEditor({
           style={styles.toggleButton}
         />
       </View>
+      <ChoiceGroup
+        label={copy.foodSafety.state}
+        values={[
+          { value: 'RS' as const, label: copy.foodSafety.rioGrandeDoSul },
+          { value: 'OTHER' as const, label: copy.foodSafety.otherState },
+        ]}
+        selected={settings.jurisdiction}
+        onSelect={(jurisdiction: Jurisdiction) => onChange({ jurisdiction })}
+      />
+      <Text style={styles.hint}>{copy.foodSafety.jurisdictionHint}</Text>
+      {settings.jurisdiction === 'OTHER' ? (
+        <Text style={styles.notice}>{copy.foodSafety.otherStateNotice}</Text>
+      ) : null}
+      <Text style={styles.notice}>{copy.foodSafety.municipalNotice}</Text>
+      <View style={styles.toggleRow}>
+        <View style={styles.toggleCopy}>
+          <Text style={styles.label}>{copy.foodSafety.fridgeAssumption}</Text>
+          <Text style={styles.hint}>{copy.foodSafety.fridgeAssumptionHint}</Text>
+        </View>
+        <OptionChip
+          label={settings.fridgeAtOrBelow4C ? copy.setup.on : copy.setup.off}
+          onPress={() => onChange({ fridgeAtOrBelow4C: !settings.fridgeAtOrBelow4C })}
+          selected={settings.fridgeAtOrBelow4C}
+          style={styles.toggleButton}
+        />
+      </View>
+      {!settings.fridgeAtOrBelow4C ? (
+        <Input
+          accessibilityLabel={copy.foodSafety.reducedMaximumDays}
+          keyboardType="number-pad"
+          label={copy.foodSafety.reducedMaximumDays}
+          onChangeText={(value) => {
+            const days = Number(value);
+            if (Number.isInteger(days) && days > 0) onChange({ reducedMaximumDays: days });
+          }}
+          value={String(settings.reducedMaximumDays)}
+        />
+      ) : null}
+      <ChoiceGroup
+        label={copy.foodSafety.verificationMode}
+        values={[
+          { value: 'strict' as const, label: copy.foodSafety.strictMode },
+          { value: 'test' as const, label: copy.foodSafety.testMode },
+        ]}
+        selected={settings.verificationMode}
+        onSelect={(verificationMode: VerificationMode) => onChange({ verificationMode })}
+      />
+      <Text style={styles.hint}>
+        {settings.verificationMode === 'strict'
+          ? copy.foodSafety.strictModeHint
+          : copy.foodSafety.testModeHint}
+      </Text>
     </View>
   );
 }
@@ -108,4 +161,5 @@ const styles = StyleSheet.create({
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   toggleCopy: { flex: 1 },
   toggleButton: { width: sizes.control * 3, minHeight: sizes.tapMin },
+  notice: { ...typography.caption, color: colors.warning },
 });

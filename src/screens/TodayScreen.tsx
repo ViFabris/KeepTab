@@ -59,7 +59,7 @@ export function TodayScreen({ refreshKey }: TodayScreenProps) {
     setUpdatingId(label.id);
     setError('');
     try {
-      await updateLabelStatus(db, label.id, status);
+      await updateLabelStatus(db, label.id, status, label.staffName, getAppNow(settings).toISOString());
       removeFromView(label.id);
     } catch {
       setError(copy.labelUpdateError);

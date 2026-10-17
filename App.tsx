@@ -25,6 +25,8 @@ import { SettingsScreen } from './src/screens/SettingsScreen';
 import { SetupWizard } from './src/screens/SetupWizard';
 import { TodayScreen } from './src/screens/TodayScreen';
 import { SettingsProvider } from './src/settings/SettingsContext';
+import { useSettings } from './src/settings/SettingsContext';
+import { LegalNoticePanel } from './src/settings/LegalNoticePanel';
 import { colors, radii, sizes, spacing, typography } from './src/theme';
 import type { AppSettings } from './src/types';
 
@@ -91,6 +93,7 @@ function AppShell() {
 
 function LocalizedAppShell() {
   const { copy } = useLanguage();
+  const { settings, updateSettings } = useSettings();
   const [screen, setScreen] = useState<Screen>('label');
   const [labelsVersion, setLabelsVersion] = useState(0);
   const [configurationVersion, setConfigurationVersion] = useState(0);
@@ -98,6 +101,17 @@ function LocalizedAppShell() {
   function closeSettings() {
     setConfigurationVersion((version) => version + 1);
     setScreen('label');
+  }
+
+  if (!settings.legalNoticeSeen) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.noticeScreen}>
+          <Logo size="medium" />
+          <LegalNoticePanel onAcknowledge={() => void updateSettings({ legalNoticeSeen: true })} />
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -204,4 +218,5 @@ const styles = StyleSheet.create({
   offline: { ...typography.caption, color: colors.primaryDark },
   content: { flex: 1, minWidth: 0 },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.xl, backgroundColor: colors.background },
+  noticeScreen: { flex: 1, justifyContent: 'center', gap: spacing.xl, padding: spacing.huge, backgroundColor: colors.background },
 });

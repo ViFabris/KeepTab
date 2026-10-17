@@ -21,6 +21,7 @@ export interface LabelContentInput {
   form: string;
   storageType: string;
   madeAt: string;
+  dateKind?: 'prepared' | 'opened';
   useByAt?: string;
   staffName: string;
 }
@@ -61,7 +62,7 @@ export function buildFittedLabelFields({
     formStorage: `${formName} · ${template.id === 'small' ? compactStorageName : storageName}`,
     useByLabel: copy.useBy,
     useByValue: label.useByAt ? formatLabelDate(label.useByAt, settings) : copy.notConfigured,
-    madeLabel: copy.made,
+    madeLabel: label.dateKind === 'opened' ? copy.openedOn : copy.made,
     madeValue: template.id === 'small'
       ? formatCompactLabelDate(label.madeAt, settings)
       : formatLabelUseBy(label.madeAt, settings),

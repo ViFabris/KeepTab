@@ -17,7 +17,7 @@ import {
 import { getLabelOptionName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { colors, radii, sizes, spacing, typography } from '../theme';
-import type { LabelOption, OptionKind } from '../types';
+import type { LabelOption, OptionKind, TemperatureClass } from '../types';
 
 export function OptionManager({ onOptionsChange }: { onOptionsChange?: () => void }) {
   const db = useSQLiteContext();
@@ -89,6 +89,7 @@ function OptionList({
   const db = useSQLiteContext();
   const { copy } = useLanguage();
   const [newName, setNewName] = useState('');
+  const [temperatureClass, setTemperatureClass] = useState<TemperatureClass>('refrigerated');
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [localError, setLocalError] = useState('');
   const [pendingRemove, setPendingRemove] = useState<LabelOption | null>(null);
@@ -105,7 +106,7 @@ function OptionList({
       return;
     }
     setLocalError('');
-    await onChanged(() => addLabelOption(db, kind, newName));
+    await onChanged(() => addLabelOption(db, kind, newName, kind === 'storage' ? temperatureClass : undefined));
     setNewName('');
   }
 
@@ -157,6 +158,22 @@ function OptionList({
           style={styles.addButton}
         />
       </View>
+      {kind === 'storage' ? (
+        <View style={styles.temperatureGroup}>
+          <Text style={styles.label}>{copy.foodSafety.temperatureClass}</Text>
+          <View style={styles.temperatureChoices}>
+            {(['refrigerated', 'frozen', 'ambient'] as TemperatureClass[]).map((value) => (
+              <BigButton
+                key={value}
+                label={copy.foodSafety[value]}
+                onPress={() => setTemperatureClass(value)}
+                variant={temperatureClass === value ? 'primary' : 'secondary'}
+                style={styles.temperatureButton}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
       {localError ? <Text style={styles.localError}>{localError}</Text> : null}
       <ScrollView contentContainerStyle={styles.list}>
         {options.map((option, index) => (
@@ -168,6 +185,9 @@ function OptionList({
               returnKeyType="done"
               value={drafts[option.id] ?? ''}
             />
+            {kind === 'storage' && option.temperatureClass ? (
+              <Text style={styles.classText}>{copy.foodSafety[option.temperatureClass]}</Text>
+            ) : null}
             <View style={styles.optionActions}>
               <BigButton
                 label={copy.settings.moveUp}
@@ -235,4 +255,9 @@ const styles = StyleSheet.create({
   actionButton: { flex: 1, minHeight: sizes.tapMin, paddingHorizontal: spacing.xs },
   error: { ...typography.bodyStrong, color: colors.dangerDark },
   localError: { ...typography.caption, marginTop: spacing.xs, color: colors.dangerDark },
+  label: { ...typography.caption, color: colors.ink },
+  temperatureGroup: { gap: spacing.xs, marginTop: spacing.sm },
+  temperatureChoices: { flexDirection: 'row', gap: spacing.xs },
+  temperatureButton: { flex: 1, minHeight: sizes.tapMin, paddingHorizontal: spacing.xs },
+  classText: { ...typography.caption, color: colors.muted },
 });

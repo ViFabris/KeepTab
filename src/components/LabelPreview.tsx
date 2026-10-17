@@ -17,6 +17,7 @@ interface LabelPreviewProps {
     form: string;
     storageType: string;
     madeAt: string;
+    dateKind?: 'prepared' | 'opened';
     useByAt?: string;
     staffName: string;
     labelWidthMm?: number;

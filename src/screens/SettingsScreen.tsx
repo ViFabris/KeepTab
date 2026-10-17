@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
-import { Languages, LockKeyhole, PackageOpen, Printer, Ruler, Users } from 'lucide-react-native';
+import { FileDown, Languages, LockKeyhole, PackageOpen, PackageSearch, Printer, Ruler, Scale, ScrollText, Users } from 'lucide-react-native';
 
 import { BigButton } from '../components/BigButton';
 import { Card } from '../components/Card';
@@ -10,13 +10,17 @@ import { PageHeader } from '../components/PageHeader';
 import { useLanguage } from '../i18n/LanguageContext';
 import { findNearestLabelTemplate, type LabelTemplate } from '../printing/labelTemplates';
 import { DateTimeEditor } from '../settings/DateTimeEditor';
+import { AuditExportPanel } from '../settings/AuditExportPanel';
+import { ItemAdminPanel } from '../settings/ItemAdminPanel';
 import { LabelSizeEditor } from '../settings/LabelSizeEditor';
+import { LegalNoticePanel } from '../settings/LegalNoticePanel';
 import { OptionManager } from '../settings/OptionManager';
 import { PinInput } from '../settings/PinInput';
 import { isValidPin, saveAdminPin, verifyAdminPin } from '../settings/pin';
 import { PreferencesEditor } from '../settings/PreferencesEditor';
 import { PrinterSettingsEditor } from '../settings/PrinterSettingsEditor';
 import { PrintingDebugPanel } from '../settings/PrintingDebugPanel';
+import { RulesPanel } from '../settings/RulesPanel';
 import { useSettings } from '../settings/SettingsContext';
 import { TestPrintPanel } from '../settings/TestPrintPanel';
 import { MockPrinter } from '../printing/MockPrinter';
@@ -24,7 +28,7 @@ import { colors, radii, sizes, spacing, typography } from '../theme';
 import { createClockDraft, reformatClockDraft } from '../utils/appClock';
 import { StaffScreen } from './StaffScreen';
 
-type SettingsSection = 'preferences' | 'size' | 'people' | 'options' | 'security' | 'printer' | 'debug';
+type SettingsSection = 'preferences' | 'size' | 'people' | 'options' | 'items' | 'rules' | 'audit' | 'legal' | 'security' | 'printer' | 'debug';
 
 export function SettingsScreen({ onClose }: { onClose: () => void }) {
   const db = useSQLiteContext();
@@ -131,6 +135,10 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
     { id: 'size' as const, label: copy.settings.labelSize, icon: Ruler },
     { id: 'people' as const, label: copy.settings.people, icon: Users },
     { id: 'options' as const, label: copy.settings.options, icon: PackageOpen },
+    { id: 'items' as const, label: copy.foodSafety.items, icon: PackageSearch },
+    { id: 'rules' as const, label: copy.foodSafety.rules, icon: ScrollText },
+    { id: 'audit' as const, label: copy.foodSafety.auditExport, icon: FileDown },
+    { id: 'legal' as const, label: copy.foodSafety.legalNotice, icon: Scale },
     { id: 'security' as const, label: copy.settings.security, icon: LockKeyhole },
     { id: 'printer' as const, label: copy.settings.advancedPrinterSettings, icon: Printer },
     { id: 'debug' as const, label: copy.settings.printingDebug, icon: Printer },
@@ -207,6 +215,10 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
         ) : null}
         {section === 'people' ? <StaffScreen embedded /> : null}
         {section === 'options' ? <OptionManager /> : null}
+        {section === 'items' ? <ItemAdminPanel /> : null}
+        {section === 'rules' ? <RulesPanel /> : null}
+        {section === 'audit' ? <AuditExportPanel /> : null}
+        {section === 'legal' ? <LegalNoticePanel /> : null}
         {section === 'security' ? (
           <View style={styles.securityContent}>
             <View style={styles.pinRow}>
@@ -248,7 +260,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
 }
 
 function isProtectedSection(section: SettingsSection): boolean {
-  return section === 'preferences' || section === 'size' || section === 'security' || section === 'printer' || section === 'debug';
+  return section === 'preferences' || section === 'size' || section === 'items' || section === 'rules' || section === 'audit' || section === 'security' || section === 'printer' || section === 'debug';
 }
 
 function ProtectedSectionDialog({
