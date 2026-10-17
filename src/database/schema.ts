@@ -154,9 +154,23 @@ export const SCHEMA_SQL = `
     product_photo_uri TEXT NOT NULL DEFAULT '',
     photo_uri TEXT NOT NULL DEFAULT '',
     confirmed_at TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'sealed' CHECK (status IN ('sealed', 'open', 'used_up')),
+    opened_at TEXT,
+    closed_at TEXT,
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE RESTRICT
   );
 
   CREATE INDEX IF NOT EXISTS package_scans_gtin_idx
     ON package_scans(gtin, confirmed_at DESC);
+
+  CREATE INDEX IF NOT EXISTS package_scans_active_item_idx
+    ON package_scans(item_id, status, package_expiry_date);
+
+  CREATE TABLE IF NOT EXISTS label_package_scans (
+    label_id INTEGER NOT NULL,
+    package_scan_id INTEGER NOT NULL,
+    PRIMARY KEY (label_id, package_scan_id),
+    FOREIGN KEY (label_id) REFERENCES labels(id) ON DELETE RESTRICT,
+    FOREIGN KEY (package_scan_id) REFERENCES package_scans(id) ON DELETE RESTRICT
+  );
 `;

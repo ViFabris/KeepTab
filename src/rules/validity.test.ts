@@ -59,6 +59,16 @@ describe('food-safety validity calculation', () => {
     expect(result.cappedBy).toBeNull();
   });
 
+  it('calculates an opened product from the recorded batch opening time', () => {
+    const result = allowed({
+      madeAt: new Date('2026-10-18T15:00:00.000Z'),
+      opened: true,
+      openedAt: new Date('2026-10-16T15:00:00.000Z'),
+      manufacturerDaysAfterOpen: 3,
+    });
+    expect(result.expiresAt.toISOString()).toBe('2026-10-19T15:00:00.000Z');
+  });
+
   it('never prints a non-opened label past the confirmed package expiry', () => {
     const result = allowed({
       preparedFood: false,

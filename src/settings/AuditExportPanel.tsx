@@ -103,15 +103,15 @@ function parseDate(value: string, end: boolean, timeZone: string): Date | null {
 }
 
 function toCsv(records: Awaited<ReturnType<typeof getAuditRecords>>, headers: string[]): string {
-  const rows = records.map(({ label, packageEvidence, events }) => [
+  const rows = records.map(({ label, packageEvidence, packageEvidences, events }) => [
     label.id,
-    packageEvidence?.id ?? '',
-    label.productBarcode ?? '',
-    label.lotCode ?? '',
-    packageEvidence?.packageExpiryDate ?? '',
-    packageEvidence?.productPhotoUri ?? '',
-    packageEvidence?.expiryPhotoUri ?? '',
-    packageEvidence?.confirmedAt ?? '',
+    packageEvidences.map(({ id }) => id).join('|') || packageEvidence?.id || '',
+    packageEvidences.map(({ barcodeValue }) => barcodeValue).join('|') || label.productBarcode || '',
+    packageEvidences.map(({ lotCode }) => lotCode).join('|') || label.lotCode || '',
+    packageEvidences.map(({ packageExpiryDate }) => packageExpiryDate).join('|') || packageEvidence?.packageExpiryDate || '',
+    packageEvidences.map(({ productPhotoUri }) => productPhotoUri).join('|') || packageEvidence?.productPhotoUri || '',
+    packageEvidences.map(({ expiryPhotoUri }) => expiryPhotoUri).join('|') || packageEvidence?.expiryPhotoUri || '',
+    packageEvidences.map(({ confirmedAt }) => confirmedAt).join('|') || packageEvidence?.confirmedAt || '',
     label.itemName,
     label.form,
     label.storageType,

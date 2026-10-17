@@ -116,6 +116,9 @@ export function PackageIntakeModal({
         productPhotoUri,
         expiryPhotoUri,
         confirmedAt: getAppNow(settings).toISOString(),
+        status: 'sealed',
+        openedAt: null,
+        closedAt: null,
       });
       onConfirmed(evidence);
     } catch {

@@ -35,10 +35,11 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await migrateAuditTrail(db);
   await migratePackageEvidence(db);
   await migrateManufacturerEvidence(db);
+  await migratePackageBatches(db);
   await initializeSettings(db);
   await migrateLabelSizeSetting(db);
   await linkExistingLabelsToOptions(db);
-  await db.execAsync('PRAGMA user_version = 7');
+  await db.execAsync('PRAGMA user_version = 8');
 }
 
 const LEGACY_SEED_ITEM_IDS = [
@@ -211,6 +212,25 @@ async function migratePackageEvidence(db: SQLiteDatabase): Promise<void> {
 async function migrateManufacturerEvidence(db: SQLiteDatabase): Promise<void> {
   await addColumnIfMissing(db, 'items', 'registration_complete', 'INTEGER NOT NULL DEFAULT 1');
   await addColumnIfMissing(db, 'package_scans', 'product_photo_uri', "TEXT NOT NULL DEFAULT ''");
+}
+
+async function migratePackageBatches(db: SQLiteDatabase): Promise<void> {
+  await addColumnIfMissing(db, 'package_scans', 'status', "TEXT NOT NULL DEFAULT 'sealed'");
+  await addColumnIfMissing(db, 'package_scans', 'opened_at', 'TEXT');
+  await addColumnIfMissing(db, 'package_scans', 'closed_at', 'TEXT');
+  await db.execAsync(`
+    CREATE INDEX IF NOT EXISTS package_scans_active_item_idx
+      ON package_scans(item_id, status, package_expiry_date);
+    CREATE TABLE IF NOT EXISTS label_package_scans (
+      label_id INTEGER NOT NULL,
+      package_scan_id INTEGER NOT NULL,
+      PRIMARY KEY (label_id, package_scan_id),
+      FOREIGN KEY (label_id) REFERENCES labels(id) ON DELETE RESTRICT,
+      FOREIGN KEY (package_scan_id) REFERENCES package_scans(id) ON DELETE RESTRICT
+    );
+    INSERT OR IGNORE INTO label_package_scans (label_id, package_scan_id)
+      SELECT id, package_scan_id FROM labels WHERE package_scan_id IS NOT NULL;
+  `);
 }
 
 async function migratePrinterSettings(db: SQLiteDatabase): Promise<void> {

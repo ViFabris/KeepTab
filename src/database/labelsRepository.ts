@@ -7,7 +7,7 @@ import type {
   SavedLabel,
   TodayLabelGroups,
 } from '../types';
-import { getPackageEvidenceById } from './packageScansRepository';
+import { getPackageEvidenceById, getPackageEvidenceByIds } from './packageScansRepository';
 import { DEFAULT_TIME_ZONE, getZonedDayNumber } from '../utils/appClock';
 import { withWriteTransaction } from './transactions';
 
@@ -45,43 +45,58 @@ export async function savePrintedLabel(
   label: PrintableLabel,
   printedAt = new Date().toISOString(),
 ): Promise<SavedLabel> {
-  const result = await db.runAsync(
-    `INSERT INTO labels
+  let labelId = 0;
+  await withWriteTransaction(db, async (transaction) => {
+    const result = await transaction.runAsync(
+      `INSERT INTO labels
       (item_id, item_name, form, form_option_id, storage_type, storage_option_id,
        made_at, use_by_at, staff_id, staff_name, status, printed_at,
        label_width_mm, label_height_mm, jurisdictions_json, rules_version,
        capped_by_rule_id, item_verification_status, verification_mode, verification_basis,
        printer_profile_json, app_version, package_scan_id, lot_code, product_barcode)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    label.itemId,
-    label.itemName,
-    label.form,
-    label.formOptionId,
-    label.storageType,
-    label.storageOptionId,
-    label.madeAt,
-    label.useByAt,
-    label.staffId,
-    label.staffName,
-    printedAt,
-    label.labelWidthMm,
-    label.labelHeightMm,
-    JSON.stringify(label.jurisdictions ?? []),
-    label.rulesVersion ?? '',
-    label.cappedByRuleId ?? null,
-    label.itemVerificationStatus ?? 'unverified',
-    label.verificationMode ?? 'strict',
-    label.verificationBasis ?? 'test',
-    JSON.stringify(label.printerProfileSnapshot ?? {}),
-    label.appVersion ?? '',
-    label.packageScanId ?? null,
-    label.lotCode ?? '',
-    label.productBarcode ?? '',
-  );
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      label.itemId,
+      label.itemName,
+      label.form,
+      label.formOptionId,
+      label.storageType,
+      label.storageOptionId,
+      label.madeAt,
+      label.useByAt,
+      label.staffId,
+      label.staffName,
+      printedAt,
+      label.labelWidthMm,
+      label.labelHeightMm,
+      JSON.stringify(label.jurisdictions ?? []),
+      label.rulesVersion ?? '',
+      label.cappedByRuleId ?? null,
+      label.itemVerificationStatus ?? 'unverified',
+      label.verificationMode ?? 'strict',
+      label.verificationBasis ?? 'test',
+      JSON.stringify(label.printerProfileSnapshot ?? {}),
+      label.appVersion ?? '',
+      label.packageScanId ?? null,
+      label.lotCode ?? '',
+      label.productBarcode ?? '',
+    );
+    labelId = result.lastInsertRowId;
+    const packageScanIds = [...new Set([
+      ...(label.packageScanIds ?? []),
+      ...(label.packageScanId ? [label.packageScanId] : []),
+    ])];
+    for (const packageScanId of packageScanIds) {
+      await transaction.runAsync(
+        `INSERT OR IGNORE INTO label_package_scans (label_id, package_scan_id) VALUES (?, ?)`,
+        labelId,
+        packageScanId,
+      );
+    }
+  });
 
   return {
     ...label,
-    id: result.lastInsertRowId,
+    id: labelId,
     status: 'active',
     printedAt,
   };
@@ -140,6 +155,7 @@ export async function updateLabelStatus(
 export interface AuditRecord {
   label: SavedLabel;
   packageEvidence: PackageEvidence | null;
+  packageEvidences: PackageEvidence[];
   events: { eventType: string; occurredAt: string; personName: string }[];
 }
 
@@ -159,11 +175,18 @@ export async function getAuditRecords(
       `SELECT event_type, occurred_at, person_name FROM label_events WHERE label_id = ? ORDER BY occurred_at`,
       row.id,
     );
+    const packageLinks = await db.getAllAsync<{ package_scan_id: number }>(
+      `SELECT package_scan_id FROM label_package_scans WHERE label_id = ? ORDER BY package_scan_id`,
+      row.id,
+    );
+    const packageIds = packageLinks.map((link) => link.package_scan_id);
+    if (!packageIds.length && row.package_scan_id) packageIds.push(row.package_scan_id);
+    const packageEvidences = await getPackageEvidenceByIds(db, packageIds);
     records.push({
       label: mapLabelRow(row),
-      packageEvidence: row.package_scan_id
-        ? await getPackageEvidenceById(db, row.package_scan_id)
-        : null,
+      packageEvidence: packageEvidences[0]
+        ?? (row.package_scan_id ? await getPackageEvidenceById(db, row.package_scan_id) : null),
+      packageEvidences,
       events: events.map((event) => ({
         eventType: event.event_type,
         occurredAt: event.occurred_at,
@@ -200,6 +223,7 @@ function mapLabelRow(row: LabelRow): SavedLabel {
     printerProfileSnapshot: parseJson(row.printer_profile_json, undefined),
     appVersion: row.app_version,
     packageScanId: row.package_scan_id,
+    packageScanIds: row.package_scan_id ? [row.package_scan_id] : [],
     lotCode: row.lot_code,
     productBarcode: row.product_barcode,
   };

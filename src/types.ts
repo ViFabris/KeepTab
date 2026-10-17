@@ -22,6 +22,8 @@ export type OptionKind = 'storage' | 'form';
 
 export type LabelStatus = 'active' | 'used' | 'thrown_away';
 
+export type PackageBatchStatus = 'sealed' | 'open' | 'used_up';
+
 export interface SelectableOption<T extends string> {
   value: T;
   isDefault: boolean;
@@ -113,6 +115,7 @@ export interface PrintableLabel {
   printerProfileSnapshot?: PrinterProfile;
   appVersion?: string;
   packageScanId?: number | null;
+  packageScanIds?: number[];
   lotCode?: string;
   productBarcode?: string;
 }
@@ -129,6 +132,9 @@ export interface PackageEvidence {
   productPhotoUri: string;
   expiryPhotoUri: string;
   confirmedAt: string;
+  status: PackageBatchStatus;
+  openedAt: string | null;
+  closedAt: string | null;
 }
 
 export type SavedLabel = Omit<PrintableLabel, 'staffId'> & {

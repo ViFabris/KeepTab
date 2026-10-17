@@ -13,6 +13,7 @@ export interface ValidityInput {
   shelfLifeDays: number | null;
   preparedFood: boolean;
   opened: boolean;
+  openedAt?: Date | null;
   storageTemperatureClass: TemperatureClass;
   jurisdiction: Jurisdiction;
   fridgeAtOrBelow4C: boolean;
@@ -44,7 +45,7 @@ export function calculateValidity(input: ValidityInput): ValidityResult {
     if (!input.manufacturerDaysAfterOpen) {
       return { allowed: false, reason: 'missingManufacturerDays' };
     }
-    let expiresAt = addDays(input.madeAt, input.manufacturerDaysAfterOpen);
+    let expiresAt = addDays(input.openedAt ?? input.madeAt, input.manufacturerDaysAfterOpen);
     if (input.packageExpiryAt && input.packageExpiryAt < expiresAt) {
       expiresAt = input.packageExpiryAt;
     }
