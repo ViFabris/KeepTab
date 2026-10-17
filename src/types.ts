@@ -6,6 +6,8 @@ export type DateOrder = 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
 
 export type TimeFormat = '12h' | '24h';
 
+export type Jurisdiction = 'RS' | 'OTHER';
+
 export type OptionKind = 'storage' | 'form';
 
 export type LabelStatus = 'active' | 'used' | 'thrown_away';
