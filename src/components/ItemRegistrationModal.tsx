@@ -26,9 +26,6 @@ import {
   type FormCategory,
 } from './itemRegistrationChoices';
 
-const PREPARED_DEFAULTS = new Set([
-  'form.cut', 'form.other', 'form.cooked', 'form.peeled', 'form.shredded',
-]);
 const FORM_CATEGORY_ORDER: FormCategory[] = ['preparation', 'cooking', 'skin', 'package'];
 
 export function ItemRegistrationModal({
@@ -48,7 +45,7 @@ export function ItemRegistrationModal({
   const [options, setOptions] = useState<LabelOption[]>([]);
   const [selectedFormIds, setSelectedFormIds] = useState<string[]>([]);
   const [selectedStorageIds, setSelectedStorageIds] = useState<string[]>([]);
-  const [preparedInKitchen, setPreparedInKitchen] = useState(false);
+  const [preparedInKitchen, setPreparedInKitchen] = useState<boolean | null>(null);
   const [plantBasedType, setPlantBasedType] = useState<PlantBasedType>('none');
   const [heatTreated, setHeatTreated] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -57,10 +54,10 @@ export function ItemRegistrationModal({
   const formOptions = useMemo(() => options.filter((option) => option.kind === 'form'), [options]);
   const storageOptions = useMemo(() => options.filter((option) => option.kind === 'storage'), [options]);
   const isLabelMode = mode === 'label';
-  const requiresManufacturerEvidence = selectedFormIds.length > 0 && !preparedInKitchen;
+  const requiresManufacturerEvidence = selectedFormIds.length > 0 && preparedInKitchen === false;
   const requiresManufacturerDays = selectedFormIds.some((id) => {
     const option = formOptions.find((candidate) => candidate.id === id);
-    return option?.legacyValue === 'Opened' && !preparedInKitchen;
+    return option?.legacyValue === 'Opened' && preparedInKitchen === false;
   });
 
   useEffect(() => {
@@ -68,7 +65,7 @@ export function ItemRegistrationModal({
     setName('');
     setSelectedFormIds([]);
     setSelectedStorageIds([]);
-    setPreparedInKitchen(false);
+    setPreparedInKitchen(null);
     setPlantBasedType('none');
     setHeatTreated(false);
     setPendingManufacturerItem(null);
@@ -79,9 +76,6 @@ export function ItemRegistrationModal({
   }, [copy.genericError, db, visible]);
 
   function toggleForm(option: LabelOption) {
-    if (!selectedFormIds.length) {
-      setPreparedInKitchen(Boolean(option.translationKey && PREPARED_DEFAULTS.has(option.translationKey)));
-    }
     setSelectedFormIds((current) => nextFormSelection(current, option, formOptions));
   }
 
@@ -90,7 +84,7 @@ export function ItemRegistrationModal({
   }
 
   async function save() {
-    if (!name.trim() || !selectedFormIds.length || !selectedStorageIds.length) {
+    if (!name.trim() || preparedInKitchen === null || !selectedFormIds.length || !selectedStorageIds.length) {
       setError(copy.foodSafety.registrationIncomplete);
       return;
     }
@@ -183,6 +177,25 @@ export function ItemRegistrationModal({
           </Card>
 
           <Card style={styles.card}>
+            <Text style={styles.sectionTitle}>{copy.foodSafety.preparedClassification}</Text>
+            <Text style={styles.hint}>{copy.foodSafety.preparedClassificationHint}</Text>
+            <View style={styles.classificationChoices}>
+              <OptionChip
+                label={copy.foodSafety.preparedInKitchen}
+                onPress={() => setPreparedInKitchen(true)}
+                selected={preparedInKitchen === true}
+                style={styles.classificationChoice}
+              />
+              <OptionChip
+                label={copy.foodSafety.manufacturerControlled}
+                onPress={() => setPreparedInKitchen(false)}
+                selected={preparedInKitchen === false}
+                style={styles.classificationChoice}
+              />
+            </View>
+          </Card>
+
+          <Card style={styles.card}>
             <Text style={styles.sectionTitle}>
               {isLabelMode ? copy.foodSafety.chooseCurrentForm : copy.foodSafety.chooseForms}
             </Text>
@@ -207,27 +220,6 @@ export function ItemRegistrationModal({
               );
             })}
           </Card>
-
-          {selectedFormIds.length ? (
-            <Card style={styles.card}>
-              <Text style={styles.sectionTitle}>{copy.foodSafety.preparedClassification}</Text>
-              <Text style={styles.hint}>{copy.foodSafety.preparedClassificationHint}</Text>
-              <View style={styles.classificationChoices}>
-                <OptionChip
-                  label={copy.foodSafety.preparedInKitchen}
-                  onPress={() => setPreparedInKitchen(true)}
-                  selected={preparedInKitchen}
-                  style={styles.classificationChoice}
-                />
-                <OptionChip
-                  label={copy.foodSafety.manufacturerControlled}
-                  onPress={() => setPreparedInKitchen(false)}
-                  selected={!preparedInKitchen}
-                  style={styles.classificationChoice}
-                />
-              </View>
-            </Card>
-          ) : null}
 
           <Card style={styles.card}>
             <Text style={styles.sectionTitle}>
