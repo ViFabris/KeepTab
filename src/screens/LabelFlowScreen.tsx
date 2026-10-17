@@ -12,12 +12,24 @@ import { LabelPreview } from '../components/LabelPreview';
 import { OptionStep } from '../components/OptionStep';
 import { PageHeader } from '../components/PageHeader';
 import { getItems, getShelfLife } from '../database/itemsRepository';
-import { getLatestPackageEvidenceForItem } from '../database/packageScansRepository';
+import {
+  closePackageBatch,
+  getPackageBatchesForItem,
+  openPackageBatch,
+} from '../database/packageScansRepository';
 import { getStaff } from '../database/staffRepository';
 import { getItemName, getLabelOptionName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
 import { PackageIntakeModal } from '../packages/PackageIntakeModal';
+import { PackageBatchSelector } from '../packages/PackageBatchSelector';
+import {
+  formRequiresOpening,
+  getPackageBatchLimits,
+  isPackageBatchExpired,
+  sortPackageBatches,
+  toggleBatchSelection,
+} from '../packages/batchSelection';
 import { RULES_VERSION } from '../rules/rules';
 import { evaluatePrintingGate } from '../rules/printingGate';
 import { calculateValidity, type ValidityResult } from '../rules/validity';
@@ -33,11 +45,11 @@ import type {
   ShelfLife,
   StaffMember,
 } from '../types';
-import { getAppNow } from '../utils/appClock';
+import { getAppNow, getZonedDateTimeParts } from '../utils/appClock';
 import { zonedDateTimeToInstant } from '../utils/appClock';
 import packageData from '../../package.json';
 
-type FlowStep = 'item' | 'storage' | 'staff' | 'preview' | 'printed';
+type FlowStep = 'item' | 'storage' | 'batch' | 'staff' | 'preview' | 'printed';
 
 interface LabelFlowScreenProps {
   onPrinted: () => void;
@@ -67,10 +79,13 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
   >(null);
   const [shelfLife, setShelfLife] = useState<ShelfLife | null>(null);
   const [validity, setValidity] = useState<ValidityResult | null>(null);
-  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
-  const [openedDays, setOpenedDays] = useState('');
-  const [packageExpiry, setPackageExpiry] = useState('');
   const [packageEvidence, setPackageEvidence] = useState<PackageEvidence | null>(null);
+  const [packageBatches, setPackageBatches] = useState<PackageEvidence[]>([]);
+  const [selectedBatchIds, setSelectedBatchIds] = useState<number[]>([]);
+  const [loadingBatches, setLoadingBatches] = useState(false);
+  const [batchMessage, setBatchMessage] = useState('');
+  const [batchMessageIsError, setBatchMessageIsError] = useState(false);
+  const [pendingBatchClose, setPendingBatchClose] = useState<PackageEvidence | null>(null);
   const [packageIntakeVisible, setPackageIntakeVisible] = useState(false);
   const [confirmTestPrint, setConfirmTestPrint] = useState(false);
   const [printedLabel, setPrintedLabel] = useState<SavedLabel | null>(null);
@@ -125,26 +140,56 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
     };
   }, [copy.printFailed, formOption, label, printer, step, storageOption]);
 
+  useEffect(() => {
+    if (step !== 'batch' || !item) return;
+    let mounted = true;
+    setLoadingBatches(true);
+    setBatchMessage('');
+    setBatchMessageIsError(false);
+    setPendingBatchClose(null);
+    void getPackageBatchesForItem(db, item.id)
+      .then((batches) => {
+        if (!mounted) return;
+        setPackageBatches(sortPackageBatches(batches));
+        setSelectedBatchIds((current) => current.filter((id) => batches.some((batch) => batch.id === id)));
+      })
+      .catch(() => {
+        if (mounted) {
+          setBatchMessage(copy.genericError);
+          setBatchMessageIsError(true);
+        }
+      })
+      .finally(() => {
+        if (mounted) setLoadingBatches(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [copy.genericError, db, item, step]);
+
   // Voice input can later resolve an item and call this exact function.
   function selectItem(selectedItem: KitchenItem) {
+    const combinedForm = combineFormOptions(selectedItem.formOptions, language);
     setItem(selectedItem);
     setStorageOption(defaultOption(selectedItem.storageOptions));
-    setFormOption(combineFormOptions(selectedItem.formOptions, language));
+    setFormOption(combinedForm);
     setError('');
     if (selectedItem.storageOptions.length > 1) {
       setStep('storage');
     } else {
-      setStep('staff');
+      setStep(combinedForm.preparedFood ? 'staff' : 'batch');
     }
   }
 
-  async function selectStaff(
-    member: StaffMember,
-    manufacturerDaysOverride?: number | null,
-    packageExpiryOverride?: string,
-    evidenceOverride?: PackageEvidence | null,
-  ) {
+  async function selectStaff(member: StaffMember) {
     if (!item || !formOption || !storageOption) return;
+    const outsideProduct = !(formOption.preparedFood ?? false);
+    const selectedBatches = packageBatches.filter((batch) => selectedBatchIds.includes(batch.id));
+    if (outsideProduct && !selectedBatches.length) {
+      setError(copy.foodSafety.batchRequired);
+      setStep('batch');
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -155,24 +200,15 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         storageOption.id,
       );
       const madeAt = getAppNow(settings);
-      const opened = formIncludes(formOption, 'Opened');
-      const confirmedPackage = evidenceOverride
-        ?? packageEvidence
-        ?? (!(formOption.preparedFood ?? false) ? await getLatestPackageEvidenceForItem(db, item.id) : null);
-      const effectiveManufacturerDays = manufacturerDaysOverride
+      const opened = formRequiresOpening(formOption.legacyValue.split(' + '));
+      const batchLimits = getPackageBatchLimits(selectedBatches);
+      const confirmedPackage = selectedBatches[0] ?? null;
+      const effectiveManufacturerDays = batchLimits.manufacturerDaysAfterOpen
         ?? item.manufacturerDaysAfterOpen
-        ?? confirmedPackage?.manufacturerDaysAfterOpen
         ?? null;
-      const effectivePackageExpiry = packageExpiryOverride
-        || packageExpiry
-        || confirmedPackage?.packageExpiryDate
-        || '';
+      const effectivePackageExpiry = batchLimits.packageExpiryDate;
       if (confirmedPackage) {
         setPackageEvidence(confirmedPackage);
-        setPackageExpiry(confirmedPackage.packageExpiryDate);
-      }
-      if (opened && !openedDays && effectiveManufacturerDays) {
-        setOpenedDays(String(effectiveManufacturerDays));
       }
       const result = calculateValidity({
         madeAt,
@@ -182,6 +218,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
           : null,
         preparedFood: formOption.preparedFood ?? false,
         opened,
+        openedAt: batchLimits.openedAt ? new Date(batchLimits.openedAt) : null,
         storageTemperatureClass: storageOption.temperatureClass ?? inferTemperatureClass(storageOption.legacyValue),
         jurisdiction: settings.jurisdiction,
         fridgeAtOrBelow4C: settings.fridgeAtOrBelow4C,
@@ -194,7 +231,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
       const legalRule = result.allowed && Boolean(result.cappedBy);
       const gate = evaluatePrintingGate(result, item.verificationStatus, settings.verificationMode, {
         legalRule,
-        confirmedPackage: Boolean(confirmedPackage),
+        confirmedPackage: selectedBatches.length > 0,
       });
       const verificationBasis = item.verificationStatus === 'verified'
         ? 'item-review' as const
@@ -224,11 +261,11 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         printerProfileSnapshot: settings.printerProfile,
         appVersion: packageData.version,
         packageScanId: confirmedPackage?.id ?? null,
-        lotCode: confirmedPackage?.lotCode ?? '',
-        productBarcode: confirmedPackage?.barcodeValue ?? '',
+        packageScanIds: selectedBatches.map((batch) => batch.id),
+        lotCode: selectedBatches.map((batch) => batch.lotCode).filter(Boolean).join(' / '),
+        productBarcode: [...new Set(selectedBatches.map((batch) => batch.barcodeValue).filter(Boolean))].join(' / '),
         verificationBasis,
       };
-      setSelectedStaff(member);
       setDraftWithoutUseBy(draft);
       setShelfLife(configuredShelfLife);
       setValidity(result);
@@ -243,6 +280,58 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
       setStep('preview');
     } catch (caught) {
       setError(errorMessage(caught, copy.genericError));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function continueWithBatches() {
+    if (!formOption) return;
+    const today = currentDateKey(getAppNow(settings), settings.timeZone);
+    const selected = packageBatches.filter(
+      (batch) => selectedBatchIds.includes(batch.id) && !isPackageBatchExpired(batch, today),
+    );
+    if (!selected.length) {
+      setBatchMessage(copy.foodSafety.batchRequired);
+      setBatchMessageIsError(true);
+      return;
+    }
+    setBusy(true);
+    setBatchMessage('');
+    setBatchMessageIsError(false);
+    try {
+      if (formRequiresOpening(formOption.legacyValue.split(' + '))) {
+        const openedAt = getAppNow(settings).toISOString();
+        for (const batch of selected) {
+          if (batch.status === 'sealed') await openPackageBatch(db, batch.id, openedAt);
+        }
+        setPackageBatches((current) => current.map((batch) => (
+          selectedBatchIds.includes(batch.id) && batch.status === 'sealed'
+            ? { ...batch, status: 'open', openedAt }
+            : batch
+        )));
+      }
+      setStep('staff');
+    } catch {
+      setBatchMessage(copy.genericError);
+      setBatchMessageIsError(true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function markBatchUsedUp(batch: PackageEvidence) {
+    setBusy(true);
+    setBatchMessage('');
+    setBatchMessageIsError(false);
+    try {
+      await closePackageBatch(db, batch.id, getAppNow(settings).toISOString());
+      setPackageBatches((current) => current.filter((candidate) => candidate.id !== batch.id));
+      setSelectedBatchIds((current) => current.filter((id) => id !== batch.id));
+      setBatchMessage(copy.foodSafety.batchUsedUp);
+    } catch {
+      setBatchMessage(copy.genericError);
+      setBatchMessageIsError(true);
     } finally {
       setBusy(false);
     }
@@ -286,10 +375,13 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
     setPreparing(false);
     setError('');
     setValidity(null);
-    setSelectedStaff(null);
-    setOpenedDays('');
-    setPackageExpiry('');
     setPackageEvidence(null);
+    setPackageBatches([]);
+    setSelectedBatchIds([]);
+    setLoadingBatches(false);
+    setBatchMessage('');
+    setBatchMessageIsError(false);
+    setPendingBatchClose(null);
     setPackageIntakeVisible(false);
     setConfirmTestPrint(false);
     setStep('item');
@@ -341,11 +433,69 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
             }
             setError('');
             setStorageOption(option);
-            setStep('staff');
+            setStep(formOption.preparedFood ? 'staff' : 'batch');
           }}
           onBack={resetFlow}
         />
       </View>
+    );
+  }
+
+  if (step === 'batch') {
+    const today = currentDateKey(getAppNow(settings), settings.timeZone);
+    return (
+      <>
+        <PackageBatchSelector
+          batches={packageBatches}
+          busy={busy}
+          loading={loadingBatches}
+          message={batchMessage}
+          messageIsError={batchMessageIsError}
+          onAdd={() => setPackageIntakeVisible(true)}
+          onBack={() => {
+            if (item.storageOptions.length > 1) setStep('storage');
+            else resetFlow();
+          }}
+          onContinue={() => void continueWithBatches()}
+          onMarkUsedUp={setPendingBatchClose}
+          onToggle={(batch) => setSelectedBatchIds((current) => toggleBatchSelection(current, batch.id))}
+          selectedIds={selectedBatchIds}
+          today={today}
+        />
+        <PackageIntakeModal
+          activeBatches={packageBatches.filter((batch) => !isPackageBatchExpired(batch, today))}
+          itemId={item.id}
+          onCancel={() => setPackageIntakeVisible(false)}
+          onConfirmed={(evidence) => {
+            setPackageBatches((current) => sortPackageBatches([...current, evidence]));
+            setSelectedBatchIds([evidence.id]);
+            setPackageIntakeVisible(false);
+            setBatchMessage(copy.foodSafety.packageSaved);
+            setBatchMessageIsError(false);
+          }}
+          onMatched={(evidence) => {
+            setSelectedBatchIds([evidence.id]);
+            setPackageIntakeVisible(false);
+            setBatchMessage(copy.foodSafety.batchMatched);
+            setBatchMessageIsError(false);
+          }}
+          requireManufacturerDays={formRequiresOpening(formOption.legacyValue.split(' + '))}
+          visible={packageIntakeVisible}
+        />
+        <ConfirmDialog
+          body={copy.foodSafety.closeBatchHint}
+          cancelLabel={copy.cancel}
+          confirmLabel={copy.foodSafety.markBatchUsedUp}
+          onCancel={() => setPendingBatchClose(null)}
+          onConfirm={() => {
+            const batch = pendingBatchClose;
+            setPendingBatchClose(null);
+            if (batch) void markBatchUsedUp(batch);
+          }}
+          title={copy.foodSafety.closeBatchTitle(pendingBatchClose?.lotCode || `#${pendingBatchClose?.id ?? ''}`)}
+          visible={pendingBatchClose !== null}
+        />
+      </>
     );
   }
 
@@ -380,7 +530,8 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         <BigButton
           label={copy.back}
           onPress={() => {
-            if (item.storageOptions.length > 1) setStep('storage');
+            if (!(formOption.preparedFood ?? false)) setStep('batch');
+            else if (item.storageOptions.length > 1) setStep('storage');
             else resetFlow();
           }}
           variant="secondary"
@@ -445,32 +596,21 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
           {validityMessage && validity && !validity.allowed && validity.reason !== 'missingShelfLife' ? (
             <View style={styles.noShelfLife}><Text style={styles.noShelfTitle}>{copy.missingShelfTitle}</Text><Text style={styles.noShelfBody}>{validityMessage}</Text></View>
           ) : null}
-          {formIncludes(formOption, 'Opened') ? (
-            <Card style={styles.openedInputs}>
-              <Input keyboardType="number-pad" label={copy.foodSafety.manufacturerDays} onChangeText={(value) => setOpenedDays(value.replace(/\D/g, ''))} value={openedDays} />
-              <Input label={copy.foodSafety.packageExpiry} onChangeText={setPackageExpiry} value={packageExpiry} />
-              <BigButton label={copy.settings.save} disabled={!openedDays} onPress={() => selectedStaff ? void selectStaff(selectedStaff, Number(openedDays)) : undefined} />
+          {packageEvidence ? (
+            <Card style={styles.packageCard}>
+              <View style={styles.packageCopy}>
+                <Text style={styles.packageTitle}>{copy.foodSafety.batchSelectionTitle}</Text>
+                {selectedBatchIds.length > 1 ? (
+                  <Text style={styles.packageHint}>{copy.foodSafety.combinedBatches}</Text>
+                ) : null}
+                {packageBatches.filter((batch) => selectedBatchIds.includes(batch.id)).map((batch) => (
+                  <Text key={batch.id} style={styles.packageMeta}>
+                    {copy.foodSafety.lotCode}: {batch.lotCode || `#${batch.id}`} · {copy.foodSafety.packageExpiry}: {batch.packageExpiryDate}
+                  </Text>
+                ))}
+              </View>
             </Card>
           ) : null}
-          <Card style={styles.packageCard}>
-            <View style={styles.packageCopy}>
-              <Text style={styles.packageTitle}>{copy.foodSafety.packageIntakeTitle}</Text>
-              <Text style={styles.packageHint}>
-                {packageEvidence ? copy.foodSafety.packageSaved : copy.foodSafety.packageIntakeHint}
-              </Text>
-              {packageEvidence ? (
-                <Text style={styles.packageMeta}>
-                  {copy.foodSafety.lotCode}: {packageEvidence.lotCode || '—'} · {copy.foodSafety.packageExpiry}: {packageEvidence.packageExpiryDate}
-                </Text>
-              ) : null}
-            </View>
-            <BigButton
-              label={copy.foodSafety.scanPackage}
-              onPress={() => setPackageIntakeVisible(true)}
-              variant="secondary"
-              style={styles.packageButton}
-            />
-          </Card>
           {validity?.allowed && validity.cappedBy ? (
             <Text style={styles.ruleExplanation}>{copy.foodSafety.ruleLimited(validity.cappedBy.limitDays, validity.cappedBy.law, validity.cappedBy.itemNumber)}</Text>
           ) : null}
@@ -499,28 +639,6 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
           onConfirm={() => { setConfirmTestPrint(false); void printConfirmed(); }}
           title={copy.foodSafety.testModeBanner}
           visible={confirmTestPrint}
-        />
-        <PackageIntakeModal
-          itemId={item.id}
-          onCancel={() => setPackageIntakeVisible(false)}
-          onConfirmed={(evidence) => {
-            setPackageEvidence(evidence);
-            setPackageExpiry(evidence.packageExpiryDate);
-            if (evidence.manufacturerDaysAfterOpen) {
-              setOpenedDays(String(evidence.manufacturerDaysAfterOpen));
-            }
-            setPackageIntakeVisible(false);
-            if (selectedStaff) {
-              void selectStaff(
-                selectedStaff,
-                evidence.manufacturerDaysAfterOpen,
-                evidence.packageExpiryDate,
-                evidence,
-              );
-            }
-          }}
-          requireManufacturerDays={formIncludes(formOption, 'Opened')}
-          visible={packageIntakeVisible}
         />
       </View>
     );
@@ -596,10 +714,6 @@ function combineFormOptions(options: ItemLabelOption[], language: 'en' | 'pt-BR'
   };
 }
 
-function formIncludes(option: ItemLabelOption, legacyValue: string): boolean {
-  return option.legacyValue.split(' + ').includes(legacyValue);
-}
-
 function parsePackageExpiry(value: string, timeZone: string): Date | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
   if (!match) return null;
@@ -611,6 +725,11 @@ function parsePackageExpiry(value: string, timeZone: string): Date | null {
     minute: 59,
     second: 0,
   }, timeZone);
+}
+
+function currentDateKey(date: Date, timeZone: string): string {
+  const parts = getZonedDateTimeParts(date, timeZone);
+  return `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`;
 }
 
 const styles = StyleSheet.create({
@@ -645,13 +764,11 @@ const styles = StyleSheet.create({
   noShelfTitle: { ...typography.h3, color: colors.dangerDark },
   noShelfBody: { ...typography.body, marginTop: spacing.xxs, color: colors.dangerDark },
   testBanner: { ...typography.bodyStrong, alignSelf: 'center', padding: spacing.sm, borderRadius: radii.sm, backgroundColor: colors.accent, color: colors.ink },
-  openedInputs: { gap: spacing.sm, padding: spacing.md },
   packageCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md },
   packageCopy: { flex: 1, minWidth: 0, gap: spacing.xxs },
   packageTitle: { ...typography.h3, color: colors.ink },
   packageHint: { ...typography.caption, color: colors.muted },
   packageMeta: { ...typography.bodyStrong, color: colors.primaryDark },
-  packageButton: { minWidth: 300 },
   ruleExplanation: { ...typography.bodyStrong, alignSelf: 'center', color: colors.primaryDark },
   actionRow: { flexDirection: 'row', gap: spacing.md },
   backButton: { width: 180 },

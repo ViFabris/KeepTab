@@ -53,6 +53,17 @@ export function formRequiresOpening(legacyValues: string[]): boolean {
   return legacyValues.some((value) => ['Opened', 'Cut', 'Shredded', 'Peeled'].includes(value));
 }
 
+export function findExactPackageBatch(
+  batches: PackageEvidence[],
+  scanned: { gtin: string | null; lotCode: string | null; rawValue: string },
+): PackageEvidence | null {
+  if (!scanned.lotCode) return null;
+  return batches.find((batch) => (
+    batch.lotCode === scanned.lotCode
+    && (scanned.gtin ? batch.gtin === scanned.gtin : batch.barcodeValue === scanned.rawValue)
+  )) ?? null;
+}
+
 function comparableExpiry(batch: PackageEvidence): string {
   return batch.packageExpiryDate || '9999-12-31';
 }

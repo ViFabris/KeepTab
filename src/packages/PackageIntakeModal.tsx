@@ -16,6 +16,7 @@ import type { PackageEvidence } from '../types';
 import { getAppNow } from '../utils/appClock';
 import { validatePackageEvidence, type PackageEvidenceValidationError } from './evidenceValidation';
 import { parseProductBarcode, type ParsedProductBarcode } from './gs1';
+import { findExactPackageBatch } from './batchSelection';
 
 const BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e', 'qr', 'datamatrix', 'code128'] as const;
 
@@ -25,12 +26,16 @@ export function PackageIntakeModal({
   requireManufacturerDays = false,
   onCancel,
   onConfirmed,
+  activeBatches = [],
+  onMatched,
 }: {
   visible: boolean;
   itemId: string;
   requireManufacturerDays?: boolean;
   onCancel: () => void;
   onConfirmed: (evidence: PackageEvidence) => void;
+  activeBatches?: PackageEvidence[];
+  onMatched?: (evidence: PackageEvidence) => void;
 }) {
   const db = useSQLiteContext();
   const { copy } = useLanguage();
@@ -60,6 +65,11 @@ export function PackageIntakeModal({
   async function handleBarcode(result: BarcodeScanningResult) {
     if (parsed) return;
     const next = parseProductBarcode(result.data, result.type);
+    const exactBatch = findExactPackageBatch(activeBatches, next);
+    if (exactBatch && onMatched) {
+      onMatched(exactBatch);
+      return;
+    }
     setParsed(next);
     setLotCode(next.lotCode ?? '');
     setExpiryDate(next.expiryDate ?? next.bestBeforeDate ?? '');

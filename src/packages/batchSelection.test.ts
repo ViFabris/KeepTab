@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { PackageEvidence } from '../types';
 import {
   formRequiresOpening,
+  findExactPackageBatch,
   getPackageBatchLimits,
   getRecommendedBatchId,
   sortPackageBatches,
@@ -63,5 +64,19 @@ describe('package batch selection', () => {
   it('treats cutting, shredding, peeling, and opened packaging as opening the source package', () => {
     expect(formRequiresOpening(['Shredded', 'Unopened'])).toBe(true);
     expect(formRequiresOpening(['Whole', 'Unopened'])).toBe(false);
+  });
+
+  it('matches an exact active batch only when the scan includes its lot', () => {
+    const batches = [batch({ id: 4, gtin: '07891234567890', lotCode: 'LOT42' })];
+    expect(findExactPackageBatch(batches, {
+      gtin: '07891234567890',
+      lotCode: 'LOT42',
+      rawValue: '(01)07891234567890(10)LOT42',
+    })?.id).toBe(4);
+    expect(findExactPackageBatch(batches, {
+      gtin: '07891234567890',
+      lotCode: null,
+      rawValue: '07891234567890',
+    })).toBeNull();
   });
 });

@@ -13,6 +13,7 @@ import { getLabelOptions } from '../database/optionsRepository';
 import { getLabelOptionName, type FoodSafetyCopy } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { PackageIntakeModal } from '../packages/PackageIntakeModal';
+import { formRequiresOpening } from '../packages/batchSelection';
 import { colors, sizes, spacing, typography } from '../theme';
 import type { KitchenItem, LabelOption, PackageEvidence, PlantBasedType } from '../types';
 import { BigButton } from './BigButton';
@@ -55,10 +56,11 @@ export function ItemRegistrationModal({
   const storageOptions = useMemo(() => options.filter((option) => option.kind === 'storage'), [options]);
   const isLabelMode = mode === 'label';
   const requiresManufacturerEvidence = selectedFormIds.length > 0 && preparedInKitchen === false;
-  const requiresManufacturerDays = selectedFormIds.some((id) => {
-    const option = formOptions.find((candidate) => candidate.id === id);
-    return option?.legacyValue === 'Opened' && preparedInKitchen === false;
-  });
+  const requiresManufacturerDays = preparedInKitchen === false && formRequiresOpening(
+    selectedFormIds
+      .map((id) => formOptions.find((candidate) => candidate.id === id)?.legacyValue)
+      .filter((value): value is string => Boolean(value)),
+  );
 
   useEffect(() => {
     if (!visible) return;

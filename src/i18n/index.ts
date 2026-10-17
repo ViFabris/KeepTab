@@ -293,6 +293,24 @@ export interface FoodSafetyCopy {
   manufacturerDaysRequired: string;
   packageDetailsDetected: string;
   manufacturerEvidenceRequired: string;
+  batchSelectionTitle: string;
+  batchSelectionHint: string;
+  addBatch: string;
+  noActiveBatches: string;
+  batchSealed: string;
+  batchOpen: string;
+  batchExpired: string;
+  batchUseFirst: string;
+  batchSelectedCount: (count: number) => string;
+  continueWithBatches: string;
+  batchRequired: string;
+  markBatchUsedUp: string;
+  closeBatchTitle: (lot: string) => string;
+  closeBatchHint: string;
+  batchUsedUp: string;
+  batchMatched: string;
+  combinedBatches: string;
+  openedAt: string;
   continueToEvidence: string;
   registerItem: string;
   emptyCatalog: string;
@@ -630,8 +648,8 @@ const COPY: Record<Language, AppCopy> = {
       no: 'Não',
       manufacturerDays: 'Dias após abertura informados pelo fabricante',
       packageExpiry: 'Validade da embalagem (AAAA-MM-DD)',
-      packageIntakeTitle: 'Registrar comprovação do fabricante',
-      packageIntakeHint: 'Registre o produto por código de barras ou foto e fotografe separadamente a validade impressa. Os dados ficam salvos neste dispositivo para auditoria.',
+      packageIntakeTitle: 'Registrar lote do fabricante',
+      packageIntakeHint: 'Registre este lote por código de barras ou foto e fotografe separadamente a validade impressa. A comprovação é feita uma vez por lote e fica salva neste dispositivo para auditoria.',
       scanPackage: 'Ler código e fotografar embalagem',
       cameraPermission: 'A câmera é necessária para ler o código e registrar as fotos do produto e da validade.',
       grantCameraPermission: 'Permitir câmera',
@@ -655,7 +673,7 @@ const COPY: Record<Language, AppCopy> = {
       retakeExpiryPhoto: 'Refazer foto da validade',
       lotCode: 'Lote',
       confirmPackage: 'Confirmar dados da embalagem',
-      packageSaved: 'Dados da embalagem confirmados e salvos somente neste dispositivo.',
+      packageSaved: 'Lote confirmado e salvo somente neste dispositivo.',
       packageExpiryRequired: 'Digite a validade impressa na embalagem.',
       packageDateInvalid: 'Use uma data válida no formato AAAA-MM-DD.',
       productIdentityRequired: 'Leia o código de barras ou fotografe o produto para identificá-lo.',
@@ -663,6 +681,24 @@ const COPY: Record<Language, AppCopy> = {
       manufacturerDaysRequired: 'Digite o prazo após abertura informado pelo fabricante para produtos abertos.',
       packageDetailsDetected: 'Dados GS1 encontrados. Confira todos os campos com a embalagem antes de confirmar.',
       manufacturerEvidenceRequired: 'A comprovação do fabricante é obrigatória. O alimento não foi adicionado ao catálogo.',
+      batchSelectionTitle: 'Qual lote você está usando?',
+      batchSelectionHint: 'Escolha o lote da embalagem. Se misturar lotes, selecione todos; a validade mais próxima será usada.',
+      addBatch: 'Ler ou adicionar novo lote',
+      noActiveBatches: 'Nenhum lote ativo. Registre a embalagem recebida antes de criar a etiqueta.',
+      batchSealed: 'Lacrado',
+      batchOpen: 'Aberto',
+      batchExpired: 'Vencido — não usar',
+      batchUseFirst: 'Usar primeiro',
+      batchSelectedCount: (count) => `${count} lote(s) selecionado(s)`,
+      continueWithBatches: 'Continuar com os lotes',
+      batchRequired: 'Selecione pelo menos um lote válido.',
+      markBatchUsedUp: 'Marcar lote como esgotado',
+      closeBatchTitle: (lot) => `Marcar o lote ${lot} como esgotado?`,
+      closeBatchHint: 'Ele sairá das opções ativas, mas continuará preservado nas etiquetas e na auditoria.',
+      batchUsedUp: 'Lote removido das opções ativas e preservado na auditoria.',
+      batchMatched: 'Lote identificado pelo código GS1 e selecionado.',
+      combinedBatches: 'Lotes combinados: será usada a validade mais próxima.',
+      openedAt: 'Aberto em',
       continueToEvidence: 'Continuar para comprovação',
       registerItem: 'Cadastrar alimento',
       emptyCatalog: 'Nenhum alimento cadastrado. Cadastre cada alimento uma vez para reutilizá-lo nas próximas etiquetas.',
@@ -1010,8 +1046,8 @@ const COPY: Record<Language, AppCopy> = {
       no: 'No',
       manufacturerDays: 'Manufacturer days after opening',
       packageExpiry: 'Package expiry (YYYY-MM-DD)',
-      packageIntakeTitle: 'Record manufacturer evidence',
-      packageIntakeHint: 'Identify the product with a barcode or photo, then separately photograph the printed expiry. The evidence is stored on this device for audits.',
+      packageIntakeTitle: 'Record manufacturer batch',
+      packageIntakeHint: 'Identify this batch with a barcode or photo, then separately photograph the printed expiry. Evidence is captured once per batch and stored on this device for audits.',
       scanPackage: 'Scan code and photograph package',
       cameraPermission: 'Camera access is needed to scan the code and record product and expiry photos.',
       grantCameraPermission: 'Allow camera',
@@ -1035,7 +1071,7 @@ const COPY: Record<Language, AppCopy> = {
       retakeExpiryPhoto: 'Retake expiry photo',
       lotCode: 'Lot / batch',
       confirmPackage: 'Confirm package details',
-      packageSaved: 'Package details confirmed and saved on this device only.',
+      packageSaved: 'Batch confirmed and saved on this device only.',
       packageExpiryRequired: 'Enter the expiry printed on the package.',
       packageDateInvalid: 'Use a valid date in YYYY-MM-DD format.',
       productIdentityRequired: 'Scan the barcode or photograph the product to identify it.',
@@ -1043,6 +1079,24 @@ const COPY: Record<Language, AppCopy> = {
       manufacturerDaysRequired: 'Enter the manufacturer after-opening period for an opened product.',
       packageDetailsDetected: 'GS1 details found. Check every field against the package before confirming.',
       manufacturerEvidenceRequired: 'Manufacturer evidence is required. The item was not added to the catalog.',
+      batchSelectionTitle: 'Which batch are you using?',
+      batchSelectionHint: 'Choose the batch from the package. If batches are mixed, select every one; the earliest limit will be used.',
+      addBatch: 'Scan or add a new batch',
+      noActiveBatches: 'No active batches. Record the received package before making the label.',
+      batchSealed: 'Sealed',
+      batchOpen: 'Open',
+      batchExpired: 'Expired — do not use',
+      batchUseFirst: 'Use first',
+      batchSelectedCount: (count) => `${count} batch(es) selected`,
+      continueWithBatches: 'Continue with batches',
+      batchRequired: 'Select at least one valid batch.',
+      markBatchUsedUp: 'Mark batch used up',
+      closeBatchTitle: (lot) => `Mark batch ${lot} as used up?`,
+      closeBatchHint: 'It will leave the active choices but remain preserved on labels and in the audit trail.',
+      batchUsedUp: 'Batch removed from active choices and preserved in the audit trail.',
+      batchMatched: 'Batch identified by its GS1 code and selected.',
+      combinedBatches: 'Combined batches: the earliest limit will be used.',
+      openedAt: 'Opened at',
       continueToEvidence: 'Continue to evidence',
       registerItem: 'Register item',
       emptyCatalog: 'No items are registered. Register each item once and reuse it for future labels.',

@@ -163,9 +163,6 @@ export const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS package_scans_gtin_idx
     ON package_scans(gtin, confirmed_at DESC);
 
-  CREATE INDEX IF NOT EXISTS package_scans_active_item_idx
-    ON package_scans(item_id, status, package_expiry_date);
-
   CREATE TABLE IF NOT EXISTS label_package_scans (
     label_id INTEGER NOT NULL,
     package_scan_id INTEGER NOT NULL,
