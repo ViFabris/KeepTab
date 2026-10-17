@@ -114,7 +114,7 @@ export function getZonedDayNumber(date: Date, timeZone: string): number {
   return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
 }
 
-function zonedDateTimeToInstant(
+export function zonedDateTimeToInstant(
   desired: ZonedDateTimeParts,
   timeZone: string,
 ): Date | null {

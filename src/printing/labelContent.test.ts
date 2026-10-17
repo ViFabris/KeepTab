@@ -120,6 +120,11 @@ function settingsFor(language: Language, labelWidthMm: number, labelHeightMm: nu
     printerProfile: DEFAULT_PRINTER_PROFILE,
     printerThresholdPercent: 50,
     defaultPrintCopies: 1,
+    jurisdiction: 'RS',
+    fridgeAtOrBelow4C: false,
+    reducedMaximumDays: 3,
+    verificationMode: 'strict',
+    legalNoticeSeen: true,
     setupComplete: true,
   };
 }

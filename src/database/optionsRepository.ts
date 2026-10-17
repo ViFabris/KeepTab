@@ -1,7 +1,7 @@
 import * as Crypto from 'expo-crypto';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { LabelOption, OptionKind } from '../types';
+import type { LabelOption, OptionKind, TemperatureClass } from '../types';
 import { withWriteTransaction } from './transactions';
 
 interface OptionRow {
@@ -12,6 +12,7 @@ interface OptionRow {
   legacy_value: string;
   sort_order: number;
   applies_to_all: number;
+  temperature_class: TemperatureClass | null;
 }
 
 export async function getLabelOptions(
@@ -23,14 +24,14 @@ export async function getLabelOptions(
   const rows = kind
     ? await db.getAllAsync<OptionRow>(
         `SELECT id, kind, translation_key, custom_label, legacy_value,
-                sort_order, applies_to_all
+                sort_order, applies_to_all, temperature_class
          FROM label_options WHERE kind = ? ${enabledClause}
          ORDER BY sort_order, id`,
         kind,
       )
     : await db.getAllAsync<OptionRow>(
         `SELECT id, kind, translation_key, custom_label, legacy_value,
-                sort_order, applies_to_all
+                sort_order, applies_to_all, temperature_class
          FROM label_options WHERE 1 = 1 ${enabledClause}
          ORDER BY kind, sort_order, id`,
       );
@@ -41,7 +42,11 @@ export async function addLabelOption(
   db: SQLiteDatabase,
   kind: OptionKind,
   rawLabel: string,
+  temperatureClass?: TemperatureClass,
 ): Promise<void> {
+  if (kind === 'storage' && !temperatureClass) {
+    throw new Error('STORAGE_TEMPERATURE_CLASS_REQUIRED');
+  }
   const label = rawLabel.trim().replace(/\s+/g, ' ');
   const nextOrder = await db.getFirstAsync<{ next_order: number }>(
     `SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order
@@ -52,13 +57,14 @@ export async function addLabelOption(
   await db.runAsync(
     `INSERT INTO label_options
       (id, kind, translation_key, custom_label, legacy_value,
-       sort_order, applies_to_all, enabled)
-     VALUES (?, ?, NULL, ?, ?, ?, 1, 1)`,
+      sort_order, applies_to_all, temperature_class, enabled)
+     VALUES (?, ?, NULL, ?, ?, ?, 1, ?, 1)`,
     id,
     kind,
     label,
     id,
     nextOrder?.next_order ?? 0,
+    kind === 'storage' ? temperatureClass ?? null : null,
   );
 }
 
@@ -105,5 +111,6 @@ function mapOption(row: OptionRow): LabelOption {
     legacyValue: row.legacy_value,
     sortOrder: row.sort_order,
     appliesToAll: row.applies_to_all === 1,
+    temperatureClass: row.temperature_class,
   };
 }

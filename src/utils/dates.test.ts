@@ -33,6 +33,11 @@ describe('label date calculations', () => {
         printerProfile: DEFAULT_PRINTER_PROFILE,
         printerThresholdPercent: 50,
         defaultPrintCopies: 1,
+        jurisdiction: 'RS',
+        fridgeAtOrBelow4C: false,
+        reducedMaximumDays: 3,
+        verificationMode: 'strict',
+        legalNoticeSeen: true,
         setupComplete: true,
       }),
     ).toContain('20 OUT 2026');

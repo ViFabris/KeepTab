@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import sampleData from '../data/sample-data.json';
-import type { StorageType } from '../types';
+import type { PlantBasedType, StorageType } from '../types';
 import { migrateDatabase } from './migrations';
 import { SCHEMA_SQL } from './schema';
 import { withWriteTransaction } from './transactions';
@@ -29,6 +29,9 @@ interface SeedItem {
   storageOptions: SeedOption<StorageType>[];
   formOptions: SeedOption<string>[];
   shelfLives: SeedShelfLife[];
+  plantBasedType?: PlantBasedType;
+  heatTreated?: boolean;
+  source?: string;
 }
 
 interface SeedData {
@@ -56,10 +59,14 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
   await withWriteTransaction(db, async (transaction) => {
     for (const item of seed.items) {
       await transaction.runAsync(
-        `INSERT INTO items (id, name) VALUES (?, ?)
+        `INSERT INTO items (id, name, plant_based_type, heat_treated, verification_status, source)
+         VALUES (?, ?, ?, ?, 'unverified', ?)
          ON CONFLICT(id) DO UPDATE SET name = excluded.name`,
         item.id,
         item.name,
+        item.plantBasedType ?? 'none',
+        item.heatTreated ? 1 : 0,
+        item.source ?? '',
       );
 
       for (const [index, option] of item.storageOptions.entries()) {
@@ -80,15 +87,17 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
       for (const [index, option] of item.formOptions.entries()) {
         await transaction.runAsync(
           `INSERT INTO item_form_options
-            (item_id, form, sort_order, is_default)
-           VALUES (?, ?, ?, ?)
+            (item_id, form, sort_order, is_default, prepared_food)
+           VALUES (?, ?, ?, ?, ?)
            ON CONFLICT(item_id, form) DO UPDATE SET
              sort_order = excluded.sort_order,
-             is_default = excluded.is_default`,
+             is_default = excluded.is_default,
+             prepared_food = excluded.prepared_food`,
           item.id,
           option.value,
           index,
           option.isDefault ? 1 : 0,
+          defaultPreparedFood(option.value) ? 1 : 0,
         );
       }
 
@@ -134,6 +143,10 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
       String(seed.seedVersion),
     );
   });
+}
+
+function defaultPreparedFood(form: string): boolean {
+  return form === 'Cut' || form === 'Cooked' || form === 'Other';
 }
 
 async function resetLocalDatabaseOnce(db: SQLiteDatabase): Promise<void> {

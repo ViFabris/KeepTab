@@ -9,29 +9,150 @@ interface TableColumn {
 }
 
 const DEFAULT_OPTIONS = [
-  ['storage-refrigerated', 'storage', 'storage.refrigerated', 'Refrigerated', 0, 0],
-  ['storage-frozen', 'storage', 'storage.frozen', 'Frozen', 1, 0],
-  ['form-whole', 'form', 'form.whole', 'Whole', 0, 0],
-  ['form-cut', 'form', 'form.cut', 'Cut', 1, 0],
-  ['form-other', 'form', 'form.other', 'Other', 2, 1],
-  ['form-cooked', 'form', 'form.cooked', 'Cooked', 3, 0],
-  ['form-raw', 'form', 'form.raw', 'Raw', 4, 0],
-  ['form-in-shell', 'form', 'form.inShell', 'In shell', 5, 0],
-  ['form-peeled', 'form', 'form.peeled', 'Peeled', 6, 0],
-  ['form-opened', 'form', 'form.opened', 'Opened', 7, 0],
-  ['form-unopened', 'form', 'form.unopened', 'Unopened', 8, 0],
-  ['form-shredded', 'form', 'form.shredded', 'Shredded', 9, 0],
+  ['storage-refrigerated', 'storage', 'storage.refrigerated', 'Refrigerated', 0, 0, 'refrigerated'],
+  ['storage-frozen', 'storage', 'storage.frozen', 'Frozen', 1, 0, 'frozen'],
+  ['form-whole', 'form', 'form.whole', 'Whole', 0, 0, null],
+  ['form-cut', 'form', 'form.cut', 'Cut', 1, 0, null],
+  ['form-other', 'form', 'form.other', 'Other', 2, 1, null],
+  ['form-cooked', 'form', 'form.cooked', 'Cooked', 3, 0, null],
+  ['form-raw', 'form', 'form.raw', 'Raw', 4, 0, null],
+  ['form-in-shell', 'form', 'form.inShell', 'In shell', 5, 0, null],
+  ['form-peeled', 'form', 'form.peeled', 'Peeled', 6, 0, null],
+  ['form-opened', 'form', 'form.opened', 'Opened', 7, 0, null],
+  ['form-unopened', 'form', 'form.unopened', 'Unopened', 8, 0, null],
+  ['form-shredded', 'form', 'form.shredded', 'Shredded', 9, 0, null],
 ] as const;
 
 export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
-  await seedDefaultOptions(db);
   await migrateLabelsTable(db);
   await migrateClockSettings(db);
   await migratePrinterSettings(db);
+  await migrateFoodSafetySettings(db);
+  await migrateItemSafetyFields(db);
+  await migrateStorageValueConstraints(db);
+  await seedDefaultOptions(db);
+  await migrateAuditTrail(db);
   await initializeSettings(db);
   await migrateLabelSizeSetting(db);
   await linkExistingLabelsToOptions(db);
-  await db.execAsync('PRAGMA user_version = 5');
+  await db.execAsync('PRAGMA user_version = 6');
+}
+
+async function addColumnIfMissing(
+  db: SQLiteDatabase,
+  table: string,
+  column: string,
+  definition: string,
+): Promise<void> {
+  const columns = await db.getAllAsync<TableColumn>(`PRAGMA table_info(${table})`);
+  if (!columns.some((candidate) => candidate.name === column)) {
+    await db.execAsync(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
+
+async function migrateFoodSafetySettings(db: SQLiteDatabase): Promise<void> {
+  await addColumnIfMissing(db, 'app_settings', 'jurisdiction', "TEXT NOT NULL DEFAULT 'RS'");
+  await addColumnIfMissing(db, 'app_settings', 'fridge_at_or_below_4c', 'INTEGER NOT NULL DEFAULT 0');
+  await addColumnIfMissing(db, 'app_settings', 'reduced_maximum_days', 'INTEGER NOT NULL DEFAULT 3');
+  await addColumnIfMissing(db, 'app_settings', 'verification_mode', "TEXT NOT NULL DEFAULT 'strict'");
+  await addColumnIfMissing(db, 'app_settings', 'legal_notice_seen', 'INTEGER NOT NULL DEFAULT 0');
+}
+
+async function migrateItemSafetyFields(db: SQLiteDatabase): Promise<void> {
+  await addColumnIfMissing(db, 'label_options', 'temperature_class', 'TEXT');
+  await db.runAsync("UPDATE label_options SET temperature_class = 'refrigerated' WHERE id = 'storage-refrigerated'");
+  await db.runAsync("UPDATE label_options SET temperature_class = 'frozen' WHERE id = 'storage-frozen'");
+  await addColumnIfMissing(db, 'items', 'plant_based_type', "TEXT NOT NULL DEFAULT 'none'");
+  await addColumnIfMissing(db, 'items', 'heat_treated', 'INTEGER NOT NULL DEFAULT 0');
+  await addColumnIfMissing(db, 'items', 'verification_status', "TEXT NOT NULL DEFAULT 'unverified'");
+  await addColumnIfMissing(db, 'items', 'verified_by', "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing(db, 'items', 'verified_on', "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing(db, 'items', 'manufacturer_days_after_open', 'INTEGER');
+  await addColumnIfMissing(db, 'items', 'source', "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing(db, 'item_form_options', 'prepared_food', 'INTEGER NOT NULL DEFAULT 0');
+  await db.execAsync(`
+    UPDATE item_form_options SET prepared_food = 1 WHERE form IN ('Cut', 'Cooked', 'Other');
+    UPDATE item_form_options SET prepared_food = 0 WHERE form IN ('Whole', 'Opened');
+  `);
+}
+
+async function migrateStorageValueConstraints(db: SQLiteDatabase): Promise<void> {
+  const migrated = await db.getFirstAsync<{ value: string }>(
+    `SELECT value FROM app_metadata WHERE key = 'storage_value_constraints_version'`,
+  );
+  if (migrated?.value === '1') return;
+
+  await db.execAsync('PRAGMA foreign_keys = OFF');
+  try {
+    await withWriteTransaction(db, async (transaction) => {
+      await transaction.execAsync(`
+        CREATE TABLE item_storage_options_open (
+          item_id TEXT NOT NULL,
+          storage_type TEXT NOT NULL,
+          sort_order INTEGER NOT NULL,
+          is_default INTEGER NOT NULL DEFAULT 0 CHECK (is_default IN (0, 1)),
+          PRIMARY KEY (item_id, storage_type),
+          FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
+        );
+        INSERT INTO item_storage_options_open
+          (item_id, storage_type, sort_order, is_default)
+        SELECT item_id, storage_type, sort_order, is_default
+        FROM item_storage_options;
+
+        CREATE TABLE shelf_lives_open (
+          item_id TEXT NOT NULL,
+          form TEXT NOT NULL,
+          storage_type TEXT NOT NULL,
+          shelf_life_hours INTEGER NOT NULL CHECK (shelf_life_hours > 0),
+          is_placeholder INTEGER NOT NULL DEFAULT 1 CHECK (is_placeholder IN (0, 1)),
+          source_note TEXT NOT NULL,
+          PRIMARY KEY (item_id, form, storage_type),
+          FOREIGN KEY (item_id, form) REFERENCES item_form_options(item_id, form) ON DELETE CASCADE,
+          FOREIGN KEY (item_id, storage_type) REFERENCES item_storage_options_open(item_id, storage_type) ON DELETE CASCADE
+        );
+        INSERT INTO shelf_lives_open
+          (item_id, form, storage_type, shelf_life_hours, is_placeholder, source_note)
+        SELECT item_id, form, storage_type, shelf_life_hours, is_placeholder, source_note
+        FROM shelf_lives;
+
+        DROP TABLE shelf_lives;
+        DROP TABLE item_storage_options;
+        ALTER TABLE item_storage_options_open RENAME TO item_storage_options;
+        ALTER TABLE shelf_lives_open RENAME TO shelf_lives;
+      `);
+      await transaction.runAsync(
+        `INSERT INTO app_metadata (key, value) VALUES ('storage_value_constraints_version', '1')
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+      );
+    });
+  } finally {
+    await db.execAsync('PRAGMA foreign_keys = ON');
+  }
+}
+
+async function migrateAuditTrail(db: SQLiteDatabase): Promise<void> {
+  await addColumnIfMissing(db, 'labels', 'jurisdictions_json', "TEXT NOT NULL DEFAULT '[]'");
+  await addColumnIfMissing(db, 'labels', 'rules_version', "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing(db, 'labels', 'capped_by_rule_id', 'TEXT');
+  await addColumnIfMissing(db, 'labels', 'item_verification_status', "TEXT NOT NULL DEFAULT 'unverified'");
+  await addColumnIfMissing(db, 'labels', 'verification_mode', "TEXT NOT NULL DEFAULT 'strict'");
+  await addColumnIfMissing(db, 'labels', 'printer_profile_json', "TEXT NOT NULL DEFAULT '{}'");
+  await addColumnIfMissing(db, 'labels', 'app_version', "TEXT NOT NULL DEFAULT ''");
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS label_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      label_id INTEGER NOT NULL,
+      event_type TEXT NOT NULL CHECK (event_type IN ('used', 'thrown_away')),
+      occurred_at TEXT NOT NULL,
+      person_name TEXT NOT NULL,
+      FOREIGN KEY (label_id) REFERENCES labels(id) ON DELETE RESTRICT
+    );
+    CREATE TABLE IF NOT EXISTS rule_reviews (
+      rule_id TEXT PRIMARY KEY NOT NULL,
+      reviewed_on TEXT NOT NULL,
+      reviewed_by TEXT NOT NULL
+    );
+  `);
 }
 
 async function migratePrinterSettings(db: SQLiteDatabase): Promise<void> {
@@ -94,8 +215,8 @@ async function seedDefaultOptions(db: SQLiteDatabase): Promise<void> {
     for (const option of DEFAULT_OPTIONS) {
       await transaction.runAsync(
         `INSERT OR IGNORE INTO label_options
-          (id, kind, translation_key, custom_label, legacy_value, sort_order, applies_to_all, enabled)
-         VALUES (?, ?, ?, NULL, ?, ?, ?, 1)`,
+          (id, kind, translation_key, custom_label, legacy_value, sort_order, applies_to_all, temperature_class, enabled)
+         VALUES (?, ?, ?, NULL, ?, ?, ?, ?, 1)`,
         ...option,
       );
     }

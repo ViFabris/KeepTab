@@ -1,0 +1,7 @@
+item_id,item_name,form,storage_type,storage_temperature_class,shelf_life_days,prepared_food,status,verified_by,verified_on,manufacturer_days_after_open,source,plant_based_type,heat_treated
+cucumber,Cucumber,Whole,Refrigerated,refrigerated,7,não,unverified,,,,,none,não
+cucumber,Cucumber,Cut,Refrigerated,refrigerated,3,sim,unverified,,,,,none,não
+coconut-water,Coconut water,Other,Refrigerated,refrigerated,1,sim,unverified,,,,,drink,não
+sugarcane-juice,Sugarcane juice,Other,Refrigerated,refrigerated,1,sim,unverified,,,,,drink,não
+fruit-salad,Fruit salad,Cut,Refrigerated,refrigerated,3,sim,unverified,,,,,food,não
+fruit-pulp,Fruit pulp,Other,Frozen,frozen,90,sim,unverified,,,,,food,não

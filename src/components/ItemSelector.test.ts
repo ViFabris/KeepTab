@@ -4,9 +4,25 @@ import type { KitchenItem } from '../types';
 import { filterItems } from '../utils/itemSearch';
 
 const items: KitchenItem[] = [
-  { id: 'cucumber', name: 'Cucumber', storageOptions: [], formOptions: [] },
-  { id: 'rice', name: 'Rice', storageOptions: [], formOptions: [] },
+  item('cucumber', 'Cucumber'),
+  item('rice', 'Rice'),
 ];
+
+function item(id: string, name: string): KitchenItem {
+  return {
+    id,
+    name,
+    storageOptions: [],
+    formOptions: [],
+    plantBasedType: 'none',
+    heatTreated: false,
+    verificationStatus: 'unverified',
+    verifiedBy: '',
+    verifiedOn: '',
+    manufacturerDaysAfterOpen: null,
+    source: '',
+  };
+}
 
 describe('item search', () => {
   it('matches item names without case sensitivity', () => {
