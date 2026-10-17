@@ -152,7 +152,13 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
     setStorageOption(defaultOption(selectedItem.storageOptions));
     setFormOption(defaultOption(selectedItem.formOptions));
     setError('');
-    setStep('storage');
+    if (selectedItem.storageOptions.length > 1) {
+      setStep('storage');
+    } else if (selectedItem.formOptions.length > 1) {
+      setStep('form');
+    } else {
+      setStep('staff');
+    }
   }
 
   async function selectStaff(
@@ -339,6 +345,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
           </Card>
         )}
         <ItemRegistrationModal
+          mode="label"
           onCancel={() => setRegistrationVisible(false)}
           onRegistered={(registeredItem) => {
             setItems((current) => [...current.filter((candidate) => candidate.id !== registeredItem.id), registeredItem]
@@ -377,7 +384,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
             }
             setError('');
             setStorageOption(option);
-            setStep('form');
+            setStep(item.formOptions.length > 1 ? 'form' : 'staff');
           }}
           onBack={resetFlow}
           progress={progress}
@@ -398,7 +405,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
             setFormOption(option);
             setStep('staff');
           }}
-          onBack={() => setStep('storage')}
+          onBack={() => item.storageOptions.length > 1 ? setStep('storage') : resetFlow()}
           progress={progress}
         />
       </View>
@@ -436,7 +443,11 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         )}
         <BigButton
           label={copy.back}
-          onPress={() => setStep('form')}
+          onPress={() => {
+            if (item.formOptions.length > 1) setStep('form');
+            else if (item.storageOptions.length > 1) setStep('storage');
+            else resetFlow();
+          }}
           variant="secondary"
           style={styles.bottomBack}
           leading={<ArrowLeft color={colors.ink} size={sizes.iconMd} strokeWidth={2} />}

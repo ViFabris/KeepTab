@@ -287,10 +287,13 @@ export interface FoodSafetyCopy {
   emptyCatalog: string;
   itemRegistrationTitle: string;
   itemRegistrationHint: string;
+  itemRegistrationForLabelHint: string;
   itemName: string;
   itemNamePlaceholder: string;
   chooseForms: string;
   chooseStorageTypes: string;
+  chooseCurrentForm: string;
+  chooseCurrentStorage: string;
   preparedClassification: string;
   preparedClassificationHint: string;
   preparedInKitchen: string;
@@ -639,10 +642,13 @@ const COPY: Record<Language, AppCopy> = {
       emptyCatalog: 'Nenhum alimento cadastrado. Cadastre cada alimento uma vez para reutilizá-lo nas próximas etiquetas.',
       itemRegistrationTitle: 'Cadastrar alimento da cozinha',
       itemRegistrationHint: 'Escolha os estados e armazenamentos usados nesta cozinha. O prazo será limitado automaticamente pelas regras aplicáveis.',
+      itemRegistrationForLabelHint: 'Escolha uma vez o estado atual e o armazenamento. Essas opções serão usadas diretamente nesta etiqueta.',
       itemName: 'Nome do alimento',
       itemNamePlaceholder: 'Ex.: arroz cozido',
       chooseForms: 'Estados ou preparos disponíveis',
       chooseStorageTypes: 'Armazenamentos disponíveis',
+      chooseCurrentForm: 'Estado ou preparo atual',
+      chooseCurrentStorage: 'Armazenamento atual',
       preparedClassification: 'Classificação de cada estado',
       preparedClassificationHint: 'Marque como pré-preparado/preparado quando houver manipulação na cozinha, como cortar, descascar, ralar ou cozinhar.',
       preparedInKitchen: 'Pré-preparado ou preparado na cozinha',
@@ -1001,10 +1007,13 @@ const COPY: Record<Language, AppCopy> = {
       emptyCatalog: 'No items are registered. Register each item once and reuse it for future labels.',
       itemRegistrationTitle: 'Register a kitchen item',
       itemRegistrationHint: 'Choose the forms and storage methods used in this kitchen. Applicable legal rules will automatically limit the date.',
+      itemRegistrationForLabelHint: 'Choose the current form and storage once. These choices will be used directly for this label.',
       itemName: 'Item name',
       itemNamePlaceholder: 'Example: cooked rice',
       chooseForms: 'Available forms or preparations',
       chooseStorageTypes: 'Available storage methods',
+      chooseCurrentForm: 'Current form or preparation',
+      chooseCurrentStorage: 'Current storage method',
       preparedClassification: 'Classification for each form',
       preparedClassificationHint: 'Mark pre-prepared/prepared when the kitchen handles the food, such as cutting, peeling, shredding, or cooking.',
       preparedInKitchen: 'Pre-prepared or prepared in the kitchen',

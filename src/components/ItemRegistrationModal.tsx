@@ -13,6 +13,7 @@ import { BigButton } from './BigButton';
 import { Card } from './Card';
 import { Input } from './Input';
 import { OptionChip } from './OptionChip';
+import { nextFormSelection, nextStorageSelection } from './itemRegistrationChoices';
 
 const PREPARED_DEFAULTS = new Set([
   'form.cut', 'form.other', 'form.cooked', 'form.peeled', 'form.shredded',
@@ -22,10 +23,12 @@ export function ItemRegistrationModal({
   visible,
   onCancel,
   onRegistered,
+  mode = 'catalog',
 }: {
   visible: boolean;
   onCancel: () => void;
   onRegistered: (item: KitchenItem) => void;
+  mode?: 'catalog' | 'label';
 }) {
   const db = useSQLiteContext();
   const { language, copy } = useLanguage();
@@ -40,6 +43,7 @@ export function ItemRegistrationModal({
   const [error, setError] = useState('');
   const formOptions = useMemo(() => options.filter((option) => option.kind === 'form'), [options]);
   const storageOptions = useMemo(() => options.filter((option) => option.kind === 'storage'), [options]);
+  const isLabelMode = mode === 'label';
 
   useEffect(() => {
     if (!visible) return;
@@ -56,9 +60,7 @@ export function ItemRegistrationModal({
   }, [copy.genericError, db, visible]);
 
   function toggleForm(option: LabelOption) {
-    setSelectedFormIds((current) => current.includes(option.id)
-      ? current.filter((id) => id !== option.id)
-      : [...current, option.id]);
+    setSelectedFormIds((current) => nextFormSelection(current, option, formOptions, isLabelMode));
     setPreparedByForm((current) => ({
       ...current,
       [option.id]: current[option.id] ?? Boolean(option.translationKey && PREPARED_DEFAULTS.has(option.translationKey)),
@@ -66,9 +68,7 @@ export function ItemRegistrationModal({
   }
 
   function toggleStorage(optionId: string) {
-    setSelectedStorageIds((current) => current.includes(optionId)
-      ? current.filter((id) => id !== optionId)
-      : [...current, optionId]);
+    setSelectedStorageIds((current) => nextStorageSelection(current, optionId, isLabelMode));
   }
 
   async function save() {
@@ -107,7 +107,9 @@ export function ItemRegistrationModal({
         <View style={styles.header}>
           <View style={styles.headerText}>
             <Text style={styles.title}>{copy.foodSafety.itemRegistrationTitle}</Text>
-            <Text style={styles.hint}>{copy.foodSafety.itemRegistrationHint}</Text>
+            <Text style={styles.hint}>
+              {isLabelMode ? copy.foodSafety.itemRegistrationForLabelHint : copy.foodSafety.itemRegistrationHint}
+            </Text>
           </View>
           <BigButton
             label={copy.settings.close}
@@ -130,7 +132,9 @@ export function ItemRegistrationModal({
           </Card>
 
           <Card style={styles.card}>
-            <Text style={styles.sectionTitle}>{copy.foodSafety.chooseForms}</Text>
+            <Text style={styles.sectionTitle}>
+              {isLabelMode ? copy.foodSafety.chooseCurrentForm : copy.foodSafety.chooseForms}
+            </Text>
             <View style={styles.grid}>
               {formOptions.map((option) => (
                 <OptionChip
@@ -176,7 +180,9 @@ export function ItemRegistrationModal({
           ) : null}
 
           <Card style={styles.card}>
-            <Text style={styles.sectionTitle}>{copy.foodSafety.chooseStorageTypes}</Text>
+            <Text style={styles.sectionTitle}>
+              {isLabelMode ? copy.foodSafety.chooseCurrentStorage : copy.foodSafety.chooseStorageTypes}
+            </Text>
             <View style={styles.grid}>
               {storageOptions.map((option) => (
                 <OptionChip

@@ -360,10 +360,11 @@ function optionsForItem<
   mappings: T[],
   valueKey: 'storage_type' | 'form',
 ) {
+  const hasExplicitMappings = mappings.length > 0;
   const applicable = options
     .filter(
       (option) =>
-        option.appliesToAll ||
+        (!hasExplicitMappings && option.appliesToAll) ||
         mappings.some((mapping) => mapping[valueKey as keyof T] === option.legacyValue),
     )
     .map((option) => ({
