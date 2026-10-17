@@ -51,12 +51,21 @@ export function calculateValidity(input: ValidityInput): ValidityResult {
     return { allowed: true, expiresAt, cappedBy: null };
   }
 
-  if (!input.shelfLifeDays) {
+  let expiresAt: Date;
+  let cappedBy: AppliedRule | null = null;
+  if (input.shelfLifeDays) {
+    expiresAt = addDays(input.madeAt, input.shelfLifeDays);
+  } else if (input.packageExpiryAt) {
+    expiresAt = input.packageExpiryAt;
+  } else if (input.preparedFood && input.jurisdiction === 'RS' && input.storageTemperatureClass === 'refrigerated') {
+    expiresAt = addDays(input.madeAt, 3);
+    cappedBy = appliedRule('COLD-3D', 3);
+  } else if (input.preparedFood && input.jurisdiction === 'RS' && input.storageTemperatureClass === 'frozen') {
+    expiresAt = addDays(input.madeAt, 90);
+    cappedBy = appliedRule('FROZEN-90D', 90);
+  } else {
     return { allowed: false, reason: 'missingShelfLife' };
   }
-
-  let expiresAt = addDays(input.madeAt, input.shelfLifeDays);
-  let cappedBy: AppliedRule | null = null;
   const applyCap = (days: number, ruleId: string) => {
     const candidate = addDays(input.madeAt, days);
     if (candidate <= expiresAt) {

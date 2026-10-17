@@ -9,19 +9,26 @@ export interface PrintingGateResult {
   reason?: PrintingGateReason;
 }
 
+export interface PrintingEvidence {
+  legalRule: boolean;
+  confirmedPackage: boolean;
+}
+
 export function evaluatePrintingGate(
   validity: ValidityResult,
   itemStatus: VerificationStatus,
   mode: VerificationMode,
+  evidence: PrintingEvidence = { legalRule: false, confirmedPackage: false },
 ): PrintingGateResult {
   if (!validity.allowed) {
     return { allowed: false, requiresTestWarning: false, reason: 'invalidValidity' };
   }
-  if (itemStatus !== 'verified' && mode === 'strict') {
+  const hasEvidence = itemStatus === 'verified' || evidence.legalRule || evidence.confirmedPackage;
+  if (!hasEvidence && mode === 'strict') {
     return { allowed: false, requiresTestWarning: false, reason: 'unverifiedStrict' };
   }
   return {
     allowed: true,
-    requiresTestWarning: itemStatus !== 'verified' && mode === 'test',
+    requiresTestWarning: !hasEvidence && mode === 'test',
   };
 }

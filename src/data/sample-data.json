@@ -1,6 +1,6 @@
 {
   "_notice": "PLACEHOLDER SAMPLE DATA — NOT VERIFIED FOR FOOD SAFETY. Replace every shelf-life value with data checked for your operation before production use.",
-  "seedVersion": 2,
+  "seedVersion": 3,
   "staff": [],
   "items": [
     {
@@ -132,7 +132,7 @@
       "id": "hard-boiled-egg",
       "name": "Hard-boiled egg",
       "storageOptions": [{ "value": "Refrigerated", "isDefault": true }],
-      "formOptions": [{ "value": "In shell", "isDefault": true }, { "value": "Peeled", "isDefault": false }],
+      "formOptions": [{ "value": "In shell", "isDefault": true, "preparedFood": true }, { "value": "Peeled", "isDefault": false, "preparedFood": true }],
       "shelfLives": [
         { "form": "In shell", "storageType": "Refrigerated", "hours": 168, "placeholder": true },
         { "form": "Peeled", "storageType": "Refrigerated", "hours": 120, "placeholder": true }

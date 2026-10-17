@@ -24,6 +24,20 @@ describe('printing gate', () => {
     });
   });
 
+  it('allows an unverified item when the selected combination is directly limited by law', () => {
+    expect(evaluatePrintingGate(VALID, 'unverified', 'strict', {
+      legalRule: true,
+      confirmedPackage: false,
+    })).toMatchObject({ allowed: true, requiresTestWarning: false });
+  });
+
+  it('allows an unverified packaged item after package evidence is confirmed', () => {
+    expect(evaluatePrintingGate(VALID, 'unverified', 'strict', {
+      legalRule: false,
+      confirmedPackage: true,
+    })).toMatchObject({ allowed: true, requiresTestWarning: false });
+  });
+
   it('never prints an invalid validity result in either mode', () => {
     expect(evaluatePrintingGate(INVALID, 'verified', 'strict').allowed).toBe(false);
     expect(evaluatePrintingGate(INVALID, 'unverified', 'test').allowed).toBe(false);

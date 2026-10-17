@@ -110,6 +110,7 @@ export const SCHEMA_SQL = `
     capped_by_rule_id TEXT,
     item_verification_status TEXT NOT NULL DEFAULT 'unverified',
     verification_mode TEXT NOT NULL DEFAULT 'strict',
+    verification_basis TEXT NOT NULL DEFAULT 'test',
     printer_profile_json TEXT NOT NULL DEFAULT '{}',
     app_version TEXT NOT NULL DEFAULT '',
     package_scan_id INTEGER,

@@ -13,6 +13,7 @@ const DATABASE_RESET_VERSION = 7;
 interface SeedOption<T extends string> {
   value: T;
   isDefault: boolean;
+  preparedFood?: boolean;
 }
 
 interface SeedShelfLife {
@@ -97,7 +98,7 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
           option.value,
           index,
           option.isDefault ? 1 : 0,
-          defaultPreparedFood(option.value) ? 1 : 0,
+          (option.preparedFood ?? defaultPreparedFood(option.value)) ? 1 : 0,
         );
       }
 
@@ -146,7 +147,7 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
 }
 
 function defaultPreparedFood(form: string): boolean {
-  return form === 'Cut' || form === 'Cooked' || form === 'Other';
+  return form === 'Cut' || form === 'Cooked' || form === 'Other' || form === 'Peeled' || form === 'Shredded';
 }
 
 async function resetLocalDatabaseOnce(db: SQLiteDatabase): Promise<void> {

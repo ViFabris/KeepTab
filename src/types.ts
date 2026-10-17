@@ -12,6 +12,8 @@ export type VerificationMode = 'strict' | 'test';
 
 export type VerificationStatus = 'unverified' | 'verified';
 
+export type VerificationBasis = 'item-review' | 'legal-rule' | 'package-evidence' | 'test';
+
 export type PlantBasedType = 'none' | 'drink' | 'food';
 
 export type TemperatureClass = 'refrigerated' | 'frozen' | 'ambient';
@@ -107,6 +109,7 @@ export interface PrintableLabel {
   cappedByRuleId?: string | null;
   itemVerificationStatus?: VerificationStatus;
   verificationMode?: VerificationMode;
+  verificationBasis?: VerificationBasis;
   printerProfileSnapshot?: PrinterProfile;
   appVersion?: string;
   packageScanId?: number | null;

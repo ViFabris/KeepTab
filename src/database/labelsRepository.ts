@@ -30,6 +30,7 @@ interface LabelRow {
   capped_by_rule_id: string | null;
   item_verification_status: 'unverified' | 'verified';
   verification_mode: 'strict' | 'test';
+  verification_basis: 'item-review' | 'legal-rule' | 'package-evidence' | 'test';
   printer_profile_json: string;
   app_version: string;
   package_scan_id: number | null;
@@ -47,9 +48,9 @@ export async function savePrintedLabel(
       (item_id, item_name, form, form_option_id, storage_type, storage_option_id,
        made_at, use_by_at, staff_id, staff_name, status, printed_at,
        label_width_mm, label_height_mm, jurisdictions_json, rules_version,
-       capped_by_rule_id, item_verification_status, verification_mode,
+       capped_by_rule_id, item_verification_status, verification_mode, verification_basis,
        printer_profile_json, app_version, package_scan_id, lot_code, product_barcode)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     label.itemId,
     label.itemName,
     label.form,
@@ -68,6 +69,7 @@ export async function savePrintedLabel(
     label.cappedByRuleId ?? null,
     label.itemVerificationStatus ?? 'unverified',
     label.verificationMode ?? 'strict',
+    label.verificationBasis ?? 'test',
     JSON.stringify(label.printerProfileSnapshot ?? {}),
     label.appVersion ?? '',
     label.packageScanId ?? null,
@@ -188,6 +190,7 @@ function mapLabelRow(row: LabelRow): SavedLabel {
     cappedByRuleId: row.capped_by_rule_id,
     itemVerificationStatus: row.item_verification_status,
     verificationMode: row.verification_mode,
+    verificationBasis: row.verification_basis,
     printerProfileSnapshot: parseJson(row.printer_profile_json, undefined),
     appVersion: row.app_version,
     packageScanId: row.package_scan_id,

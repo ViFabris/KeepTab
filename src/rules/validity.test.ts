@@ -72,10 +72,32 @@ describe('food-safety validity calculation', () => {
   });
 
   it('blocks combinations without a shelf life', () => {
-    expect(calculateValidity({ ...BASE, shelfLifeDays: null })).toEqual({
+    expect(calculateValidity({ ...BASE, shelfLifeDays: null, preparedFood: false })).toEqual({
       allowed: false,
       reason: 'missingShelfLife',
     });
+  });
+
+  it('derives three days directly from Portaria 799 for RS prepared refrigerated food', () => {
+    const result = allowed({ shelfLifeDays: null });
+    expect(result.expiresAt.toISOString()).toBe('2026-10-19T15:00:00.000Z');
+    expect(result.cappedBy?.ruleId).toBe('COLD-3D');
+  });
+
+  it('derives 90 days directly from Portaria 799 for RS prepared frozen food', () => {
+    const result = allowed({ shelfLifeDays: null, storageTemperatureClass: 'frozen' });
+    expect(result.expiresAt.toISOString()).toBe('2027-01-14T15:00:00.000Z');
+    expect(result.cappedBy?.ruleId).toBe('FROZEN-90D');
+  });
+
+  it('accepts confirmed package expiry as the sole limit for non-prepared food', () => {
+    const result = allowed({
+      shelfLifeDays: null,
+      preparedFood: false,
+      packageExpiryAt: new Date('2026-10-18T02:59:00.000Z'),
+    });
+    expect(result.expiresAt.toISOString()).toBe('2026-10-18T02:59:00.000Z');
+    expect(result.cappedBy).toBeNull();
   });
 
   it('expires a plant drink prepared at 23:30 at 23:59 on the same local day', () => {

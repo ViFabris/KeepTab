@@ -137,6 +137,7 @@ async function migrateAuditTrail(db: SQLiteDatabase): Promise<void> {
   await addColumnIfMissing(db, 'labels', 'capped_by_rule_id', 'TEXT');
   await addColumnIfMissing(db, 'labels', 'item_verification_status', "TEXT NOT NULL DEFAULT 'unverified'");
   await addColumnIfMissing(db, 'labels', 'verification_mode', "TEXT NOT NULL DEFAULT 'strict'");
+  await addColumnIfMissing(db, 'labels', 'verification_basis', "TEXT NOT NULL DEFAULT 'test'");
   await addColumnIfMissing(db, 'labels', 'printer_profile_json', "TEXT NOT NULL DEFAULT '{}'");
   await addColumnIfMissing(db, 'labels', 'app_version', "TEXT NOT NULL DEFAULT ''");
   await db.execAsync(`

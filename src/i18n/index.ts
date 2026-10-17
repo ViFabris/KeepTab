@@ -235,6 +235,7 @@ export interface FoodSafetyCopy {
   fridgeAssumptionHint: string;
   reducedMaximumDays: string;
   verificationMode: string;
+  verificationBasis: string;
   strictMode: string;
   testMode: string;
   strictModeHint: string;
@@ -575,6 +576,7 @@ const COPY: Record<Language, AppCopy> = {
       fridgeAssumptionHint: 'Se desativado, use o prazo máximo reduzido definido abaixo.',
       reducedMaximumDays: 'Prazo máximo reduzido (dias)',
       verificationMode: 'Modo de verificação',
+      verificationBasis: 'Base da verificação',
       strictMode: 'Estrito',
       testMode: 'Teste',
       strictModeHint: 'Imprime somente itens verificados com validade configurada.',
@@ -925,6 +927,7 @@ const COPY: Record<Language, AppCopy> = {
       fridgeAssumptionHint: 'When off, the reduced maximum below is used.',
       reducedMaximumDays: 'Reduced maximum (days)',
       verificationMode: 'Verification mode',
+      verificationBasis: 'Verification basis',
       strictMode: 'Strict',
       testMode: 'Test',
       strictModeHint: 'Only verified items with a configured shelf life can print.',

@@ -169,6 +169,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         formOption.id,
         storageOption.id,
       );
+      const confirmedPackage = evidenceOverride ?? packageEvidence;
       const madeAt = getAppNow(settings);
       const opened = formOption.legacyValue === 'Opened';
       if (opened && !openedDays && item.manufacturerDaysAfterOpen) {
@@ -177,7 +178,9 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
       const result = calculateValidity({
         madeAt,
         timeZone: settings.timeZone,
-        shelfLifeDays: configuredShelfLife ? configuredShelfLife.hours / 24 : null,
+        shelfLifeDays: configuredShelfLife && !configuredShelfLife.isPlaceholder
+          ? configuredShelfLife.hours / 24
+          : null,
         preparedFood: formOption.preparedFood ?? false,
         opened,
         storageTemperatureClass: storageOption.temperatureClass ?? inferTemperatureClass(storageOption.legacyValue),
@@ -189,7 +192,19 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         manufacturerDaysAfterOpen: manufacturerDaysOverride ?? item.manufacturerDaysAfterOpen,
         packageExpiryAt: parsePackageExpiry(packageExpiryOverride ?? packageExpiry, settings.timeZone),
       });
-      const draft = {
+      const legalRule = result.allowed && Boolean(result.cappedBy);
+      const gate = evaluatePrintingGate(result, item.verificationStatus, settings.verificationMode, {
+        legalRule,
+        confirmedPackage: Boolean(confirmedPackage),
+      });
+      const verificationBasis = item.verificationStatus === 'verified'
+        ? 'item-review' as const
+        : legalRule
+          ? 'legal-rule' as const
+          : confirmedPackage
+            ? 'package-evidence' as const
+            : 'test' as const;
+      const draft: Omit<PrintableLabel, 'useByAt'> = {
         itemId: item.id,
         itemName: getItemName(item.id, item.name, language),
         form: formOption.legacyValue,
@@ -209,16 +224,17 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         verificationMode: settings.verificationMode,
         printerProfileSnapshot: settings.printerProfile,
         appVersion: packageData.version,
-        packageScanId: (evidenceOverride ?? packageEvidence)?.id ?? null,
-        lotCode: (evidenceOverride ?? packageEvidence)?.lotCode ?? '',
-        productBarcode: (evidenceOverride ?? packageEvidence)?.barcodeValue ?? '',
+        packageScanId: confirmedPackage?.id ?? null,
+        lotCode: confirmedPackage?.lotCode ?? '',
+        productBarcode: confirmedPackage?.barcodeValue ?? '',
+        verificationBasis,
       };
       setSelectedStaff(member);
       setDraftWithoutUseBy(draft);
       setShelfLife(configuredShelfLife);
       setValidity(result);
       setLabel(
-        evaluatePrintingGate(result, item.verificationStatus, settings.verificationMode).allowed && result.allowed
+        gate.allowed && result.allowed
           ? {
               ...draft,
               useByAt: result.expiresAt.toISOString(),
@@ -235,7 +251,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
 
   async function printLabel() {
     if (!label) return;
-    if (item?.verificationStatus !== 'verified' && settings.verificationMode === 'test' && !confirmTestPrint) {
+    if (label.verificationBasis === 'test' && settings.verificationMode === 'test' && !confirmTestPrint) {
       setConfirmTestPrint(true);
       return;
     }
@@ -391,7 +407,13 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
   }
 
   if (step === 'preview' && draftWithoutUseBy) {
-    const strictVerificationBlock = settings.verificationMode === 'strict' && item.verificationStatus !== 'verified';
+    const previewGate = validity
+      ? evaluatePrintingGate(validity, item.verificationStatus, settings.verificationMode, {
+          legalRule: validity.allowed && Boolean(validity.cappedBy),
+          confirmedPackage: Boolean(packageEvidence),
+        })
+      : null;
+    const strictVerificationBlock = previewGate?.reason === 'unverifiedStrict';
     const validityMessage = validity && !validity.allowed
       ? validity.reason === 'ambientPlantPreparation'
         ? copy.foodSafety.ambientPlantBlock
@@ -404,7 +426,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         <PageHeader title={copy.previewTitle} subtitle={copy.previewHint} action={progress} />
         {error ? <ErrorMessage message={error} /> : null}
         <ScrollView contentContainerStyle={styles.previewArea}>
-          {item.verificationStatus !== 'verified' && settings.verificationMode === 'test' ? (
+          {previewGate?.requiresTestWarning ? (
             <Text style={styles.testBanner}>{copy.foodSafety.testModeBanner}</Text>
           ) : null}
           <LabelPreview
