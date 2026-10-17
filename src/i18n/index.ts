@@ -538,7 +538,7 @@ const COPY: Record<Language, AppCopy> = {
       'form.shredded': 'Ralado',
     },
     appTagline: 'Label today. Keep tomorrow.',
-    navNewLabel: 'Etiquetas cadastradas',
+    navNewLabel: 'Etiquetas Cadastradas',
     navToday: 'Hoje',
     navStaff: 'Equipe',
     offlineDatabase: '● Banco de dados offline',
