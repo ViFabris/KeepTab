@@ -113,6 +113,8 @@ export const SCHEMA_SQL = `
     printer_profile_json TEXT NOT NULL DEFAULT '{}',
     app_version TEXT NOT NULL DEFAULT '',
     package_scan_id INTEGER,
+    lot_code TEXT NOT NULL DEFAULT '',
+    product_barcode TEXT NOT NULL DEFAULT '',
     FOREIGN KEY (item_id) REFERENCES items(id),
     FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE SET NULL,
     FOREIGN KEY (form_option_id) REFERENCES label_options(id),

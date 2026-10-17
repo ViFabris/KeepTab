@@ -35,7 +35,13 @@
           "resizeMode": "contain"
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow KeepTab to scan product codes and photograph lot and expiry information."
+        }
+      ]
     ]
   }
 }

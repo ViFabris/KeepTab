@@ -158,6 +158,8 @@ async function migrateAuditTrail(db: SQLiteDatabase): Promise<void> {
 
 async function migratePackageEvidence(db: SQLiteDatabase): Promise<void> {
   await addColumnIfMissing(db, 'labels', 'package_scan_id', 'INTEGER');
+  await addColumnIfMissing(db, 'labels', 'lot_code', "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing(db, 'labels', 'product_barcode', "TEXT NOT NULL DEFAULT ''");
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS package_scans (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

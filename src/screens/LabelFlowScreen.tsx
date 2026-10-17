@@ -18,6 +18,7 @@ import { getStaff } from '../database/staffRepository';
 import { getItemName, getLabelOptionName } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import { MockPrinter } from '../printing/MockPrinter';
+import { PackageIntakeModal } from '../packages/PackageIntakeModal';
 import { RULES_VERSION } from '../rules/rules';
 import { evaluatePrintingGate } from '../rules/printingGate';
 import { calculateValidity, type ValidityResult } from '../rules/validity';
@@ -27,6 +28,7 @@ import { colors, radii, sizes, spacing, typography } from '../theme';
 import type {
   KitchenItem,
   ItemLabelOption,
+  PackageEvidence,
   PrintableLabel,
   SavedLabel,
   ShelfLife,
@@ -79,6 +81,8 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
   const [openedDays, setOpenedDays] = useState('');
   const [packageExpiry, setPackageExpiry] = useState('');
+  const [packageEvidence, setPackageEvidence] = useState<PackageEvidence | null>(null);
+  const [packageIntakeVisible, setPackageIntakeVisible] = useState(false);
   const [confirmTestPrint, setConfirmTestPrint] = useState(false);
   const [printedLabel, setPrintedLabel] = useState<SavedLabel | null>(null);
   const [preparedJob, setPreparedJob] = useState<PreparedPrintJob | null>(null);
@@ -149,7 +153,12 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
     setStep('storage');
   }
 
-  async function selectStaff(member: StaffMember, manufacturerDaysOverride?: number | null) {
+  async function selectStaff(
+    member: StaffMember,
+    manufacturerDaysOverride?: number | null,
+    packageExpiryOverride?: string,
+    evidenceOverride?: PackageEvidence | null,
+  ) {
     if (!item || !formOption || !storageOption) return;
     setBusy(true);
     setError('');
@@ -178,7 +187,7 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         plantBasedType: item.plantBasedType,
         heatTreated: item.heatTreated,
         manufacturerDaysAfterOpen: manufacturerDaysOverride ?? item.manufacturerDaysAfterOpen,
-        packageExpiryAt: parsePackageExpiry(packageExpiry, settings.timeZone),
+        packageExpiryAt: parsePackageExpiry(packageExpiryOverride ?? packageExpiry, settings.timeZone),
       });
       const draft = {
         itemId: item.id,
@@ -200,6 +209,9 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
         verificationMode: settings.verificationMode,
         printerProfileSnapshot: settings.printerProfile,
         appVersion: packageData.version,
+        packageScanId: (evidenceOverride ?? packageEvidence)?.id ?? null,
+        lotCode: (evidenceOverride ?? packageEvidence)?.lotCode ?? '',
+        productBarcode: (evidenceOverride ?? packageEvidence)?.barcodeValue ?? '',
       };
       setSelectedStaff(member);
       setDraftWithoutUseBy(draft);
@@ -262,6 +274,8 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
     setSelectedStaff(null);
     setOpenedDays('');
     setPackageExpiry('');
+    setPackageEvidence(null);
+    setPackageIntakeVisible(false);
     setConfirmTestPrint(false);
     setStep('item');
   }
@@ -431,6 +445,25 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
               <BigButton label={copy.settings.save} disabled={!openedDays} onPress={() => selectedStaff ? void selectStaff(selectedStaff, Number(openedDays)) : undefined} />
             </Card>
           ) : null}
+          <Card style={styles.packageCard}>
+            <View style={styles.packageCopy}>
+              <Text style={styles.packageTitle}>{copy.foodSafety.packageIntakeTitle}</Text>
+              <Text style={styles.packageHint}>
+                {packageEvidence ? copy.foodSafety.packageSaved : copy.foodSafety.packageIntakeHint}
+              </Text>
+              {packageEvidence ? (
+                <Text style={styles.packageMeta}>
+                  {copy.foodSafety.lotCode}: {packageEvidence.lotCode || '—'} · {copy.foodSafety.packageExpiry}: {packageEvidence.packageExpiryDate}
+                </Text>
+              ) : null}
+            </View>
+            <BigButton
+              label={copy.foodSafety.scanPackage}
+              onPress={() => setPackageIntakeVisible(true)}
+              variant="secondary"
+              style={styles.packageButton}
+            />
+          </Card>
           {validity?.allowed && validity.cappedBy ? (
             <Text style={styles.ruleExplanation}>{copy.foodSafety.ruleLimited(validity.cappedBy.limitDays, validity.cappedBy.law, validity.cappedBy.itemNumber)}</Text>
           ) : null}
@@ -459,6 +492,27 @@ export function LabelFlowScreen({ onPrinted }: LabelFlowScreenProps) {
           onConfirm={() => { setConfirmTestPrint(false); void printConfirmed(); }}
           title={copy.foodSafety.testModeBanner}
           visible={confirmTestPrint}
+        />
+        <PackageIntakeModal
+          itemId={item.id}
+          onCancel={() => setPackageIntakeVisible(false)}
+          onConfirmed={(evidence) => {
+            setPackageEvidence(evidence);
+            setPackageExpiry(evidence.packageExpiryDate);
+            if (evidence.manufacturerDaysAfterOpen) {
+              setOpenedDays(String(evidence.manufacturerDaysAfterOpen));
+            }
+            setPackageIntakeVisible(false);
+            if (selectedStaff) {
+              void selectStaff(
+                selectedStaff,
+                evidence.manufacturerDaysAfterOpen,
+                evidence.packageExpiryDate,
+                evidence,
+              );
+            }
+          }}
+          visible={packageIntakeVisible}
         />
       </View>
     );
@@ -565,6 +619,12 @@ const styles = StyleSheet.create({
   noShelfBody: { ...typography.body, marginTop: spacing.xxs, color: colors.dangerDark },
   testBanner: { ...typography.bodyStrong, alignSelf: 'center', padding: spacing.sm, borderRadius: radii.sm, backgroundColor: colors.accent, color: colors.ink },
   openedInputs: { gap: spacing.sm, padding: spacing.md },
+  packageCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md },
+  packageCopy: { flex: 1, minWidth: 0, gap: spacing.xxs },
+  packageTitle: { ...typography.h3, color: colors.ink },
+  packageHint: { ...typography.caption, color: colors.muted },
+  packageMeta: { ...typography.bodyStrong, color: colors.primaryDark },
+  packageButton: { minWidth: 300 },
   ruleExplanation: { ...typography.bodyStrong, alignSelf: 'center', color: colors.primaryDark },
   actionRow: { flexDirection: 'row', gap: spacing.md },
   backButton: { width: 180 },

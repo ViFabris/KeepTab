@@ -33,6 +33,8 @@ interface LabelRow {
   printer_profile_json: string;
   app_version: string;
   package_scan_id: number | null;
+  lot_code: string;
+  product_barcode: string;
 }
 
 export async function savePrintedLabel(
@@ -46,8 +48,8 @@ export async function savePrintedLabel(
        made_at, use_by_at, staff_id, staff_name, status, printed_at,
        label_width_mm, label_height_mm, jurisdictions_json, rules_version,
        capped_by_rule_id, item_verification_status, verification_mode,
-       printer_profile_json, app_version, package_scan_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       printer_profile_json, app_version, package_scan_id, lot_code, product_barcode)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     label.itemId,
     label.itemName,
     label.form,
@@ -69,6 +71,8 @@ export async function savePrintedLabel(
     JSON.stringify(label.printerProfileSnapshot ?? {}),
     label.appVersion ?? '',
     label.packageScanId ?? null,
+    label.lotCode ?? '',
+    label.productBarcode ?? '',
   );
 
   return {
@@ -187,6 +191,8 @@ function mapLabelRow(row: LabelRow): SavedLabel {
     printerProfileSnapshot: parseJson(row.printer_profile_json, undefined),
     appVersion: row.app_version,
     packageScanId: row.package_scan_id,
+    lotCode: row.lot_code,
+    productBarcode: row.product_barcode,
   };
 }
 

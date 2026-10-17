@@ -59,6 +59,14 @@ describe('food-safety validity calculation', () => {
     expect(result.cappedBy).toBeNull();
   });
 
+  it('never prints a non-opened label past the confirmed package expiry', () => {
+    const result = allowed({
+      preparedFood: false,
+      packageExpiryAt: new Date('2026-10-18T02:59:00.000Z'),
+    });
+    expect(result.expiresAt.toISOString()).toBe('2026-10-18T02:59:00.000Z');
+  });
+
   it('blocks opened products without manufacturer days', () => {
     expect(calculateValidity({ ...BASE, opened: true }).allowed).toBe(false);
   });

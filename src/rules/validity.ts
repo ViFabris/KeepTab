@@ -82,6 +82,10 @@ export function calculateValidity(input: ValidityInput): ValidityResult {
     }
   }
 
+  if (input.packageExpiryAt && input.packageExpiryAt < expiresAt) {
+    expiresAt = input.packageExpiryAt;
+  }
+
   return { allowed: true, expiresAt, cappedBy };
 }
 

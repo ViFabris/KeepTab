@@ -261,6 +261,34 @@ export interface FoodSafetyCopy {
   no: string;
   manufacturerDays: string;
   packageExpiry: string;
+  shelfLifeGuidance: string;
+  shelfLifeGuidanceNotice: string;
+  refrigeratedGuidance: string;
+  frozenGuidance: string;
+  exactValueRequired: string;
+  userSuppliedSource: string;
+  thirdPartySource: string;
+  relatedRules: string;
+  packageIntakeTitle: string;
+  packageIntakeHint: string;
+  scanPackage: string;
+  cameraPermission: string;
+  grantCameraPermission: string;
+  noBarcodeYet: string;
+  barcodeOnlyNotice: string;
+  barcode: string;
+  gtin: string;
+  scanAgain: string;
+  captureEvidence: string;
+  retakePhoto: string;
+  photoEvidence: string;
+  lotCode: string;
+  confirmPackage: string;
+  packageSaved: string;
+  packagePhotoRequired: string;
+  packageExpiryRequired: string;
+  packageDateInvalid: string;
+  packageDetailsDetected: string;
   source: string;
   importCsv: string;
   csvInputHint: string;
@@ -573,6 +601,34 @@ const COPY: Record<Language, AppCopy> = {
       no: 'Não',
       manufacturerDays: 'Dias após abertura informados pelo fabricante',
       packageExpiry: 'Validade da embalagem (AAAA-MM-DD, opcional)',
+      shelfLifeGuidance: 'Guia de prazos',
+      shelfLifeGuidanceNotice: 'Valores de referência fornecidos pelo usuário. Não são aplicados automaticamente. Um prazo exato e sua fonte precisam ser aprovados antes de verificar um item.',
+      refrigeratedGuidance: 'Refrigeração',
+      frozenGuidance: 'Congelamento',
+      exactValueRequired: 'Este intervalo exige que o responsável escolha e aprove um valor exato.',
+      userSuppliedSource: 'Informado pelo usuário',
+      thirdPartySource: 'Referência de terceiros',
+      relatedRules: 'Regras relacionadas',
+      packageIntakeTitle: 'Ler embalagem do produto',
+      packageIntakeHint: 'Leia o código, fotografe lote e validade e confirme exatamente o que está impresso. Um código comum identifica o produto, mas normalmente não contém lote ou validade.',
+      scanPackage: 'Ler código e fotografar embalagem',
+      cameraPermission: 'A câmera é necessária para ler o código e registrar a foto do lote e da validade.',
+      grantCameraPermission: 'Permitir câmera',
+      noBarcodeYet: 'Aponte a câmera para o código de barras ou QR/GS1 da embalagem.',
+      barcodeOnlyNotice: 'Produto identificado. A validade e o lote não estão neste código; copie-os da embalagem e confirme abaixo.',
+      barcode: 'Código lido',
+      gtin: 'GTIN',
+      scanAgain: 'Ler novamente',
+      captureEvidence: 'Fotografar lote e validade',
+      retakePhoto: 'Refazer foto',
+      photoEvidence: 'Foto da embalagem',
+      lotCode: 'Lote',
+      confirmPackage: 'Confirmar dados da embalagem',
+      packageSaved: 'Dados da embalagem confirmados e salvos somente neste dispositivo.',
+      packagePhotoRequired: 'Fotografe a parte da embalagem que mostra lote e validade.',
+      packageExpiryRequired: 'Digite a validade impressa na embalagem.',
+      packageDateInvalid: 'Use uma data válida no formato AAAA-MM-DD.',
+      packageDetailsDetected: 'Dados GS1 encontrados. Confira todos os campos com a embalagem antes de confirmar.',
       source: 'Fonte',
       importCsv: 'Importar CSV',
       csvInputHint: 'Cole aqui o conteúdo do arquivo items_template.csv.',
@@ -895,6 +951,34 @@ const COPY: Record<Language, AppCopy> = {
       no: 'No',
       manufacturerDays: 'Manufacturer days after opening',
       packageExpiry: 'Package expiry (YYYY-MM-DD, optional)',
+      shelfLifeGuidance: 'Shelf-life guidance',
+      shelfLifeGuidanceNotice: 'Reference values supplied by the user. They are not applied automatically. An exact limit and supporting source must be approved before an item is verified.',
+      refrigeratedGuidance: 'Refrigerated',
+      frozenGuidance: 'Frozen',
+      exactValueRequired: 'This range requires the responsible person to choose and approve one exact value.',
+      userSuppliedSource: 'User supplied',
+      thirdPartySource: 'Third-party reference',
+      relatedRules: 'Related rules',
+      packageIntakeTitle: 'Read product package',
+      packageIntakeHint: 'Scan the code, photograph the lot and expiry, and confirm exactly what is printed. An ordinary barcode identifies the product but usually does not contain a lot or expiry.',
+      scanPackage: 'Scan code and photograph package',
+      cameraPermission: 'Camera access is needed to scan the code and record a photo of the lot and expiry.',
+      grantCameraPermission: 'Allow camera',
+      noBarcodeYet: 'Point the camera at the package barcode or QR/GS1 code.',
+      barcodeOnlyNotice: 'Product identified. Expiry and lot are not encoded here; copy them from the package and confirm below.',
+      barcode: 'Scanned code',
+      gtin: 'GTIN',
+      scanAgain: 'Scan again',
+      captureEvidence: 'Photograph lot and expiry',
+      retakePhoto: 'Retake photo',
+      photoEvidence: 'Package photo',
+      lotCode: 'Lot / batch',
+      confirmPackage: 'Confirm package details',
+      packageSaved: 'Package details confirmed and saved on this device only.',
+      packagePhotoRequired: 'Photograph the package area showing the lot and expiry.',
+      packageExpiryRequired: 'Enter the expiry printed on the package.',
+      packageDateInvalid: 'Use a valid date in YYYY-MM-DD format.',
+      packageDetailsDetected: 'GS1 details found. Check every field against the package before confirming.',
       source: 'Source',
       importCsv: 'Import CSV',
       csvInputHint: 'Paste the contents of items_template.csv here.',
