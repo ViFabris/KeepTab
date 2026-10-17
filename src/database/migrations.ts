@@ -32,6 +32,7 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await migrateStorageValueConstraints(db);
   await seedDefaultOptions(db);
   await migrateAuditTrail(db);
+  await migratePackageEvidence(db);
   await initializeSettings(db);
   await migrateLabelSizeSetting(db);
   await linkExistingLabelsToOptions(db);
@@ -152,6 +153,27 @@ async function migrateAuditTrail(db: SQLiteDatabase): Promise<void> {
       reviewed_on TEXT NOT NULL,
       reviewed_by TEXT NOT NULL
     );
+  `);
+}
+
+async function migratePackageEvidence(db: SQLiteDatabase): Promise<void> {
+  await addColumnIfMissing(db, 'labels', 'package_scan_id', 'INTEGER');
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS package_scans (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_id TEXT NOT NULL,
+      barcode_value TEXT NOT NULL,
+      barcode_format TEXT NOT NULL,
+      gtin TEXT NOT NULL DEFAULT '',
+      lot_code TEXT NOT NULL DEFAULT '',
+      package_expiry_date TEXT NOT NULL DEFAULT '',
+      manufacturer_days_after_open INTEGER CHECK (manufacturer_days_after_open > 0),
+      photo_uri TEXT NOT NULL DEFAULT '',
+      confirmed_at TEXT NOT NULL,
+      FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE RESTRICT
+    );
+    CREATE INDEX IF NOT EXISTS package_scans_gtin_idx
+      ON package_scans(gtin, confirmed_at DESC);
   `);
 }
 

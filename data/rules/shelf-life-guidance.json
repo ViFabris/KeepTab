@@ -1,0 +1,125 @@
+{
+  "version": "USER-GUIDANCE-2026-10-16-1",
+  "status": "unverified",
+  "automatic": false,
+  "notice": {
+    "en": "Reference values supplied by the user. They are not automatically applied to labels. An exact value and supporting source must be approved before an item can be verified.",
+    "pt-BR": "Valores de referência fornecidos pelo usuário. Eles não são aplicados automaticamente às etiquetas. Um valor exato e sua fonte devem ser aprovados antes da verificação do item."
+  },
+  "refrigerated": [
+    {
+      "id": "GUIDE-POST-COOK",
+      "category": { "en": "Post-cooking foods", "pt-BR": "Alimentos pós-cocção" },
+      "examples": { "en": "Ready meals, cooked meat, rice, beans", "pt-BR": "Pratos prontos, carnes cozidas, arroz, feijão" },
+      "temperatureText": { "en": "At or below 4°C or 5°C, as applicable", "pt-BR": "Até 4°C ou 5°C, conforme aplicável" },
+      "minimumDays": 3,
+      "maximumDays": 3,
+      "wording": { "en": "Up to 3 days (72 hours)", "pt-BR": "Até 3 dias (72 horas)" },
+      "sourceType": "user-supplied",
+      "sourceUrl": "https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2025/vai-preparar-a-ceia-se-liga-em-nossas-dicas-e-garanta-saude-no-prato",
+      "relatedRuleIds": ["COLD-3D", "COLD-5D"]
+    },
+    {
+      "id": "GUIDE-RAW-FISH-MEAT",
+      "category": { "en": "Raw fish and meat", "pt-BR": "Pescados e carnes cruas" },
+      "examples": { "en": "Fresh raw fish and meat", "pt-BR": "Pescados e carnes cruas frescos" },
+      "temperatureText": { "en": "Refrigerated", "pt-BR": "Refrigerado" },
+      "minimumDays": 1,
+      "maximumDays": 3,
+      "wording": { "en": "Up to 3 days; fish preferably 1 to 2 days", "pt-BR": "Até 3 dias; pescados preferencialmente de 1 a 2 dias" },
+      "sourceType": "user-supplied",
+      "sourceUrl": "",
+      "relatedRuleIds": []
+    },
+    {
+      "id": "GUIDE-HOMEMADE-MAYO-SAUCE",
+      "category": { "en": "Homemade mayonnaise and sauces", "pt-BR": "Maionese e molhos caseiros" },
+      "examples": { "en": "Homemade mayonnaise and sauces", "pt-BR": "Maionese e molhos caseiros" },
+      "temperatureText": { "en": "Refrigerated", "pt-BR": "Refrigerado" },
+      "minimumDays": 1,
+      "maximumDays": 2,
+      "wording": { "en": "No more than 1 to 2 days", "pt-BR": "No máximo de 1 a 2 dias" },
+      "sourceType": "user-supplied",
+      "sourceUrl": "",
+      "relatedRuleIds": []
+    },
+    {
+      "id": "GUIDE-SLICED-DELI",
+      "category": { "en": "Sliced cold cuts and processed meats", "pt-BR": "Frios e embutidos fatiados" },
+      "examples": { "en": "Ham and cheese", "pt-BR": "Presunto e queijo" },
+      "temperatureText": { "en": "Refrigerated after opening", "pt-BR": "Refrigerado após abertura" },
+      "minimumDays": 3,
+      "maximumDays": 3,
+      "wording": { "en": "Up to 3 days after opening", "pt-BR": "Até 3 dias após abrir a embalagem" },
+      "sourceType": "user-supplied",
+      "sourceUrl": "",
+      "relatedRuleIds": ["LABEL-OPENED"]
+    },
+    {
+      "id": "GUIDE-WHOLE-EGGS",
+      "category": { "en": "Whole eggs", "pt-BR": "Ovos inteiros" },
+      "examples": { "en": "Whole eggs", "pt-BR": "Ovos inteiros" },
+      "temperatureText": { "en": "Refrigerated", "pt-BR": "Sob refrigeração" },
+      "minimumDays": 7,
+      "maximumDays": 7,
+      "wording": { "en": "Up to 7 days", "pt-BR": "Até 7 dias" },
+      "sourceType": "user-supplied",
+      "sourceUrl": "",
+      "relatedRuleIds": []
+    },
+    {
+      "id": "GUIDE-OPENED-CANS",
+      "category": { "en": "Opened cans", "pt-BR": "Abertura de latas" },
+      "examples": { "en": "Corn and industrialized tomato sauce", "pt-BR": "Milho e molho de tomate industrializado" },
+      "temperatureText": { "en": "Transfer from the can to a glass or plastic container and refrigerate", "pt-BR": "Retirar da lata, transferir para pote de vidro ou plástico e refrigerar" },
+      "minimumDays": 3,
+      "maximumDays": 5,
+      "wording": { "en": "Consume within 3 to 5 days", "pt-BR": "Consumir em até 3 a 5 dias" },
+      "sourceType": "user-supplied",
+      "sourceUrl": "",
+      "relatedRuleIds": ["LABEL-OPENED"]
+    }
+  ],
+  "frozen": [
+    {
+      "id": "GUIDE-FROZEN-0--5",
+      "temperatureText": { "en": "0°C to -5°C", "pt-BR": "De 0°C a -5°C" },
+      "minimumDays": 10,
+      "maximumDays": 10,
+      "wording": { "en": "Up to 10 days", "pt-BR": "Até 10 dias" },
+      "sourceType": "third-party-reference",
+      "sourceUrl": "https://www.foodtosave.com.br/blog/como-definir-o-prazo-de-validade/",
+      "relatedRuleIds": []
+    },
+    {
+      "id": "GUIDE-FROZEN--6--10",
+      "temperatureText": { "en": "-6°C to -10°C", "pt-BR": "De -6°C a -10°C" },
+      "minimumDays": 20,
+      "maximumDays": 20,
+      "wording": { "en": "Up to 20 days", "pt-BR": "Até 20 dias" },
+      "sourceType": "third-party-reference",
+      "sourceUrl": "https://www.foodtosave.com.br/blog/como-definir-o-prazo-de-validade/",
+      "relatedRuleIds": []
+    },
+    {
+      "id": "GUIDE-FROZEN--11--18",
+      "temperatureText": { "en": "-11°C to -18°C", "pt-BR": "De -11°C a -18°C" },
+      "minimumDays": 30,
+      "maximumDays": 30,
+      "wording": { "en": "Up to 30 days", "pt-BR": "Até 30 dias" },
+      "sourceType": "third-party-reference",
+      "sourceUrl": "https://www.foodtosave.com.br/blog/como-definir-o-prazo-de-validade/",
+      "relatedRuleIds": []
+    },
+    {
+      "id": "GUIDE-FROZEN-BELOW--18",
+      "temperatureText": { "en": "Below -18°C", "pt-BR": "Abaixo de -18°C" },
+      "minimumDays": 90,
+      "maximumDays": 90,
+      "wording": { "en": "Up to 90 days (3 months)", "pt-BR": "Até 90 dias (3 meses)" },
+      "sourceType": "third-party-reference",
+      "sourceUrl": "https://www.foodtosave.com.br/blog/como-definir-o-prazo-de-validade/",
+      "relatedRuleIds": ["FROZEN-90D"]
+    }
+  ]
+}

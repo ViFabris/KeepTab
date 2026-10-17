@@ -109,6 +109,22 @@ export interface PrintableLabel {
   verificationMode?: VerificationMode;
   printerProfileSnapshot?: PrinterProfile;
   appVersion?: string;
+  packageScanId?: number | null;
+  lotCode?: string;
+  productBarcode?: string;
+}
+
+export interface PackageEvidence {
+  id: number;
+  itemId: string;
+  barcodeValue: string;
+  barcodeFormat: string;
+  gtin: string;
+  lotCode: string;
+  packageExpiryDate: string;
+  manufacturerDaysAfterOpen: number | null;
+  photoUri: string;
+  confirmedAt: string;
 }
 
 export type SavedLabel = Omit<PrintableLabel, 'staffId'> & {

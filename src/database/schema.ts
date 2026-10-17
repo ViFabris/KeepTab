@@ -112,6 +112,7 @@ export const SCHEMA_SQL = `
     verification_mode TEXT NOT NULL DEFAULT 'strict',
     printer_profile_json TEXT NOT NULL DEFAULT '{}',
     app_version TEXT NOT NULL DEFAULT '',
+    package_scan_id INTEGER,
     FOREIGN KEY (item_id) REFERENCES items(id),
     FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE SET NULL,
     FOREIGN KEY (form_option_id) REFERENCES label_options(id),
@@ -135,4 +136,21 @@ export const SCHEMA_SQL = `
     reviewed_on TEXT NOT NULL,
     reviewed_by TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS package_scans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id TEXT NOT NULL,
+    barcode_value TEXT NOT NULL,
+    barcode_format TEXT NOT NULL,
+    gtin TEXT NOT NULL DEFAULT '',
+    lot_code TEXT NOT NULL DEFAULT '',
+    package_expiry_date TEXT NOT NULL DEFAULT '',
+    manufacturer_days_after_open INTEGER CHECK (manufacturer_days_after_open > 0),
+    photo_uri TEXT NOT NULL DEFAULT '',
+    confirmed_at TEXT NOT NULL,
+    FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE RESTRICT
+  );
+
+  CREATE INDEX IF NOT EXISTS package_scans_gtin_idx
+    ON package_scans(gtin, confirmed_at DESC);
 `;
